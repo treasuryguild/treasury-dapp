@@ -6,7 +6,7 @@ const Nav = () => {
           <Link href="/" className="navitems">
             Home
           </Link>
-          <Link href='/transaction' className="navitems">
+          <Link href='/txbuilder' className="navitems">
             Build Transaction
           </Link>
           <Link href='/txhistory' className="navitems">
