@@ -22,10 +22,12 @@ function MyApp({ Component, pageProps }: AppProps) {
         <div className="component">
           <Component {...pageProps} />
         </div>
-        <div className="mesh-badge">
-          Powered by
-          <MeshBadge dark={true} />
-        </div>
+      </div>
+      <div className="mesh-badge">
+          <div className="mesh-badge-item">Powered by</div>
+          <div className="mesh-badge-item">
+            <MeshBadge dark={true} />
+          </div>
       </div>
     </MeshProvider>
     </>

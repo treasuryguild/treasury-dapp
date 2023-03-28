@@ -152,10 +152,18 @@ a {
   margin: 0.5em;
 }
 
+.walletbutton * {
+  background: black;
+}
+
 .mesh-badge {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
   margin: 0.5em;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+}
+
+.mesh-badge-item {
+  display: flex;
+  justify-content: center;
 }
