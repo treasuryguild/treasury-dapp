@@ -9,7 +9,7 @@ const Nav = () => {
           <Link href='/txbuilder' className="navitems">
             Build Transaction
           </Link>
-          <Link href='/txhistory' className="navitems">
+          <Link href='/transactions' className="navitems">
             Transaction History
           </Link>
     </nav>

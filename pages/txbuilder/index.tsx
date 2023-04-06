@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import TransactionForm from '../../components/ContributionForm';
 
 function TransactionList() {
   const router = useRouter()
@@ -21,6 +22,7 @@ function TransactionList() {
           Dework Bulk Transaction
         </Link>
       </h2>
+      <TransactionForm />
     </>
   )
 }
