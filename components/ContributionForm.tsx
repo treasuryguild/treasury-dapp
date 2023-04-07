@@ -1,145 +1,165 @@
-// components/ContributionForm.tsx
-
 import React, { useState } from 'react';
-import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 
-interface TokenAmount {
-  token: string;
-  amount: number;
-}
+type Tokens = 'ADA' | 'GMBL' | 'AGIX';
 
-interface Contributor {
-  walletAddress: string;
-  tokens: TokenAmount[];
-}
+type Contributor = Record<string, Record<Tokens, number>>;
+type Contribution = {
+  taskCreator: string;
+  name: string[];
+  label: string[];
+  contributors: Contributor;
+};
 
-interface FormValues {
-  name: string;
-  description: string;
-  contributors: Contributor[];
-}
+const tokensList: Tokens[] = ['ADA', 'GMBL', 'AGIX'];
 
 const ContributionForm: React.FC = () => {
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormValues>({
-    defaultValues: {
-      name: '',
-      description: '',
-      contributors: [],
-    },
-  });
-  const { fields, append, remove, update } = useFieldArray({
-    control,
-    name: 'contributors',
-  });
+  const [contributions, setContributions] = useState<Contribution[]>([]);
 
-  const [output, setOutput] = useState<string>('');
+  const addContribution = () => {
+    setContributions([
+      ...contributions,
+      {
+        taskCreator: 'catalyst swarm',
+        name: [],
+        label: [],
+        contributors: {},
+      },
+    ]);
+  };
 
-  const onSubmit: SubmitHandler<FormValues> = (values) => {
-    setOutput(JSON.stringify(values, null, 2));
+  const removeContribution = (index: number) => {
+    const newContributions = [...contributions];
+    newContributions.splice(index, 1);
+    setContributions(newContributions);
+  };
+
+  const updateName = (index: number, name: string) => {
+    const newContributions = [...contributions];
+    newContributions[index].name = name.split(',');
+    setContributions(newContributions);
+  };
+
+  const updateLabel = (index: number, label: string) => {
+    const newContributions = [...contributions];
+    newContributions[index].label = label.split(',');
+    setContributions(newContributions);
+  };
+
+  const addContributor = (index: number, contributorId: string) => {
+    const newContributions = [...contributions];
+    newContributions[index].contributors[contributorId] = {};
+    setContributions(newContributions);
+  };
+
+  const removeContributor = (index: number, contributorId: string) => {
+    const newContributions = [...contributions];
+    delete newContributions[index].contributors[contributorId];
+    setContributions(newContributions);
+  };
+
+  const addToken = (
+    contributionIndex: number,
+    contributorId: string,
+    token: Tokens,
+    amount: number
+  ) => {
+    const newContributions = [...contributions];
+    newContributions[contributionIndex].contributors[contributorId][token] = amount;
+    setContributions(newContributions);
+  };
+
+  const updateTokenAmount = (
+    contributionIndex: number,
+    contributorId: string,
+    token: Tokens,
+    amount: number
+  ) => {
+    const newContributions = [...contributions];
+    newContributions[contributionIndex].contributors[contributorId][token] = amount;
+    setContributions(newContributions);
+  };
+
+  const removeToken = (
+    contributionIndex: number,
+    contributorId: string,
+    token: Tokens
+  ) => {
+    const newContributions = [...contributions];
+    delete newContributions[contributionIndex].contributors[contributorId][token];
+    setContributions(newContributions);
   };
 
   return (
     <div>
-      <h1>Contribution Form</h1>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div>
-          <label htmlFor="name">Contribution Name:</label>
-          <input {...register('name', { required: 'Required' })} type="text" />
-          {errors.name && <div>{errors.name.message}</div>}
-        </div>
-        <div>
-          <label htmlFor="description">Description:</label>
-          <textarea {...register('description', { required: 'Required' })} />
-          {errors.description && <div>{errors.description.message}</div>}
-        </div>
-        <h3>Contributors:</h3>
-        {fields.map((field, index) => (
-          <div key={field.id}>
-            <div>
-              <label htmlFor={`contributors.${index}.walletAddress`}>Wallet Address:</label>
-              <input
-                {...register(`contributors.${index}.walletAddress`, { required: 'Required' })}
-                type="text"
-                defaultValue={field.walletAddress}
-              />
-              {errors.contributors?.[index]?.walletAddress && (
-                <div>{errors.contributors[index]?.walletAddress?.message}</div>
-              )}
+      <button onClick={addContribution}>Add Contribution</button>
+      {contributions.map((contribution, index) => (
+        <div key={index}>
+          <h2>Contribution {index + 1}</h2>
+          <button onClick={() => removeContribution(index)}>Remove Contribution</button>
+          <br />
+          <label>
+            Contribution Name (comma-separated):
+            <input
+              type="text"
+              value={contribution.name.join(',')}
+              onChange={(e) => updateName(index, e.target.value)}
+            />
+          </label>
+          <br />
+          <label>
+            Labels (comma-separated):
+            <input
+              type="text"
+              value={contribution.label.join(',')}
+              onChange={(e) => updateLabel(index, e.target.value)}
+            />
+          </label>
+          <br />
+          {Object.keys(contribution.contributors).map((contributorId) => (
+            <div key={contributorId}>
+              <h3>Contributor ID: {contributorId}</h3>
+              <button onClick={() => removeContributor(index, contributorId)}>
+                Remove Contributor
+              </button>
+              <br />
+              {Object.entries(contribution.contributors[contributorId]).map(([token, amount]) => (
+                <div key={token}>
+                  <label>
+                    {token} Amount:
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) =>
+                        updateTokenAmount(index, contributorId, token as Tokens, Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <button onClick={() => removeToken(index, contributorId, token as Tokens)}>
+                    Remove {token}
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => addToken(index, contributorId, 'ADA', 0)}>+ ADA</button>
+              <button onClick={() => addToken(index, contributorId, 'GMBL', 0)}>+ GMBL</button>
+              <button onClick={() => addToken(index, contributorId, 'AGIX', 0)}>+ AGIX</button>
             </div>
-            <h4>Tokens:</h4>
-            {field.tokens.map((token, tokenIndex) => (
-              <div key={`token-${tokenIndex}`}>
-                <div>
-                  <label htmlFor={`contributors.${index}.tokens.${tokenIndex}.token`}>Token:</label>
-                  <input
-                    {...register(`contributors.${index}.tokens.${tokenIndex}.token`, { required: 'Required' })}
-                    type="text"
-                    defaultValue={token.token}
-                  />
-                  {errors.contributors?.[index]?.tokens?.[tokenIndex]?.token && (
-                    <div>{errors.contributors?.[index]?.tokens?.[tokenIndex]?.token?.message}</div>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor={`contributors.${index}.tokens.${tokenIndex}.amount`}>Amount:</label>
-                  <input
-                    {...register(`contributors.${index}.tokens.${tokenIndex}.amount`, { required: 'Required' })}
-                    type="number"
-                    defaultValue={token.amount}
-                  />
-                  {errors.contributors?.[index]?.tokens?.[tokenIndex]?.amount && (
-                    <div>{errors.contributors?.[index]?.tokens?.[tokenIndex]?.amount?.message}</div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  data-token-index={tokenIndex}
-                  onClick={(e) => {
-                    const tokenIndexToRemove = parseInt(e.currentTarget.getAttribute('data-token-index') || '0');
-                    const newTokens = field.tokens.filter((_, index) => index !== tokenIndexToRemove);
-                    update(index, { walletAddress: field.walletAddress, tokens: newTokens });
-                  }}
-                >
-                  Remove Token
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                const newTokens = [...field.tokens, { token: '', amount: 0 }];
-                update(index, { walletAddress: field.walletAddress, tokens: newTokens });
+          ))}
+          <label>
+            Add Contributor ID:
+            <input
+              type="text"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  addContributor(index, e.currentTarget.value);
+                  e.currentTarget.value = '';
+                }
               }}
-            >
-              Add Token
-            </button>
-            <button type="button" onClick={() => remove(index)}>
-              Remove Contributor
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            append({
-              walletAddress: '',
-              tokens: [{ token: '', amount: 0 }],
-            })
-          }
-        >
-          Add Contributor
-        </button>
-        <div>
-          <button type="submit">Submit</button>
+            />
+          </label>
         </div>
-      </form>
-      <h2>Output:</h2>
-      <pre>{output}</pre>
+      ))}
+      <pre>{JSON.stringify(contributions, null, 2)}</pre>
     </div>
   );
 };
