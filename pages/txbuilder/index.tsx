@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import TransactionForm from '../../components/ContributionForm';
 
 function TransactionList() {
   const router = useRouter()
@@ -8,21 +7,15 @@ function TransactionList() {
   return (
     <>
       <h2>
-        <Link href='txbuilder/singletx'>
-          Single Transaction
-        </Link>
-      </h2>
-      <h2>
         <Link href='txbuilder/bulktx'>
-          Bulk Transaction
+          Manual Transaction Builder
         </Link>
       </h2>
       <h2>
         <Link href='txbuilder/deworkbulktx' replace>
-          Dework Bulk Transaction
+          Dework Import Transaction Builder
         </Link>
       </h2>
-      <TransactionForm />
     </>
   )
 }

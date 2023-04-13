@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import styles from '../styles/TxBuilder.module.css'
 
 type Tokens = 'ADA' | 'GMBL' | 'AGIX';
 
-type Contributor = Record<string, Record<Tokens, number>>;
+type Contributor = Record<string, Record<Tokens, string>>;
 type Contribution = {
   taskCreator: string;
   name: string[];
@@ -10,10 +11,20 @@ type Contribution = {
   contributors: Contributor;
 };
 
-const tokensList: Tokens[] = ['ADA', 'GMBL', 'AGIX'];
+type ContributionFormProps = {
+  onContributionsUpdate: (contributions: Contribution[]) => void;
+};
 
-const ContributionForm: React.FC = () => {
+const tokensList: Tokens[] = ['ADA', 'GMBL', 'AGIX'];
+const contributorWallets: any[] = []
+
+const ContributionForm: React.FC<ContributionFormProps> = ({ onContributionsUpdate }) => {
   const [contributions, setContributions] = useState<Contribution[]>([]);
+
+  useEffect(() => {
+    // Call the onContributionsUpdate callback function whenever the contributions state is updated
+    onContributionsUpdate(contributions);
+  }, [contributions]);
 
   const addContribution = () => {
     setContributions([
@@ -47,8 +58,19 @@ const ContributionForm: React.FC = () => {
 
   const addContributor = (index: number, contributorId: string) => {
     const newContributions = [...contributions];
-    newContributions[index].contributors[contributorId] = {};
+    let contributorWalletId: any
+    contributorWalletId = contributorId.slice(-6)
+    if (!contributorWallets.includes(contributorId)) {
+      contributorWallets.push(contributorId)
+    }
+    newContributions[index].contributors[contributorWalletId] = { ADA: "", GMBL: "", AGIX: "" };
     setContributions(newContributions);
+    console.log("contributorWallets",contributorWallets)
+  };
+
+  const getWalletValue = (contributorId: string) => {
+    const wallet = contributorWallets.find(wallet => wallet.slice(-6) === contributorId);
+    return wallet || '';
   };
 
   const removeContributor = (index: number, contributorId: string) => {
@@ -61,7 +83,7 @@ const ContributionForm: React.FC = () => {
     contributionIndex: number,
     contributorId: string,
     token: Tokens,
-    amount: number
+    amount: string
   ) => {
     const newContributions = [...contributions];
     newContributions[contributionIndex].contributors[contributorId][token] = amount;
@@ -72,7 +94,7 @@ const ContributionForm: React.FC = () => {
     contributionIndex: number,
     contributorId: string,
     token: Tokens,
-    amount: number
+    amount: string
   ) => {
     const newContributions = [...contributions];
     newContributions[contributionIndex].contributors[contributorId][token] = amount;
@@ -91,21 +113,12 @@ const ContributionForm: React.FC = () => {
 
   return (
     <div>
-      <button onClick={addContribution}>Add Contribution</button>
       {contributions.map((contribution, index) => (
-        <div key={index}>
-          <h2>Contribution {index + 1}</h2>
-          <button onClick={() => removeContribution(index)}>Remove Contribution</button>
-          <br />
-          <label>
-            Contribution Name (comma-separated):
-            <input
-              type="text"
-              value={contribution.name.join(',')}
-              onChange={(e) => updateName(index, e.target.value)}
-            />
-          </label>
-          <br />
+        <div  className={styles.contributionBox} key={index}>
+          <div className={styles.contributionHead}>
+            <h2>Contribution {index + 1}</h2>
+            <button className={styles.contributionButton} onClick={() => removeContribution(index)}>Remove Contribution</button>
+          </div> 
           <label>
             Labels (comma-separated):
             <input
@@ -115,9 +128,19 @@ const ContributionForm: React.FC = () => {
             />
           </label>
           <br />
+          <label>
+            Description:
+            <textarea
+              style={{ width: '200px', height: '50px' }}
+              value={contribution.name.join(',')}
+              onChange={(e) => updateName(index, e.target.value)}
+            />
+          </label>
+          <br />
           {Object.keys(contribution.contributors).map((contributorId) => (
             <div key={contributorId}>
               <h3>Contributor ID: {contributorId}</h3>
+              <p>wallet: {getWalletValue(contributorId)}</p>
               <button onClick={() => removeContributor(index, contributorId)}>
                 Remove Contributor
               </button>
@@ -127,11 +150,10 @@ const ContributionForm: React.FC = () => {
                   <label>
                     {token} Amount:
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
                       value={amount}
                       onChange={(e) =>
-                        updateTokenAmount(index, contributorId, token as Tokens, Number(e.target.value))
+                        updateTokenAmount(index, contributorId, token as Tokens, String(e.target.value))
                       }
                     />
                   </label>
@@ -140,13 +162,13 @@ const ContributionForm: React.FC = () => {
                   </button>
                 </div>
               ))}
-              <button onClick={() => addToken(index, contributorId, 'ADA', 0)}>+ ADA</button>
-              <button onClick={() => addToken(index, contributorId, 'GMBL', 0)}>+ GMBL</button>
-              <button onClick={() => addToken(index, contributorId, 'AGIX', 0)}>+ AGIX</button>
+              <button onClick={() => addToken(index, contributorId, 'ADA', '')}>+ ADA</button>
+              <button onClick={() => addToken(index, contributorId, 'GMBL', '')}>+ GMBL</button>
+              <button onClick={() => addToken(index, contributorId, 'AGIX', '')}>+ AGIX</button>
             </div>
           ))}
           <label>
-            Add Contributor ID:
+            Enter Wallet address and hit enter:
             <input
               type="text"
               onKeyDown={(e) => {
@@ -159,7 +181,8 @@ const ContributionForm: React.FC = () => {
           </label>
         </div>
       ))}
-      <pre>{JSON.stringify(contributions, null, 2)}</pre>
+      <button className={styles.contributionButton} onClick={addContribution}>Add Contribution</button>
+      {/*<pre>{JSON.stringify(contributions, null, 2)}</pre>*/}
     </div>
   );
 };

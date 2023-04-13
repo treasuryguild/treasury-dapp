@@ -1,0 +1,30 @@
+
+.contributionButton {
+    margin-left: 0.2em;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.2em 0.6em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: rgb(42, 38, 38);
+    cursor: pointer;
+    transition: border-color 0.25s;
+  }
+  .contributionButton:hover {
+    border-color: #646cff;
+  }
+  .contributionButton:focus,
+  .contributionButton:focus-visible {
+    border-color: #646cff;
+    outline: 4px auto -webkit-focus-ring-color;
+  }
+
+  .contributionBox {
+    
+    margin: 0.6em;
+  }
+
+  .contributionHead {
+    display: flex;
+  }
