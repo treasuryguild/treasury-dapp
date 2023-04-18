@@ -3,3 +3,7 @@
     flex-wrap: wrap;
     justify-content: space-around;
 }
+
+.preContainer {
+    font-size: 1.32rem; 
+  }
