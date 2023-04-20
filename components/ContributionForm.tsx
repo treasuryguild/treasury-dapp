@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styles from '../styles/TxBuilder.module.css';
 import ReactSelect from 'react-select';
 
-type Tokens = 'ADA' | 'GMBL' | 'AGIX';
-
 type Contributor = Record<string, Partial<Record<Tokens, string>>>;
 export type Contribution = {
   taskCreator: string;
@@ -19,34 +17,44 @@ type OptionType = {
 };
 type ValueType = ReadonlyArray<OptionType> | null;
 
+type Tokens = string;
+
 export type ContributionFormProps = {
   onContributionsUpdate: (contributions: Contribution[]) => void;
-  myVariable: string; // define the prop you want to receive
+  onContributorWalletsUpdate: (contributorWallets: any[]) => void;
+  myVariable: string;
+  walletTokens: any;
+  labels: any;
 };
 
-const tokensList: Tokens[] = ['ADA', 'GMBL', 'AGIX'];
 const contributorWallets: any[] = []
 
-const ContributionForm: React.FC<ContributionFormProps> = ({ onContributionsUpdate, myVariable }) => {
-  
+const ContributionForm: React.FC<ContributionFormProps> = ({
+  onContributionsUpdate,
+  onContributorWalletsUpdate,
+  myVariable,
+  walletTokens,
+  labels,
+  }) => {
+  const tokensList: Tokens[] = walletTokens.map((token: any) => token.name);
+  const [contributorWallets, setContributorWallets] = useState<any[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([{
-    taskCreator: 'catalyst swarm',
+    taskCreator: myVariable,
     name: [],
     label: [],
     contributors: {},
   }]);
-  const [labelOptions, setLabelOptions] = useState<OptionsType>([
-    { value: 'Operations', label: 'Operations' },
-    { value: 'Fixed Costs', label: 'Fixed Costs' },
-    { value: myVariable, label: myVariable },
-  ]);
+  const [labelOptions, setLabelOptions] = useState<OptionsType>(labels);
   const [selectedLabels, setSelectedLabels] = useState<Array<ValueType>>([[]]);
   const [userDefinedLabels, setUserDefinedLabels] = useState<OptionsType>([]);
 
   useEffect(() => {
-    // Call the onContributionsUpdate callback function whenever the contributions state is updated
     onContributionsUpdate(contributions);
   }, [contributions]);
+
+  useEffect(() => {
+    onContributorWalletsUpdate(contributorWallets);
+  }, [contributorWallets]);
 
   const addContribution = () => {
     setContributions([
@@ -104,12 +112,12 @@ const ContributionForm: React.FC<ContributionFormProps> = ({ onContributionsUpda
     let contributorWalletId: any
     contributorWalletId = contributorId.slice(-6)
     if (!contributorWallets.includes(contributorId)) {
-      contributorWallets.push(contributorId)
+      setContributorWallets([...contributorWallets, contributorId]);
     }
     // Set the default token to 'ADA' with an empty value
     newContributions[index].contributors[contributorWalletId] = { ADA: "" };
     setContributions(newContributions);
-    console.log("contributorWallets",contributorWallets)
+    console.log("contributorWallets", contributorWallets)
   };
 
   const getWalletValue = (contributorId: string) => {
@@ -236,11 +244,13 @@ const ContributionForm: React.FC<ContributionFormProps> = ({ onContributionsUpda
               <p style={{ fontSize: 'smaller' }}>wallet: {getWalletValue(contributorId)}</p>
               <br />
               <div className={styles.contributorBody}>
-                <div className={styles.contributorTokenButtons}>
-                  <button onClick={() => addToken(index, contributorId, 'ADA', '')}>+ ADA</button>
-                  <button onClick={() => addToken(index, contributorId, 'GMBL', '')}>+ GMBL</button>
-                  <button onClick={() => addToken(index, contributorId, 'AGIX', '')}>+ AGIX</button>
-                </div>
+              <div className={styles.contributorTokenButtons}>
+                {tokensList.map(token => (
+                  <button key={token} onClick={() => addToken(index, contributorId, token, '')}>
+                    + {token}
+                  </button>
+                ))}
+              </div>
                 <div>
                   {Object.entries(contribution.contributors[contributorId]).map(([token, amount]) => (
                     <div className={styles.contributorToken} key={token}>

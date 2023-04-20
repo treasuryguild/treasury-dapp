@@ -7,7 +7,7 @@ function TransactionList() {
   return (
     <>
       <h2>
-        <Link href='txbuilder/bulktx'>
+        <Link href='txbuilder/buildtx'>
           Manual Transaction Builder
         </Link>
       </h2>
