@@ -3,7 +3,7 @@ import { useEffect, SetStateAction, useState } from 'react'
 import { useWallet } from '@meshsdk/react';
 import axios from 'axios'
 
-function Post({ post }) {
+function Txid({ post }) {
   const router = useRouter()
   const { txId } = router.query
   const { connected, wallet } = useWallet();
@@ -49,4 +49,4 @@ function Post({ post }) {
   )
 }
 
-export default Post
+export default Txid

@@ -9,6 +9,7 @@ import ContributionBuilder from '../../components/ContributionBuilder'
 import { Contribution } from '../../components/ContributionBuilder';
 import { ContributionBuilderProps } from '../../components/ContributionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
+import { fetchWallets } from "../../utils/fetchWallets";
 import axios from 'axios';
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -18,20 +19,25 @@ type Token = {
     amount: React.ReactNode;
   };
 
-function Deworktx() {
+function TxBuilder() {
 
   const tickerAPI = 'http://localhost:3000/api/tickers'
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
-  
+  let customFilePath = '';
+  let customFileContent = '';
+  let project: any[] = [];
   const router = useRouter();
+  const [isVisible, setIsVisible] = useState(false);
   const { connected, wallet } = useWallet();
   const [assets, setAssets] = useState<null | any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedOption, setSelectedOption] = useState<'' | any>('')
+  const [projectName, setProjectName] = useState<'' | any>('')
   const [doneTxHash, setDoneTxHash] = useState<'' | any>('')
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
+  const [myVariable, setMyVariable] = useState<{} | any>({})
   const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
   const [labelOptions, setLabelOptions] = useState<OptionsType>([
     { value: 'Operations', label: 'Operations' },
@@ -49,7 +55,10 @@ function Deworktx() {
     setContributorWalletsJSON(JSON.stringify(contributorWallets, null, 2));
   };
 
-  const myVariable = "Catalyst Swarm";
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
+  };
+
   const contributionBuilderProps: ContributionBuilderProps = { // create an object with the props you want to pass
     executeTransaction: executeTransaction,
     onContributionsUpdate: handleContributionsUpdate,
@@ -68,13 +77,16 @@ function Deworktx() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
+    const usedAddresses = await wallet.getUsedAddresses();
+    let project = await getProject(usedAddresses[0])
+    console.log("myVariable",myVariable)
     let tokenNames: string[] = []
     let tokenFingerprint: any[] = []
     let tokenAmounts: any[] = []
     let finalTokenAmount = 0
     let tokenUnits: any[] = []
     let tickerDetails = await axios.get(tickerAPI)
-    console.log("tickerDetails",tickerDetails.data.tickerApiNames)
+    console.log("tickerDetails2",tickerDetails.data.tickerApiNames)
     let walletBalance = await wallet.getBalance();
     const assets = await wallet.getAssets();
     let totalAmount = parseFloat(walletBalance[0].quantity).toFixed(6)
@@ -104,8 +116,26 @@ function Deworktx() {
     })
     setWalletTokens(tokens);
     console.log("walletBalance", walletBalance[0].quantity, tokens)
-    await getAssetDetails(tokens);
-    await getEchangeRate(tokens);
+    if (project != '') {
+      await getAssetDetails(tokens);
+      await getEchangeRate(tokens);
+    }
+  }
+
+  async function getProject(address: string) {
+    console.log("Project", address)
+    let projectname = ''
+    project =  await fetchWallets(address);
+    if (project.length == 0) {
+      projectname = ''
+      router.push('/newwallet')
+    } else {
+      setProjectName(project[0].project_name);
+      projectname = project[0].project_name
+      setMyVariable(JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}"}`));
+      console.log("myVariable",myVariable)
+    }
+    return projectname
   }
 
   async function getAssetDetails(tokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
@@ -257,57 +287,11 @@ function Deworktx() {
     console.log("tokenExchangeRates",tokenExchangeRates)
   }
   
-  async function getValues() {
-    let addresses: any[] = [];
-    let sendAssets: any[] = [];
-    let sendAda: any[] = [];
-    let assetsPerAddress: any;
-    let adaPerAddress: any;
-    let metaData: any;
-    assetsPerAddress = {}
-    adaPerAddress = {}
-    metaData = {}
-    //await axios.get('https://raw.githubusercontent.com/treasuryguild/treasury-system-v4/main/data/exampleMetaData.json').then(response => {
-      //const deworkJson = response.data
-      let deworkJson: any;
-      const element = document.getElementById('deworkJson') as HTMLInputElement | null;
-      deworkJson = JSON.parse(element?.value ?? "{}");
-      console.log('Building', deworkJson);
-      metaData = deworkJson.metadata['674']
-      console.log('Building',deworkJson.outputs)
-
-      for (let i in deworkJson.outputs) {
-        sendAssets = []
-        sendAda = []
-        addresses.push(i)
-        console.log("deworkJson.outputs[i]",deworkJson.outputs[i][0],i)
-        for (let j in deworkJson.outputs[i]) {
-          for (let k in walletTokens) {
-            if ((walletTokens[k].unit).startsWith(deworkJson.outputs[i][j].policyId)) {
-              console.log("Final result",deworkJson.outputs[i][j].quantity,walletTokens[j].name)
-              sendAssets.push(JSON.parse(`{"unit":"${walletTokens[k].unit}","quantity":"${deworkJson.outputs[i][j].quantity}"}`))
-            } else if ((deworkJson.outputs[i][j].policyId).toUpperCase() == "ADA" && (walletTokens[k].name).toUpperCase() == "ADA") { //Made it like this to show that we're looking for ADA amount
-              console.log("Final result",deworkJson.outputs[i][j].quantity,walletTokens[j].name)
-              sendAda.push(JSON.parse(`{"unit":"ADA","quantity":"${deworkJson.outputs[i][j].quantity}"}`))
-            }
-          }
-        }
-        assetsPerAddress[i] = sendAssets
-        adaPerAddress[i] = sendAda
-      }
-    //})
-    console.log("assetsPerAddress",assetsPerAddress, adaPerAddress, metaData, walletTokens)
-    let thash = await executeTransaction(assetsPerAddress, adaPerAddress, metaData)
-    console.log("thash",thash)
-    setTimeout(function() {
-      router.push(`/transactions/${thash}`)
-    }, 1000); // 3000 milliseconds = 3 seconds
-  }
   return (
     <>
       <div className={styles.main}>
         <div className={styles.heading}>
-          <h1>Dework Transaction Builder</h1>
+          <h1>{projectName}</h1>
         </div>
         <div className={styles.body}>
           <div className={styles.form}>
@@ -326,11 +310,13 @@ function Deworktx() {
             </div>
             <div>
             <SwitchingComponent
-  executeTransaction={executeTransaction}
-  walletTokens={walletTokens}
-  tokenRates={tokenRates}
-  contributionBuilderProps={contributionBuilderProps}
-/>
+              onClick={toggleVisibility}
+              executeTransaction={executeTransaction}
+              walletTokens={walletTokens}
+              tokenRates={tokenRates}
+              contributionBuilderProps={contributionBuilderProps}
+              myVariable={myVariable}
+            />
         </div>
           </div>
           <div className={styles.balances}>
@@ -345,6 +331,12 @@ function Deworktx() {
                   </p>
                 );
               })}
+              {isVisible && (
+        <div className={styles.preContainer}>
+          <h3>Metadata</h3>
+          <pre>{contributionsJSON}</pre>
+        </div>
+      )}
             </div>
           </div>
         </div>
@@ -353,4 +345,4 @@ function Deworktx() {
   )
   }
   
-  export default Deworktx
+  export default TxBuilder

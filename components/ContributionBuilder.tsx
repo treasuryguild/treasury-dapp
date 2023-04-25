@@ -28,7 +28,7 @@ export type ContributionBuilderProps = {
     ) => Promise<string>;
   onContributionsUpdate: (contributions: Contribution[]) => void;
   onContributorWalletsUpdate: (contributorWallets: any[]) => void;
-  myVariable: string;
+  myVariable: any;
   walletTokens: any;
   labels: any;
   tokenRates: any;
@@ -95,8 +95,12 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     let currentPart = '';
     name.split(' ').forEach(word => {
       const potentialPart = currentPart ? currentPart + ' ' + word : word;
-      if (potentialPart.length > 20) {
-        parts.push(currentPart);
+      if (potentialPart.length > 50) {
+        if (currentPart.length === 50) {
+          parts.push(currentPart + ' ');
+        } else {
+          parts.push(currentPart);
+        }
         currentPart = word;
       } else {
         currentPart = potentialPart;
@@ -174,11 +178,65 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     setContributions(newContributions);
   };
 
+  function aggregateTokens(data: Contribution[]): { [token: string]: string } {
+    const result: { [token: string]: number } = {};
+  
+    data.forEach((item) => {
+      const contributors = item.contributors;
+  
+      for (const userId in contributors) {
+        const userTokens = contributors[userId];
+  
+        for (const token in userTokens) {
+          if (typeof userTokens[token] === 'string') {
+            const tokenValue = parseFloat(userTokens[token]!);
+  
+            if (result[token]) {
+              result[token] += tokenValue;
+            } else {
+              result[token] = tokenValue;
+            }
+          }
+        }
+      }
+    });
+  
+    // Format the numbers to the desired precision and return as an object with string values
+    const formattedResult: { [token: string]: string } = {};
+    for (const token in result) {
+      formattedResult[token] = result[token].toFixed(2);
+    }
+  
+    return formattedResult;
+  }
+
+  async function getTotalTokens(aggregatedTokens: {} | any) {
+    let totalTokensPrep = ""
+    for (let i in aggregatedTokens) {
+      if (i != "GMBL") {
+        
+        let gmblNumber: any
+        let gmblNumber2: any
+        gmblNumber = parseFloat(aggregatedTokens[i])
+        gmblNumber2 = (gmblNumber * tokenRates[i]).toFixed(3)
+        totalTokensPrep = `${totalTokensPrep}
+      "${gmblNumber2} USD in ${aggregatedTokens[i]} ${i}",`
+      } else if (i == "GMBL") {
+        totalTokensPrep = `${totalTokensPrep}
+      "0 USD in ${aggregatedTokens[i]} ${i}",`
+      }
+    }
+    console.log("totalTokensPrep",totalTokensPrep)
+    return totalTokensPrep;
+  }
+
   async function getValues(contributionsJSON: string, contributorWalletsJSON: string) {
+    let customFilePath = '';
+    let customFileContent = '';
     let addresses: any[] = [];
     let sendAssets: any[] = [];
     let sendAda: any[] = [];
-    let totalTokens: any[] = [];
+    let totalTokens: any;
     let totalReps: any;
     let assetsPerAddress: any;
     const adaPerAddress: { [address: string]: Asset[] } = {};
@@ -280,10 +338,14 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       });
     }
 
+    const aggregatedTokens = aggregateTokens(contributions);
+    totalTokens = await getTotalTokens(aggregatedTokens);
+
+    console.log("aggregatedTokens",aggregatedTokens)
     metaData = `{
       "mdVersion": ["1.4"],
       "msg": [
-      "Recipients: 1",${totalTokens}
+      "Recipients: ${walletsArray.length}",${totalTokens}
       "Transaction made by Treasury Guild @${tokenRates['ADA']}",
       "https://www.treasuryguild.io/"
       ],
@@ -293,11 +355,18 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       let finalMetaData = {}
       finalMetaData = JSON.parse(metaData)
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddressString, finalMetaData, walletTokens);
-    let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
-    console.log("thash",thash)
-    setTimeout(function() {
-      router.push(`/transactions/${thash}`)
-    }, 1000); // 3000 milliseconds = 3 seconds
+    //let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
+    //console.log("thash",thash)
+    let newMetaData = JSON.parse(metaData)
+    newMetaData['txid'] = 'test tx ID'
+    console.log("newMetaData",newMetaData)
+    customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+    customFilePath = 'Transactions/Test/TEst2.json';
+    //await commitFile(customFilePath, customFileContent)
+    //await sendMessage();
+    //setTimeout(function() {
+    //  router.push(`/transactions/${thash}`)
+    //}, 1000); // 3000 milliseconds = 3 seconds
   }
 
   const handleClick = async () => {
@@ -305,6 +374,85 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
+
+  async function commitFile(filePath: string, fileContent: string) {
+    const commitMessage = 'Transaction';
+  
+    try {
+      const response = await fetch('/api/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath, fileContent, commitMessage }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error committing file');
+      }
+  
+      const result = await response.json();
+      console.log(result.message);
+    } catch (error) {
+      console.error('Error committing file to GitHub:', error);
+    }
+  }
+
+  async function sendMessage() {
+    
+    // Define your data from the client-side
+    const header = 'Testing!';
+    const wallet = 'addr32r2r3r3'
+    const content = `${header}`;
+    const embeds = [
+      {
+        color: 0xff0000,
+        title: 'Title',
+        url: 'https://www.example.com',
+        author: {
+          name: 'Author Name',
+          url: 'https://www.example.com',
+          icon_url: 'https://www.example.com/icon.png',
+        },
+        description: 'Description',
+        thumbnail: {
+          url: 'https://www.example.com/thumbnail.png',
+        },
+        fields: [
+          {
+            name: 'Field Name',
+            value: 'Field Value',
+            inline: true,
+          },
+        ],
+        image: {
+          url: 'https://www.example.com/image.png',
+        },
+        footer: {
+          text: 'Footer Text',
+          icon_url: 'https://www.example.com/icon.png',
+        },
+      },
+    ];
+  
+    try {
+      const response = await fetch('/api/discord', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Send the data to the API route
+        body: JSON.stringify({ content, embeds, wallet }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+  
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   return (
     <div>
