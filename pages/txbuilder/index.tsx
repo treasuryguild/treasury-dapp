@@ -11,6 +11,7 @@ import { ContributionBuilderProps } from '../../components/ContributionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
 import { fetchWallets } from "../../utils/fetchWallets";
 import axios from 'axios';
+import supabase from "../../lib/supabaseClient";
 
 type OptionsType = Array<{value: string, label: string}>;
 type Token = {
@@ -127,21 +128,35 @@ function TxBuilder() {
   }
 
   async function getProject(address: string) {
-    console.log("Project", address)
     let projectname = ''
     let groupInfo = {}
-    project =  await fetchWallets(address);
-    if (project.length == 0) {
-      projectname = ''
-      router.push('/newwallet')
-    } else {
-      setProjectName(project[0].project_name);
-      projectname = project[0].project_name
-      
-      groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}"}`)
-      setMyVariable(groupInfo);
-    }
-    
+      try {
+        const { data, error, status } = await supabase
+        .from("projects")
+        .select('project_name, project_type, groups(group_name)')
+        .eq("wallet", address);
+
+        if (error && status !== 406) throw error
+        if (data) {
+          project = data
+          if (project.length == 0) {
+            projectname = ''
+            router.push('/newwallet')
+          } else {
+            setProjectName(project[0].project_name);
+            projectname = project[0].project_name
+            
+            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}"}`)
+            setMyVariable(groupInfo);
+          }
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(error.message);
+        } else {
+          console.error('Unknown error:', error);
+        }
+      }
     return groupInfo
   }
 
