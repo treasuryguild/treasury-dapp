@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
+import { updateTxDatabase } from '../utils/updateTxDatabase'
 
 interface TransactionBuilderProps {
   executeTransaction: (
@@ -63,9 +64,9 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
     //})
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddress, metaData, walletTokens)
     let thash = await executeTransaction(assetsPerAddress, adaPerAddress, metaData)
-    console.log("thash",thash)
+    //console.log("thash",thash)
     let newMetaData = metaData
-    newMetaData['txid'] = thash
+    //newMetaData['txid'] = thash
     console.log("newMetaData",newMetaData)
     customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
     let pType = ''
@@ -73,10 +74,11 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       pType = 'TreasuryWallet'
     }
     customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/TEst2.json`;
-    await commitFile(customFilePath, customFileContent)
-    await sendMessage();
+    await updateTxDatabase(assetsPerAddress, adaPerAddress, metaData, thash)
+    //await commitFile(customFilePath, customFileContent)
+    //await sendMessage();
     setTimeout(function() {
-      router.push(`/transactions/${thash}`)
+      //router.push(`/transactions/${thash}`)
     }, 1000); // 3000 milliseconds = 3 seconds
   }
 

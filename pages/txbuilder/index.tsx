@@ -12,6 +12,8 @@ import SwitchingComponent from '../../components/SwitchingComponent';
 import { fetchWallets } from "../../utils/fetchWallets";
 import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
+import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-browser';
+
 
 type OptionsType = Array<{value: string, label: string}>;
 type Token = {
@@ -21,7 +23,7 @@ type Token = {
   };
 
 function TxBuilder() {
-
+  const cbor = require('cbor-js');
   const tickerAPI = 'http://localhost:3000/api/tickers'
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   let customFilePath = '';
@@ -83,7 +85,8 @@ function TxBuilder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
     const usedAddresses = await wallet.getUsedAddresses();
-    let projectInfo = await getProject(usedAddresses[0])
+    let projectInfo: any;
+    projectInfo = await getProject(usedAddresses[0])
     console.log("myVariable",myVariable)
     let tokenNames: string[] = []
     let tokenFingerprint: any[] = []
@@ -121,7 +124,7 @@ function TxBuilder() {
     })
     setWalletTokens(tokens);
     console.log("walletBalance", walletBalance[0].quantity, tokens)
-    if (projectInfo != '') {
+    if (projectInfo.project != undefined) {
       await getAssetDetails(tokens);
       await getEchangeRate(tokens);
     }
@@ -141,6 +144,7 @@ function TxBuilder() {
           project = data
           if (project.length == 0) {
             projectname = ''
+            groupInfo = {}
             router.push('/newwallet')
           } else {
             setProjectName(project[0].project_name);
@@ -204,6 +208,7 @@ function TxBuilder() {
     console.log("New Token Details", updatedTokens)
     setWalletTokens(updatedTokens);
   }
+  
   async function getAssets() {
     if (wallet) {
       setLoading(true);
@@ -211,6 +216,21 @@ function TxBuilder() {
       setAssets(_assets);
       setLoading(false);
     }
+  }
+
+  function uint8ArrayToHex(uint8Array: Uint8Array) {
+    return Array.from(uint8Array)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  function hexToUint8Array(hexString: any) {
+    const length = hexString.length;
+    const uint8Array = new Uint8Array(length / 2);
+    for (let i = 0; i < length; i += 2) {
+      uint8Array[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+    }
+    return uint8Array;
   }
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
@@ -236,11 +256,24 @@ function TxBuilder() {
       try {
         unsignedTx = await tx.build();
         console.log("unsignedTx",unsignedTx)
+        // Convert the hex string to a Uint8Array
+        const unsignedTxUint8Array = hexToUint8Array(unsignedTx);
+        
+        // Decode the CBOR data
+        const decodedData = cbor.decode(unsignedTxUint8Array.buffer);
+        const hexEncodedData = uint8ArrayToHex(decodedData[0][1][0][0]);
+        // Log the decoded data
+        console.log(decodedData, hexEncodedData);
+        const addressBytes = Buffer.from(hexEncodedData, 'hex');
+        const address = Address.from_bytes(addressBytes);
+        
+        const walletAddress = address.to_bech32();
+        console.log('Wallet Address:', walletAddress);
         // continue with the signed transaction
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
-        window.location.reload();
+        //window.location.reload();
         // handle the error as appropriate
       }
       let signedTx = ""
@@ -281,7 +314,7 @@ function TxBuilder() {
     let tokenExchangeRates: any
     tokenExchangeRates = {}
     for (let i in wallettokens) {
-      if (wallettokens[i].name == "ADA") {
+      if (wallettokens[i].name == "ADA" && myVariable) {
         axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
         const rate = response.data[tickers[wallettokens[i].name]].usd;
         let exchangeToken: any;
@@ -294,7 +327,7 @@ function TxBuilder() {
         currentXchangeRate = parseFloat(rate).toFixed(3);
         console.log("exchangeAda",rate);
         });
-      } else if (wallettokens[i].name != "GMBL") {
+      } else if (wallettokens[i].name != "GMBL" && myVariable) {
         axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
         const rate = response.data[tickers[wallettokens[i].name]].usd;
         let exchangeToken: any;
