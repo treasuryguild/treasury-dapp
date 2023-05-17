@@ -10,6 +10,7 @@ import { Contribution } from '../../components/ContributionBuilder';
 import { ContributionBuilderProps } from '../../components/ContributionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
 import { fetchWallets } from "../../utils/fetchWallets";
+import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
 import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-browser';
@@ -23,7 +24,6 @@ type Token = {
   };
 
 function TxBuilder() {
-  const cbor = require('cbor-js');
   const tickerAPI = 'http://localhost:3000/api/tickers'
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   let customFilePath = '';
@@ -217,21 +217,6 @@ function TxBuilder() {
       setLoading(false);
     }
   }
-
-  function uint8ArrayToHex(uint8Array: Uint8Array) {
-    return Array.from(uint8Array)
-      .map(byte => byte.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  function hexToUint8Array(hexString: any) {
-    const length = hexString.length;
-    const uint8Array = new Uint8Array(length / 2);
-    for (let i = 0; i < length; i += 2) {
-      uint8Array[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
-    }
-    return uint8Array;
-  }
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
     let txHash = ""
@@ -256,19 +241,23 @@ function TxBuilder() {
       try {
         unsignedTx = await tx.build();
         console.log("unsignedTx",unsignedTx)
-        // Convert the hex string to a Uint8Array
-        const unsignedTxUint8Array = hexToUint8Array(unsignedTx);
-        
-        // Decode the CBOR data
-        const decodedData = cbor.decode(unsignedTxUint8Array.buffer);
-        const hexEncodedData = uint8ArrayToHex(decodedData[0][1][0][0]);
-        // Log the decoded data
-        console.log(decodedData, hexEncodedData);
-        const addressBytes = Buffer.from(hexEncodedData, 'hex');
-        const address = Address.from_bytes(addressBytes);
-        
-        const walletAddress = address.to_bech32();
-        console.log('Wallet Address:', walletAddress);
+        const txamounts = await getTxAmounts(unsignedTx)
+        console.log('Tx amount:', txamounts, assetsPerAddress, walletTokens);
+        for (let i in assetsPerAddress) {
+          //console.log("assetsPerAddress[i]",assetsPerAddress[i])
+          for (let j in assetsPerAddress[i]) {
+            console.log("assetsPerAddress[i][j]", i, assetsPerAddress[i][j])
+            for (let k in walletTokens) {
+              if (assetsPerAddress[i][j].unit == walletTokens[k].unit) {
+                if (txamounts[i][walletTokens[k].name] == undefined) {
+                  txamounts[i][walletTokens[k].name] = 0
+                }
+                txamounts[i][walletTokens[k].name] = txamounts[i][walletTokens[k].name] + (parseInt(assetsPerAddress[i][j].quantity)/(10**parseInt(walletTokens[k].decimals)))
+              }
+            }
+          }
+        }
+        console.log('Final Tx amount:', txamounts);
         // continue with the signed transaction
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
