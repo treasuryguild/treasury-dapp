@@ -1,4 +1,4 @@
-import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-browser';
+import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-asmjs';
 
 export function getTxAmounts(decodedtext: any) {
   

@@ -13,7 +13,7 @@ import { fetchWallets } from "../../utils/fetchWallets";
 import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
-import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-browser';
+import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-asmjs';
 
 
 type OptionsType = Array<{value: string, label: string}>;
