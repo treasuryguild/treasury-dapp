@@ -102,14 +102,15 @@ function TxBuilder() {
     let tokens = [{"id":"1","name":"ADA","amount":parseFloat(finalamount).toFixed(6),"unit":"lovelace", "decimals": 6, "fingerprint":""}]
     assets.map(asset => {
       if (asset.quantity > 1) {
-        tokenNames.push((asset.assetName).slice(0,4))
+        tokenNames.push((asset.assetName))
         tokenFingerprint.push(asset.fingerprint)
         tokenUnits.push(asset.unit)
+        console.log("Testing ticker fingerprint", asset.fingerprint, tickerDetails.data.tickerFingerprints[asset.assetName])
         if (asset.fingerprint === tickerDetails.data.tickerFingerprints[asset.assetName]) {
           console.log("asset.assetName",asset.assetName)
           finalTokenAmount = asset.quantity/(10**tickerDetails.data.tickerDecimals[asset.assetName])
         } else {
-          finalTokenAmount = (parseFloat(asset.quantity)/1000000)
+          finalTokenAmount = (parseFloat(asset.quantity))
         }
         tokenAmounts.push((finalTokenAmount).toFixed(6))
       }
@@ -172,12 +173,12 @@ function TxBuilder() {
         const details = response.data;
         console.log("AssestDetails",details);
         for (let i in response.data.tokens) {
-          if (response.data.tokens[i].decimals) {
+          if (response.data.tokens[i].quantity > 1) {
             for (let j in updatedTokens) {
               if (tokens[j].fingerprint == response.data.tokens[i].fingerprint) {
-                updatedTokens[j]['name'] = response.data.tokens[i].metadata.ticker
+                updatedTokens[j]['name'] = response.data.tokens[i].metadata.ticker?response.data.tokens[i].metadata.ticker:response.data.tokens[i].metadata.symbol
                 updatedTokens[j]['decimals'] = 0;
-                updatedTokens[j]['decimals'] = response.data.tokens[i].metadata.decimals;
+                updatedTokens[j]['decimals'] = response.data.tokens[i].metadata.decimals?response.data.tokens[i].metadata.decimals:0;
               }
             }
           }
@@ -195,9 +196,7 @@ function TxBuilder() {
               if (tokens[j].fingerprint == response.data.tickerFingerprints[i]) {
                 updatedTokens[j]['name'] = i;
                 updatedTokens[j]['decimals'] = 0;
-                updatedTokens[j]['decimals'] = response.data.tickerDecimals[i];
-              } else {
-                updatedTokens[j]['decimals'] = 6;
+                updatedTokens[j]['decimals'] = response.data.tickerDecimals[i]?response.data.tickerDecimals[i]:0;
               }
             }
         }
@@ -303,6 +302,7 @@ function TxBuilder() {
     let tokenExchangeRates: any
     tokenExchangeRates = {}
     for (let i in wallettokens) {
+      console.log("wallettokens[i].name", wallettokens[i].name)
       if (wallettokens[i].name == "ADA" && myVariable) {
         axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
         const rate = response.data[tickers[wallettokens[i].name]].usd;
@@ -316,7 +316,7 @@ function TxBuilder() {
         currentXchangeRate = parseFloat(rate).toFixed(3);
         console.log("exchangeAda",rate);
         });
-      } else if (wallettokens[i].name != "GMBL" && myVariable) {
+      } else if (wallettokens[i].name != "GMBL" && wallettokens[i].name != "GovWG" && myVariable) {
         axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
         const rate = response.data[tickers[wallettokens[i].name]].usd;
         let exchangeToken: any;
