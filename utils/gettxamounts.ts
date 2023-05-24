@@ -20,6 +20,8 @@ export function getTxAmounts(decodedtext: any) {
   const txamounts: any = {};
   const unsignedTxUint8Array = hexToUint8Array(decodedtext);
   const decodedData = cbor.decode(unsignedTxUint8Array.buffer);
+  console.log("decodedData fee", decodedData[0][2])
+  let fee = decodedData[0][2]
 
   for (let i = 0; i < decodedData[0][1].length - 1; i++) {
     if (decodedData[0][1][i][1][0]) {
@@ -57,5 +59,5 @@ export function getTxAmounts(decodedtext: any) {
     // Divide by 10**6 and round to 6 decimal places
     txamounts[walletAddress]["ADA"] = Number((txamounts[walletAddress]["ADA"] / (10**6)).toFixed(6));
   }
-  return txamounts;
+  return { txamounts, fee };
 }

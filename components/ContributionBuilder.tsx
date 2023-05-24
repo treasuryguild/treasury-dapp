@@ -48,7 +48,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const tokensList: Tokens[] = walletTokens.map((token: any) => token.name);
   const [contributorWallets, setContributorWallets] = useState<any[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([{
-    taskCreator: myVariable,
+    taskCreator: myVariable.group,
     name: [],
     label: [],
     contributors: {},
@@ -71,7 +71,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     setContributions([
       ...contributions,
       {
-        taskCreator: 'catalyst swarm',
+        taskCreator: myVariable.group,
         name: [],
         label: [],
         contributors: {},
@@ -213,18 +213,12 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   async function getTotalTokens(aggregatedTokens: {} | any) {
     let totalTokensPrep = ""
     for (let i in aggregatedTokens) {
-      if (i != "GMBL") {
-        
         let gmblNumber: any
         let gmblNumber2: any
         gmblNumber = parseFloat(aggregatedTokens[i])
         gmblNumber2 = (gmblNumber * tokenRates[i]).toFixed(3)
         totalTokensPrep = `${totalTokensPrep}
       "${gmblNumber2} USD in ${aggregatedTokens[i]} ${i}",`
-      } else if (i == "GMBL") {
-        totalTokensPrep = `${totalTokensPrep}
-      "0 USD in ${aggregatedTokens[i]} ${i}",`
-      }
     }
     console.log("totalTokensPrep",totalTokensPrep)
     return totalTokensPrep;

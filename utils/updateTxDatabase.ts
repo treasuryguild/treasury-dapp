@@ -21,7 +21,7 @@ type ProjectData = {
   // Add other properties of the project object as needed
 };
 
-export async function updateTxDatabase(assetsPerAddress: any, adaPerAddress:any, metaData:any, thash: any) {
+export async function updateTxDatabase(myVariable:any, metaData:any, thash: any) {
     async function getGroupByName(groupName: string) {
         const { data: existingGroup, error } = await supabase
           .from("groups")
@@ -98,12 +98,12 @@ export async function updateTxDatabase(assetsPerAddress: any, adaPerAddress:any,
         }
       }
       
-      async function updateProject(assetsPerAddress: any, adaPerAddress:any, metaData:any, thash: any) {
-        console.log("UpdateTxDatabase",assetsPerAddress, adaPerAddress, metaData, thash);
+      async function updateProject(myVariable:any, metaData:any, thash: any) {
+        console.log("UpdateTxDatabase",myVariable, metaData, thash);
         let test = await koios.fetchTxInfo(
           '6f7d9f62fde667861ff07365e3fba6b0af650867e84c6f36a6043e910a123885',
         )
-        console.log("test",test)
+        console.log("test koios",test, myVariable.txamounts)
         /*try {
           const existingGroup = await getGroupByName(groupData.group_name);
           const groupId = existingGroup
@@ -119,5 +119,5 @@ export async function updateTxDatabase(assetsPerAddress: any, adaPerAddress:any,
           }
         }*/
       }
-      return await updateProject(assetsPerAddress, adaPerAddress, metaData, thash)
+      return await updateProject(myVariable, metaData, thash)
   }

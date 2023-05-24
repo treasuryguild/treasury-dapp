@@ -7,11 +7,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { content, embeds, wallet } = req.body;
-  let webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL;
-  if (wallet == 'addr32r2r3r3') {
-    webhookUrl = process.env.TEST2_DISCORD_WEBHOOK_URL;
-  }
-  const avatarUrl = 'https://www.example.com/avatar.png';
+
+  let webhookUrl: string | undefined;
+  const webhookUrls: { [key: string]: string | undefined } = {
+    'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
+    // other wallet addresses
+  };
+  
+  const walletSuffix = wallet.substr(-6);
+  webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL //remember to change to webhookUrls[walletSuffix];
+
+  const avatarUrl = 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png';
 
   if (typeof webhookUrl === 'undefined') {
     return res.status(500).json({ error: 'Discord webhook URL is not defined' });
@@ -19,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Get data from the client-side
   
   axios.post(webhookUrl, {
-    username: 'My Bot',
+    username: 'Treasury Guild',
     avatar_url: avatarUrl,
     content: content,
     embeds: embeds,

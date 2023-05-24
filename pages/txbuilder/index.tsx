@@ -2,18 +2,14 @@ import { useEffect, SetStateAction, useState, Key, ReactElement, ReactFragment, 
 import styles from '../../styles/Singletx.module.css'
 import { useWallet } from '@meshsdk/react';
 import { Transaction } from '@meshsdk/core';
-import type { Asset } from '@meshsdk/core';
 import { useRouter } from 'next/router'
-import TransactionBuilder from '../../components/TransactionBuilder';
-import ContributionBuilder from '../../components/ContributionBuilder'
 import { Contribution } from '../../components/ContributionBuilder';
 import { ContributionBuilderProps } from '../../components/ContributionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
-import { fetchWallets } from "../../utils/fetchWallets";
 import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
-import { Address, StakeCredential, RewardAddress } from '@emurgo/cardano-serialization-lib-asmjs';
+import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -86,7 +82,13 @@ function TxBuilder() {
   async function assignTokens() {
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
-    projectInfo = await getProject(usedAddresses[0])
+    projectInfo = await getProject(usedAddresses[0]);
+    // Move this line here
+    setMyVariable({
+      ...myVariable,
+      ...projectInfo,
+      wallet: usedAddresses[0],
+    });
     console.log("myVariable",myVariable)
     let tokenNames: string[] = []
     let tokenFingerprint: any[] = []
@@ -133,11 +135,12 @@ function TxBuilder() {
 
   async function getProject(address: string) {
     let projectname = ''
+    let projectWebsite = ''
     let groupInfo = {}
       try {
         const { data, error, status } = await supabase
         .from("projects")
-        .select('project_name, project_type, groups(group_name)')
+        .select('project_name, project_type, website, groups(group_name, logo_url)')
         .eq("wallet", address);
 
         if (error && status !== 406) throw error
@@ -149,10 +152,9 @@ function TxBuilder() {
             router.push('/newwallet')
           } else {
             setProjectName(project[0].project_name);
-            projectname = project[0].project_name
-            
-            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}"}`)
-            setMyVariable(groupInfo);
+            projectname = project[0].project_name;
+            projectWebsite = project[0].website;
+            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}","project_website":"${project[0].website}","logo_url":"${project[0]['groups'].logo_url}"}`)
           }
         }
       } catch (error) {
@@ -207,15 +209,38 @@ function TxBuilder() {
     console.log("New Token Details", updatedTokens)
     setWalletTokens(updatedTokens);
   }
-  
-  async function getAssets() {
-    if (wallet) {
-      setLoading(true);
-      const _assets = await wallet.getAssets();
-      setAssets(_assets);
-      setLoading(false);
-    }
+
+  interface IToken {
+    amount: string;
+    decimals: number;
+    id: string;
+    name: string;
+    unit: string;
+    fingerprint?: string;
   }
+  
+  interface ITotalAmounts {
+    [key: string]: number;
+  }
+  
+  function calculateWalletBalanceAfterTx(totalAmounts: ITotalAmounts, walletTokens: IToken[], fee: number): IToken[] {
+    const walletBalanceAfterTx: IToken[] = walletTokens.map(token => {
+      const tokenName = token.name;
+      const totalAmount = totalAmounts[tokenName] || 0;
+      const feeAmount = tokenName === 'ADA' ? fee / 1000000 : 0;
+      let newBalance = parseFloat(token.amount) - totalAmount - feeAmount;
+      if (tokenName === 'ADA') {
+        newBalance = parseFloat(newBalance.toFixed(6)); // ensure ADA has at most 6 decimal places
+      }
+      return {
+        ...token,
+        amount: newBalance.toString(),
+      };
+    });
+    return walletBalanceAfterTx;
+  }
+  
+  
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
     let txHash = ""
@@ -240,8 +265,8 @@ function TxBuilder() {
       try {
         unsignedTx = await tx.build();
         console.log("unsignedTx",unsignedTx)
-        const txamounts = await getTxAmounts(unsignedTx)
-        console.log('Tx amount:', txamounts, assetsPerAddress, walletTokens);
+        const { txamounts, fee } = getTxAmounts(unsignedTx)
+        console.log('Tx amount:', txamounts, fee, assetsPerAddress, walletTokens);
         for (let i in assetsPerAddress) {
           //console.log("assetsPerAddress[i]",assetsPerAddress[i])
           for (let j in assetsPerAddress[i]) {
@@ -256,14 +281,37 @@ function TxBuilder() {
             }
           }
         }
-        console.log('Final Tx amount:', txamounts);
+        
+        let totalAmounts: any = {};
+        for (let i in txamounts) {
+            for (let j in txamounts[i]) {
+                if (totalAmounts[j] === undefined) {
+                    totalAmounts[j] = 0;
+                }
+                totalAmounts[j] += parseFloat(txamounts[i][j]);
+            }
+        }
+        const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
+        setMyVariable({
+          ...myVariable,
+          txamounts: txamounts,
+          fee: fee,
+          totalAmounts: totalAmounts,
+          walletTokens: walletTokens,
+          walletBalanceAfterTx: walletBalanceAfterTx
+        });
+        console.log('Final totalAmounts:', totalAmounts);
+        console.log('Final Tx amount:', txamounts, myVariable);
+        let finalMyVariable = myVariable;
         // continue with the signed transaction
+        await sendDiscordMessage(finalMyVariable); // temp
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
         //window.location.reload();
         // handle the error as appropriate
       }
+      
       let signedTx = ""
       try {
         signedTx = await wallet.signTx(unsignedTx);
@@ -275,6 +323,11 @@ function TxBuilder() {
         // handle the error as appropriate
       }
     txHash = await wallet.submitTx(signedTx);
+    setMyVariable({
+      ...myVariable,
+      txHash: txHash,
+      txtype: 'Outgoing'
+    });
     console.log("txHash",txHash) 
     return txHash;
   }
@@ -294,42 +347,35 @@ function TxBuilder() {
   }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    let currentXchangeRate = ""
     console.log("Exchange Rate wallet tokens", wallettokens)
     let tickerDetails = await axios.get(tickerAPI)
-    console.log("tickerDetails",tickerDetails.data.tickerApiNames)
+    console.log("tickerDetails", tickerDetails.data.tickerApiNames)
     let tickers = tickerDetails.data.tickerApiNames;
-    let tokenExchangeRates: any
-    tokenExchangeRates = {}
+    let tokenExchangeRates: any = {}
     for (let i in wallettokens) {
       console.log("wallettokens[i].name", wallettokens[i].name)
-      if (wallettokens[i].name == "ADA" && myVariable) {
-        axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
+      try {
+        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
         const rate = response.data[tickers[wallettokens[i].name]].usd;
-        let exchangeToken: any;
-        exchangeToken = wallettokens[i].name
-        tokenExchangeRates[exchangeToken] = 0.00
-        tokenExchangeRates[exchangeToken] = parseFloat(rate).toFixed(3)
-        let xrates: HTMLElement | any
-        xrates = document.getElementById('xrate')
-        xrates.value = parseFloat(rate).toFixed(3);
-        currentXchangeRate = parseFloat(rate).toFixed(3);
-        console.log("exchangeAda",rate);
-        });
-      } else if (wallettokens[i].name != "GMBL" && wallettokens[i].name != "GovWG" && myVariable) {
-        axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
-        const rate = response.data[tickers[wallettokens[i].name]].usd;
-        let exchangeToken: any;
-        exchangeToken = wallettokens[i].name
-        tokenExchangeRates[exchangeToken] = 0.00
-        tokenExchangeRates[exchangeToken] = parseFloat(rate).toFixed(3)
-        console.log("exchangeAda",rate);
-        });
+        if (rate !== undefined) {
+          tokenExchangeRates[wallettokens[i].name] = parseFloat(rate).toFixed(3)
+          console.log("exchangeRate", rate);
+          if (wallettokens[i].name == "ADA") {
+            let xrates: HTMLElement | any
+            xrates = document.getElementById('xrate')
+            xrates.value = parseFloat(rate).toFixed(3);
+          }
+        } else {
+          tokenExchangeRates[wallettokens[i].name] = 0.00
+        }
+      } catch (error) {
+        console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
+        tokenExchangeRates[wallettokens[i].name] = 0.00
       }
     }
     setTokenRates(tokenExchangeRates)
-    console.log("tokenExchangeRates",tokenExchangeRates)
-  }
+    console.log("tokenExchangeRates", tokenExchangeRates)
+  }  
   
   return (
     <>

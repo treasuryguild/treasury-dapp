@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
 import { updateTxDatabase } from '../utils/updateTxDatabase'
+import { sendDiscordMessage } from '../utils/sendDiscordMessage'
 
 interface TransactionBuilderProps {
   executeTransaction: (
@@ -63,6 +64,7 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       }
     //})
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddress, metaData, walletTokens)
+    //await sendDiscordMessage(myVariable); // temp sendMessage for testing
     let thash = await executeTransaction(assetsPerAddress, adaPerAddress, metaData)
     //console.log("thash",thash)
     let newMetaData = metaData
@@ -74,9 +76,9 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       pType = 'TreasuryWallet'
     }
     customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/TEst2.json`;
-    await updateTxDatabase(assetsPerAddress, adaPerAddress, metaData, thash)
+    await updateTxDatabase(myVariable, metaData, thash)
     //await commitFile(customFilePath, customFileContent)
-    //await sendMessage();
+    //await sendDiscordMessage(myVariable)
     setTimeout(function() {
       //router.push(`/transactions/${thash}`)
     }, 1000); // 3000 milliseconds = 3 seconds
@@ -100,64 +102,6 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       console.log(result.message);
     } catch (error) {
       console.error('Error committing file to GitHub:', error);
-    }
-  }
-
-  async function sendMessage() {
-    
-    // Define your data from the client-side
-    const header = 'Testing!';
-    const wallet = 'addr32r2r3r3'
-    const content = `${header}`;
-    const embeds = [
-      {
-        color: 0xff0000,
-        title: 'Title',
-        url: 'https://www.example.com',
-        author: {
-          name: 'Author Name',
-          url: 'https://www.example.com',
-          icon_url: 'https://www.example.com/icon.png',
-        },
-        description: 'Description',
-        thumbnail: {
-          url: 'https://www.example.com/thumbnail.png',
-        },
-        fields: [
-          {
-            name: 'Field Name',
-            value: 'Field Value',
-            inline: true,
-          },
-        ],
-        image: {
-          url: 'https://www.example.com/image.png',
-        },
-        footer: {
-          text: 'Footer Text',
-          icon_url: 'https://www.example.com/icon.png',
-        },
-      },
-    ];
-  
-    try {
-      const response = await fetch('/api/discord', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Send the data to the API route
-        body: JSON.stringify({ content, embeds, wallet }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-  
-      const data = await response.json();
-      console.log(data);
-    } catch (error) {
-      console.error(error);
     }
   }
  
