@@ -24,6 +24,7 @@ function TxBuilder() {
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   let customFilePath = '';
   let customFileContent = '';
+  let txdata = {}
   let project: any[] = [];
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
@@ -89,7 +90,10 @@ function TxBuilder() {
       ...projectInfo,
       wallet: usedAddresses[0],
     });
-    console.log("myVariable",myVariable)
+    txdata = {...txdata,
+      ...projectInfo,
+      wallet: usedAddresses[0],}
+    console.log("txdata",txdata)
     let tokenNames: string[] = []
     let tokenFingerprint: any[] = []
     let tokenAmounts: any[] = []
@@ -240,7 +244,54 @@ function TxBuilder() {
     return walletBalanceAfterTx;
   }
   
+  function formatWalletBalance(walletBalanceAfterTx: IToken[]): string {
+    const formattedBalances = walletBalanceAfterTx.map(item => {
+        return `${item.amount} ${item.name}`;
+    });
+
+    return formattedBalances.join(' ');
+  }
+
+  function formatTotalAmounts(totalAmounts: ITotalAmounts): string {
+    let totalAmountsString = '';
+    Object.entries(totalAmounts).forEach(([key, value]) => {
+      totalAmountsString += `* ${value} ${key}\n`;
+    });
+    return totalAmountsString;
+  }
+
+  interface Contribution1 {
+    taskCreator: string;
+    label: string;
+    name?: string[];
+    description?: string[]; // description might be undefined
+    contributors: { [key: string]: { [key: string]: string } }; // can contain any token, not just ADA or AGIX
+}
   
+  interface Metadata {
+      mdVersion: string[];
+      txid: string;
+      msg: string[];
+      contributions: Contribution1[];
+  }
+  
+  function processMetadata(metadata: Metadata): string {
+    if (metadata.contributions.length === 1) {
+        const contribution = metadata.contributions[0];
+        if (contribution.name && contribution.name.length > 0) {
+            return contribution.name.join(' ');
+        } else if (contribution.description && contribution.description.length > 0) {
+            return contribution.description.join(' ');
+        }
+    } else {
+        const recipientsMsg = metadata.msg.find(msg => msg.startsWith("Recipients: "));
+        if (recipientsMsg) {
+            const numberOfRecipients = recipientsMsg.split(' ')[1];
+            return `Rewards to ${numberOfRecipients} contributors`;
+        }
+    }
+    return '';
+}
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
     let txHash = ""
@@ -283,35 +334,66 @@ function TxBuilder() {
         }
         
         let totalAmounts: any = {};
-        for (let i in txamounts) {
+          for (let i in txamounts) {
             for (let j in txamounts[i]) {
-                if (totalAmounts[j] === undefined) {
-                    totalAmounts[j] = 0;
-                }
-                totalAmounts[j] += parseFloat(txamounts[i][j]);
+              if (totalAmounts[j] === undefined) {
+                totalAmounts[j] = 0;
+              }
+              totalAmounts[j] += txamounts[i][j];
             }
-        }
+          }
+
+        let date = new Date();
+        let originalDateString = date.toISOString();
+        const originalDate = new Date(originalDateString);
+        const year = originalDate.getUTCFullYear();
+        const month = String(originalDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(originalDate.getUTCDate()).padStart(2, '0');
+        const hours = String(originalDate.getUTCHours()).padStart(2, '0');
+        const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}: UTC`;
+        const txdescription = processMetadata(metaData)
+        totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
+        const balanceString = formatWalletBalance(walletBalanceAfterTx)
+        const totalAmountsString = formatTotalAmounts(totalAmounts)
+
         setMyVariable({
           ...myVariable,
           txamounts: txamounts,
           fee: fee,
           totalAmounts: totalAmounts,
           walletTokens: walletTokens,
-          walletBalanceAfterTx: walletBalanceAfterTx
+          walletBalanceAfterTx: walletBalanceAfterTx,
+          balanceString: balanceString,
+          totalAmountsString: totalAmountsString,
+          txdescription: txdescription,
+          formattedDate: formattedDate,
+          tokenRates: tokenRates
         });
+        txdata = {
+          ...txdata,
+          txamounts: txamounts,
+          fee: fee,
+          totalAmounts: totalAmounts,
+          walletTokens: walletTokens,
+          walletBalanceAfterTx: walletBalanceAfterTx,
+          balanceString: balanceString,
+          totalAmountsString: totalAmountsString,
+          txdescription: txdescription,
+          formattedDate: formattedDate,
+          tokenRates: tokenRates
+        }
         console.log('Final totalAmounts:', totalAmounts);
-        console.log('Final Tx amount:', txamounts, myVariable);
-        let finalMyVariable = myVariable;
+        console.log('Final Tx amount:', txamounts, myVariable, "txdata", txdata);
         // continue with the signed transaction
-        await sendDiscordMessage(finalMyVariable); // temp
+        
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
         //window.location.reload();
         // handle the error as appropriate
       }
-      
       let signedTx = ""
       try {
         signedTx = await wallet.signTx(unsignedTx);
@@ -328,7 +410,13 @@ function TxBuilder() {
       txHash: txHash,
       txtype: 'Outgoing'
     });
+    txdata = {
+      ...txdata,
+      txHash: txHash,
+      txtype: 'Outgoing'
+    }
     console.log("txHash",txHash) 
+    await sendDiscordMessage(myVariable, txdata); // temp
     return txHash;
   }
 

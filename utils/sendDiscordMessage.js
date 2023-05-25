@@ -1,26 +1,28 @@
-export async function sendDiscordMessage(myVariable) {
+export async function sendDiscordMessage(myVariable, txdata) {
   // Define your data from the client-side
   const header = ''; //incoming or outgoing
   const wallet = myVariable.wallet
-  const thash = '18b60f6223cae642cec1119953456cf40a9f3d4c9651fbca0d0e031a2a25c7c0' //myVariable.thash
+  const thash = txdata.thash
   let website = myVariable.project_website?myVariable.project_website:''
-  let txtype = 'Outgoing'//myVariable.txtype
+  let txtype = myVariable.txtype
   let txtype2 = ''
+  let color = 0xeb3477
   if (txtype == 'Outgoing') {
     txtype2 = 'Amount paid'
+    color = 0xeb3477
   } else {
     txtype2 = 'Amount received'
+    color = 0x16fa3c
   }
   let balTokens = myVariable
   console.log("balTokens",balTokens)
-  const balance = '20 ADA'
-  let txdetail = `* 20 ADA
-* 30 DJED`
-  let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of`\n'+'```css\n'+`${balance}`+'\n```';
+  const balance = `${txdata.balanceString}`
+  let txdetail = `${txdata.totalAmountsString}`
+  let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${myVariable.wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
   const content = `${header}`;
   const embeds = [
     {
-      color: 0xff0000,
+      color: color,
       title: 'Cardanoscan',
       url: `https://cardanoscan.io/transaction/${thash}`,
       author: {
@@ -28,13 +30,13 @@ export async function sendDiscordMessage(myVariable) {
         url: `${website}`,
         icon_url: `${myVariable.logo_url}`,
       },
-      description: `${txtype} transaction`,
+      description: `[Dashboard](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)})`+'   '+`[TxView](https://treasuryguild.com/transactions/${thash})`,//'`'+`${txtype}`+' transaction'+'`'+'\n'+'```'+`${txdata.txdescription}`+'```',
       thumbnail: {
-        url: 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png',
+        url: '',
       },
       fields: [
         {
-          name: `${txtype2}`,
+          name: '```'+`${txdata.txdescription}`+'```',
           value: `${details}`,
           inline: true,
         },
@@ -43,8 +45,8 @@ export async function sendDiscordMessage(myVariable) {
         url: '',
       },
       footer: {
-        text: 'Footer Text',
-        icon_url: 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png',
+        text: `Exchange Rate - ${txdata.tokenRates.ADA} USD per ADA - ${txdata.formattedDate}`
+        //icon_url: 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png',
       },
     },
   ];
