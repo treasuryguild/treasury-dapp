@@ -5,6 +5,7 @@ import { Transaction } from '@meshsdk/core';
 import { useRouter } from 'next/router'
 import { Contribution } from '../../components/ContributionBuilder';
 import { ContributionBuilderProps } from '../../components/ContributionBuilder';
+import { TransactionBuilderProps } from '../../components/TransactionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
 import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
@@ -66,6 +67,13 @@ function TxBuilder() {
     myVariable: myVariable,
     walletTokens: walletTokens,
     labels: labelOptions,
+    tokenRates: tokenRates
+  }
+
+  const transactionBuilderProps: TransactionBuilderProps = { // create an object with the props you want to pass
+    executeTransaction: executeTransaction,
+    myVariable: myVariable,
+    walletTokens: walletTokens,
     tokenRates: tokenRates
   }
 
@@ -358,19 +366,6 @@ function TxBuilder() {
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
         const totalAmountsString = formatTotalAmounts(totalAmounts)
 
-        setMyVariable({
-          ...myVariable,
-          txamounts: txamounts,
-          fee: fee,
-          totalAmounts: totalAmounts,
-          walletTokens: walletTokens,
-          walletBalanceAfterTx: walletBalanceAfterTx,
-          balanceString: balanceString,
-          totalAmountsString: totalAmountsString,
-          txdescription: txdescription,
-          formattedDate: formattedDate,
-          tokenRates: tokenRates
-        });
         txdata = {
           ...txdata,
           txamounts: txamounts,
@@ -401,32 +396,47 @@ function TxBuilder() {
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
-        window.location.reload();
+        //window.location.reload();
         // handle the error as appropriate
       }
     txHash = await wallet.submitTx(signedTx);
-    setMyVariable({
-      ...myVariable,
-      txHash: txHash,
-      txtype: 'Outgoing'
-    });
     txdata = {
       ...txdata,
       txHash: txHash,
       txtype: 'Outgoing'
     }
     console.log("txHash",txHash) 
-    await sendDiscordMessage(myVariable, txdata); // temp
     return txHash;
   }
 
-  async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
+  async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
     console.log("executeTransaction",assetsPerAddress, adaPerAddress, metaData)
-    const txid = await buildTx(assetsPerAddress, adaPerAddress, metaData);
+    
+    const txid: string = await buildTx(assetsPerAddress, adaPerAddress, metaData);
+    
     setDoneTxHash(txid)
     console.log("txid",txid, "doneTxHash", doneTxHash)
-    return txid;
-  }
+    
+    // Use a promise to wait for state update
+    return new Promise<string>(async(resolve, reject) => {
+        const updatedVariable = {
+            ...myVariable,
+            ...txdata
+        };
+        
+        setMyVariable(updatedVariable);
+        
+        try {
+            // Wait for sendDiscordMessage to complete
+            await sendDiscordMessage(updatedVariable);
+        
+            resolve(txid);
+        } catch (error) {
+            console.error("Error sending Discord message:", error);
+            reject(error);
+        }
+    });
+}
 
   function getValue(name: string){
     let element: HTMLElement | any
@@ -489,11 +499,8 @@ function TxBuilder() {
             <div>
             <SwitchingComponent
               onClick={toggleVisibility}
-              executeTransaction={executeTransaction}
-              walletTokens={walletTokens}
-              tokenRates={tokenRates}
+              transactionBuilderProps={transactionBuilderProps}
               contributionBuilderProps={contributionBuilderProps}
-              myVariable={myVariable}
             />
         </div>
           </div>

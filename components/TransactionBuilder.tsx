@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
 import { updateTxDatabase } from '../utils/updateTxDatabase'
 import { sendDiscordMessage } from '../utils/sendDiscordMessage'
 
-interface TransactionBuilderProps {
+export type TransactionBuilderProps = {
   executeTransaction: (
     assetsPerAddress: any,
     adaPerAddress: any,
@@ -19,7 +19,7 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
   executeTransaction,
   walletTokens,
   tokenRates,
-  myVariable
+  myVariable,
 }) => {
   const router = useRouter();
 
@@ -78,8 +78,9 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
     customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/TEst2.json`;
     await updateTxDatabase(myVariable, metaData, thash)
     //await commitFile(customFilePath, customFileContent)
-    //await sendDiscordMessage(myVariable)
-    setTimeout(function() {
+    
+    setTimeout(async function() {
+      //await sendDiscordMessage(myVariable)
       //router.push(`/transactions/${thash}`)
     }, 1000); // 3000 milliseconds = 3 seconds
   }

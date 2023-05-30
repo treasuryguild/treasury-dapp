@@ -1,8 +1,7 @@
-export async function sendDiscordMessage(myVariable, txdata) {
+export async function sendDiscordMessage(myVariable) {
   // Define your data from the client-side
   const header = ''; //incoming or outgoing
   const wallet = myVariable.wallet
-  const thash = txdata.thash
   let website = myVariable.project_website?myVariable.project_website:''
   let txtype = myVariable.txtype
   let txtype2 = ''
@@ -15,9 +14,10 @@ export async function sendDiscordMessage(myVariable, txdata) {
     color = 0x16fa3c
   }
   let balTokens = myVariable
-  console.log("balTokens",balTokens)
-  const balance = `${txdata.balanceString}`
-  let txdetail = `${txdata.totalAmountsString}`
+  const thash = balTokens.txHash
+  console.log("balTokens",balTokens, myVariable)
+  const balance = `${myVariable.balanceString}`
+  let txdetail = `${myVariable.totalAmountsString}`
   let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${myVariable.wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
   const content = `${header}`;
   const embeds = [
@@ -30,13 +30,13 @@ export async function sendDiscordMessage(myVariable, txdata) {
         url: `${website}`,
         icon_url: `${myVariable.logo_url}`,
       },
-      description: `[Dashboard](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)})`+'   '+`[TxView](https://treasuryguild.com/transactions/${thash})`,//'`'+`${txtype}`+' transaction'+'`'+'\n'+'```'+`${txdata.txdescription}`+'```',
+      description: `[Dashboard](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)})`+'   '+`[TxView](https://treasuryguild.com/transactions/${thash})`,//'`'+`${txtype}`+' transaction'+'`'+'\n'+'```'+`${myVariable.txdescription}`+'```',
       thumbnail: {
         url: '',
       },
       fields: [
         {
-          name: '```'+`${txdata.txdescription}`+'```',
+          name: '```'+`${myVariable.txdescription}`+'```',
           value: `${details}`,
           inline: true,
         },
@@ -45,7 +45,7 @@ export async function sendDiscordMessage(myVariable, txdata) {
         url: '',
       },
       footer: {
-        text: `Exchange Rate - ${txdata.tokenRates.ADA} USD per ADA - ${txdata.formattedDate}`
+        text: `Exchange Rate - ${myVariable.tokenRates.ADA} USD per ADA - ${myVariable.formattedDate}`
         //icon_url: 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png',
       },
     },
