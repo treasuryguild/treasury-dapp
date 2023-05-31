@@ -94,3 +94,13 @@
     flex-wrap: wrap;
     align-items: flex-start;
   }
+
+  .executeTxButton{
+    margin: 1em;
+    padding: 0.8em;
+    min-width: 200px;
+    border-radius: 5px;
+    font-size: large;
+    background-color: rgb(61, 67, 68);
+    cursor: pointer;
+  }

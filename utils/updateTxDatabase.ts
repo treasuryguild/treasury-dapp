@@ -1,123 +1,196 @@
 import axios from 'axios';
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
-import { KoiosProvider } from '@meshsdk/core';
 
-const koios = new KoiosProvider('api');
-
-type Group = {
-  group_id: string;
-  group_name: string;
-};
-
-type GroupData = {
-  group_name: string;
-  // Add other properties of the group object as needed
-};
-
-type ProjectData = {
-  project_name: string;
+interface Transaction {
+  tx_id: string;
+  total_tokens?: string[];
+  total_amounts?: number[];
+}
+interface ContributionInsertResult {
+  contribution_id: string;
+  // Include other properties as necessary
+}
+interface Contributor {
+  contributor_id: string;
   wallet: string;
-  // Add other properties of the project object as needed
-};
+}
+interface Distribution {
+  contribution_id: number;
+  project_id: number;
+  contributor_id: string;
+  tokens: string[];
+  amounts: number[];
+}
 
-export async function updateTxDatabase(myVariable:any, metaData:any, thash: any) {
-    async function getGroupByName(groupName: string) {
-        const { data: existingGroup, error } = await supabase
-          .from("groups")
-          .select("*")
-          .eq("group_name", groupName)
-          .single();
-      
-        if (error) throw error;
-        console.log('existingGroup',error,existingGroup)
-      
-        return existingGroup;
-      }
-      
-      async function updateGroup(groupData: GroupData, groupId: string): Promise<Group> {
-        
-        const updates = {
-            group_name: groupData.group_name,
-            updated_at: new Date()
-        }
-        let { data, error } = await supabase
-            .from("groups")
-            .upsert({ ...updates, group_id: groupId })
-            .select('*')
-            .single()
-      
-        if (error) throw error;
-        console.log("updateGroup", error, data)
-      
-        if (!data) {
-            throw new Error("Failed to update the group");
-        }
-        console.log("updateGroup data", data)
-        return data as Group;
+export async function updateTxDatabase(myVariable:any, metaData:any, thash: any, customFilePath: any) {
+  function getTaskType(name: any, label: any, description: any) {
+    var tasktypes: any = {
+      "Operations":["Operations","PM Meeting","Video Meeting","Marketing Call","Weekly call - Treasury Guild Team","Weekly Call - Swarm & Treasury Guild","Setting up","set up","Schedule","setup","Organiz","gdrive","miro","Community Suggestion","Management","Transactions","Install","treasury","administration-of-budget","administration of budget","general admin", "remuneration", "salary", "payments", "leftover","test wallet","Other","budget administration","operational","research","preparation","move to exchange"],
+      "Swarm Session":["Swarm Session","Join Saturday Swarm Session"],
+      "Insight fest":["Insight fest"],
+      "Content Creation":["Content Creation","article","Poetry","create","creating","Promotion","videocreation","Translat","Clip & Edit","translat","videos","content shared","Town Hall Slides"],
+      "ATH Participation":["ATH Participation","join us at After Town Hall"],
+      "Onboarding":["Onboarding","Onboard","Mentorship","workshop"],
+      "Timestamping":["Timestamping","timestamp"],
+      "Documentation":["Documentation","How to","Report","mapping","Walkthrough"],
+      "Community Communication":["Community Communication","weekly call","Hosts","coordinat","Ambassador Town Hall","weekly meeting","community council","meeting","session","Facilitate","Announce","attendees"],
+      "Governance":["Governance","voting"],
+      "Tool Development":["Tool Development","MVP","Discord Server","Integrate","Add csv features","metadata"],
+      "Ideation":["Ideation","Suggest"],
+      "Voting":["voting registration","voting"],
+      "Staking":["Staking to pool","Stake to pool", "Staked to pool","stake to stake pool", "Payment for staking funds","Transaction fee for staking", "Staking fees", "Staking to", "Staking fee", "pool fees", "staking pool fees"],
+      "Donation":["sent donation", "send donation", "donation sent"],
+      "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties","incentives"],
+      "Fixed costs":["Fixed costs","Comm Org Tools","Zoom","GitBook", "comm-org-tools", "expenses", "costs"],
+      "Internal transfer":["Internal wallet transfer","Internal transfer"],
+      "Rewards Withdrawal":["Rewards-Withdrawal","Internal wallet transfer and staking rewards","staking rewards", "Stake rewards", "Stake Pool Rewards","Withdrawal staking reward funds"],
+      "Incoming":["Incoming","IOG", "received donation", "donation received"]
     }
-      
-      async function createGroup(groupData: GroupData): Promise<Group> {
-        const { data, error } = await supabase
-          .from("groups")
-          .upsert(groupData);
-      
-        if (error) throw error;
-        console.log(error)
-        if (!data) {
-          throw new Error("Failed to update the group");
+
+    let finalResult = "";
+    for (let i in tasktypes) {
+      tasktypes[i].forEach((partialWord: string) => {
+        let regex = new RegExp(partialWord.toLowerCase());
+        if (description && regex.test(description.toLowerCase())) {
+          finalResult = i;
         }
-      
-        return data as Group;
-      }
-      
-      async function insertOrUpdateProject(projectData: ProjectData, groupId: string) {
-        // Check if projectData.wallet exists in 'projects'
-        const { data: existingProjects, error: error1 } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("wallet", projectData.wallet);
-      
-        if (error1) throw error1;
-      
-        if (existingProjects && existingProjects.length > 0) {
-          // Update existing project with new info
-          const { error: error2 } = await supabase
-            .from("projects")
-            .update({ ...projectData, group_id: groupId })
-            .eq("wallet", projectData.wallet);
-          
-          if (error2) throw error2;
-        } else {
-          // Insert new project
-          const { error: error3 } = await supabase
-            .from("projects")
-            .insert({ ...projectData, group_id: groupId });
-      
-          if (error3) throw error3;
+        if (name && regex.test(name.toLowerCase())) {
+          finalResult = i;
         }
-      }
-      
-      async function updateProject(myVariable:any, metaData:any, thash: any) {
-        console.log("UpdateTxDatabase",myVariable, metaData, thash);
-        let test = await koios.fetchTxInfo(
-          '6f7d9f62fde667861ff07365e3fba6b0af650867e84c6f36a6043e910a123885',
-        )
-        console.log("test koios",test, myVariable.txamounts)
-        /*try {
-          const existingGroup = await getGroupByName(groupData.group_name);
-          const groupId = existingGroup
-            ? (await updateGroup(groupData, existingGroup.group_id)).group_id
-            : (await createGroup(groupData)).group_id;
-          console.log("passed");
-          await insertOrUpdateProject(projectData, groupId);
-        } catch (error) {
-          if (error instanceof Error) {
-            alert(error.message);
-          } else {
-            console.error("Unknown error:", error);
-          }
-        }*/
-      }
-      return await updateProject(myVariable, metaData, thash)
+        if (label && regex.test(label.toLowerCase())) {
+          finalResult = i;
+        }    
+      });
+    }
+  
+    return finalResult;
   }
+  
+  const total_tokens = Object.keys(myVariable.totalAmounts);
+  const total_amounts = Object.values(myVariable.totalAmounts);
+  
+  async function updateTransactions(myVariable:any, thash: any) {
+    let recipients = ''
+    const adaObject = myVariable.walletBalanceAfterTx.find((obj: any) => obj.name === 'ADA');
+    const adaBalance = adaObject ? adaObject.amount : 0;
+    const recipientsMsg = metaData.msg.find((msg: string) => msg.startsWith("Recipients: "));
+        if (recipientsMsg) {
+            const numberOfRecipients = recipientsMsg.split(' ')[1];
+            recipients = numberOfRecipients;
+        }
+
+    const { data: insertResult, error } = await supabase
+    .from("transactions")
+    .insert([
+        { 
+            transaction_id: thash, 
+            transaction_date: new Date().getTime().toString(),
+            wallet_balance_after: adaBalance, 
+            md_version: metaData.mdVersion[0],
+            tx_json: metaData,
+            tx_json_url: `https://raw.githubusercontent.com/treasuryguild/treasury-system-v4/main/${customFilePath}`,
+            exchange_rate: myVariable.tokenRates.ADA,
+            recipients: recipients,
+            fee: myVariable.fee,
+            tx_type: 'Outgoing',
+            total_ada: myVariable.totalAmounts.ADA,
+            project_id: myVariable.project_id,
+            total_tokens: total_tokens,
+            total_amounts: total_amounts
+        }
+    ])
+    .select(`tx_id`)
+    .single();;
+
+    if (error) throw error;
+    const data = insertResult as unknown as Transaction;
+
+    const tx_id: string | null = data && data.tx_id ? data.tx_id : null;
+
+    return { tx_id };
+  }
+
+
+  async function updateContributors(walletAddress: string, contributorKey: string) {
+    const { error } = await supabase
+      .from("contributors")
+      .upsert([
+        { 
+          contributor_id: contributorKey, 
+          wallet: walletAddress
+        }
+      ]);
+  
+    if (error) throw error;
+    return contributorKey;
+  }
+  
+
+  async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
+    for (const contribution of metaData.contributions) {
+
+      const task_name = contribution.name ? contribution.name.join(' ') : null;
+      const task_description = contribution.description ? contribution.description.join(' ') : null;
+      let taskType = getTaskType(task_name, contribution.label.join(','), task_description)
+      
+      const { data: insertResult, error } = await supabase
+        .from('contributions')
+        .insert([
+          {
+            project_id: myVariable.project_id,
+            tx_id: tx_id,
+            task_creator: myVariable.group,
+            task_name: task_name,
+            task_label: contribution.label.join(','),
+            task_description: task_description, 
+            task_type: taskType,
+          },
+        ])
+        .select(`contribution_id`)
+        .single();
+
+      if (error) throw error;
+
+      // Cast the returned data to the ContributionInsertResult interface
+      const data = insertResult as unknown as ContributionInsertResult;
+
+      const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
+
+      console.log("testing contribution_id", contribution_id, tx_id)
+      for (const contributorKey in contribution.contributors) {
+        const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
+        console.log("Uploading dist")
+        if (walletAddress) {
+          const contributor_id = await updateContributors(walletAddress, contributorKey);
+
+          const tokens: string[] = [];
+          const amounts: number[] = [];
+
+          for (const token in contribution.contributors[contributorKey]) {
+            tokens.push(token);
+            amounts.push(Number(contribution.contributors[contributorKey][token]));
+          }
+
+          const { error: distributionError } = await supabase
+            .from('distributions')
+            .insert([
+              {
+                tx_id,
+                contribution_id,
+                project_id: myVariable.project_id,
+                contributor_id,
+                tokens,
+                amounts,
+              },
+            ]);
+
+          if (distributionError) throw distributionError;
+        }
+      }
+    }
+  }
+
+  let { tx_id } = await updateTransactions(myVariable, thash);
+  await updateContributionsAndDistributions(myVariable, tx_id, metaData);
+}

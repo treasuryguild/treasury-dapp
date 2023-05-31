@@ -11,6 +11,8 @@ import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
+import { commitFile } from '../../utils/commitFile'
+import { updateTxDatabase } from '../../utils/updateTxDatabase'
 
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -19,13 +21,13 @@ type Token = {
     name: React.ReactNode;
     amount: React.ReactNode;
   };
+let txdata = {}
 
 function TxBuilder() {
   const tickerAPI = 'http://localhost:3000/api/tickers'
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   let customFilePath = '';
   let customFileContent = '';
-  let txdata = {}
   let project: any[] = [];
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
@@ -111,6 +113,7 @@ function TxBuilder() {
     console.log("tickerDetails",tickerDetails.data.tickerApiNames)
     let walletBalance = await wallet.getBalance();
     const assets = await wallet.getAssets();
+    console.log("assetss", assets)
     let totalAmount = parseFloat(walletBalance[0].quantity).toFixed(6)
     let finalamount = (parseFloat(totalAmount)/1000000).toFixed(6)
     let tokens = [{"id":"1","name":"ADA","amount":parseFloat(finalamount).toFixed(6),"unit":"lovelace", "decimals": 6, "fingerprint":""}]
@@ -122,7 +125,7 @@ function TxBuilder() {
         console.log("Testing ticker fingerprint", asset.fingerprint, tickerDetails.data.tickerFingerprints[asset.assetName])
         if (asset.fingerprint === tickerDetails.data.tickerFingerprints[asset.assetName]) {
           console.log("asset.assetName",asset.assetName)
-          finalTokenAmount = asset.quantity/(10**tickerDetails.data.tickerDecimals[asset.assetName])
+          finalTokenAmount = (parseFloat(asset.quantity))
         } else {
           finalTokenAmount = (parseFloat(asset.quantity))
         }
@@ -148,11 +151,12 @@ function TxBuilder() {
   async function getProject(address: string) {
     let projectname = ''
     let projectWebsite = ''
+    let projectId = ''
     let groupInfo = {}
       try {
         const { data, error, status } = await supabase
         .from("projects")
-        .select('project_name, project_type, website, groups(group_name, logo_url)')
+        .select('project_name, project_type, project_id, website, groups(group_name, logo_url)')
         .eq("wallet", address);
 
         if (error && status !== 406) throw error
@@ -166,7 +170,8 @@ function TxBuilder() {
             setProjectName(project[0].project_name);
             projectname = project[0].project_name;
             projectWebsite = project[0].website;
-            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_type":"${project[0].project_type}","project_website":"${project[0].website}","logo_url":"${project[0]['groups'].logo_url}"}`)
+            projectId = project[0].project_id;
+            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_id":"${project[0].project_id}","project_type":"${project[0].project_type}","project_website":"${project[0].website}","logo_url":"${project[0]['groups'].logo_url}"}`)
           }
         }
       } catch (error) {
@@ -193,6 +198,8 @@ function TxBuilder() {
                 updatedTokens[j]['name'] = response.data.tokens[i].metadata.ticker?response.data.tokens[i].metadata.ticker:response.data.tokens[i].metadata.symbol
                 updatedTokens[j]['decimals'] = 0;
                 updatedTokens[j]['decimals'] = response.data.tokens[i].metadata.decimals?response.data.tokens[i].metadata.decimals:0;
+                updatedTokens[j]['amount'] = (parseFloat(updatedTokens[j]['amount'])/10**updatedTokens[j]['decimals']).toFixed(updatedTokens[j]['decimals'])
+                console.log("Testing token result", updatedTokens[j]['decimals'])
               }
             }
           }
@@ -204,13 +211,15 @@ function TxBuilder() {
       //try api
       await axios.get(tickerAPI).then(response => {
         const details = response.data;
-        console.log("AssestDetails",details);
+        console.log("Ticker AssestDetails",details);
         for (let i in response.data.tickerApiNames) {
             for (let j in updatedTokens) {
               if (tokens[j].fingerprint == response.data.tickerFingerprints[i]) {
                 updatedTokens[j]['name'] = i;
                 updatedTokens[j]['decimals'] = 0;
                 updatedTokens[j]['decimals'] = response.data.tickerDecimals[i]?response.data.tickerDecimals[i]:0;
+                updatedTokens[j]['amount'] = (parseFloat(updatedTokens[j]['amount'])/10**updatedTokens[j]['decimals']).toFixed(updatedTokens[j]['decimals'])
+                console.log("Testing token result for tickers", updatedTokens[j]['decimals'])
               }
             }
         }
@@ -389,6 +398,8 @@ function TxBuilder() {
         //window.location.reload();
         // handle the error as appropriate
       }
+      console.log("metaData", metaData)
+      await updateTxDatabase(txdata, metaData, '2324dwfsfe', 'Transactions/Swarm/TreasuryWallet/Swarm-Treasury-Wallet/Bounty/1666819862051-zum4wh.json')
       let signedTx = ""
       try {
         signedTx = await wallet.signTx(unsignedTx);
@@ -411,7 +422,8 @@ function TxBuilder() {
 
   async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
     console.log("executeTransaction",assetsPerAddress, adaPerAddress, metaData)
-    
+    let customFilePath = '';
+    let customFileContent = '';
     const txid: string = await buildTx(assetsPerAddress, adaPerAddress, metaData);
     
     setDoneTxHash(txid)
@@ -429,7 +441,17 @@ function TxBuilder() {
         try {
             // Wait for sendDiscordMessage to complete
             await sendDiscordMessage(updatedVariable);
-        
+            let newMetaData = metaData
+            newMetaData['txid'] = txid
+            console.log("newMetaData",newMetaData)
+            customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+            let pType = ''
+            if (myVariable.project_type == 'Treasury Wallet') {
+              pType = 'TreasuryWallet'
+            }
+            customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-TEst2.json`;
+            await commitFile(customFilePath, customFileContent)
+            //await updateTxDatabase(myVariable, newMetaData, txid, customFilePath)
             resolve(txid);
         } catch (error) {
             console.error("Error sending Discord message:", error);
@@ -437,12 +459,6 @@ function TxBuilder() {
         }
     });
 }
-
-  function getValue(name: string){
-    let element: HTMLElement | any
-    element = document.getElementById(name)
-    return element.value
-  }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
     console.log("Exchange Rate wallet tokens", wallettokens)

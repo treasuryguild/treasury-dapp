@@ -349,7 +349,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       let finalMetaData = {}
       finalMetaData = JSON.parse(metaData)
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddressString, finalMetaData, walletTokens);
-    //let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
+    let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
     //console.log("thash",thash)
     let newMetaData = JSON.parse(metaData)
     newMetaData['txid'] = 'test tx ID'
@@ -560,7 +560,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
             </div>
           ))}
           <div className={styles.addContributor}>
-            To add contributor enter wallet address and hit enter:
+            To add contributor enter wallet address and hit ENTER:
             <input
               type="text"
               onKeyDown={(e) => {
@@ -575,7 +575,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       ))}
       <button className={styles.addContributionButton} onClick={addContribution}>Add Contribution</button>
       {/*<pre>{JSON.stringify(contributions, null, 2)}</pre>*/}
-      <button onClick={handleClick}>Execute Transaction</button>
+      {Object.keys(tokenRates).length !== 0 && (<button className={styles.executeTxButton} onClick={handleClick}>Execute Transaction</button>)}
     </div>
   );
 };

@@ -268,38 +268,35 @@ function Newwallet() {
   }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    let currentXchangeRate = ""
     console.log("Exchange Rate wallet tokens", wallettokens)
     let tickerDetails = await axios.get(tickerAPI)
-    console.log("tickerDetails",tickerDetails.data.tickerApiNames)
+    console.log("tickerDetails", tickerDetails.data.tickerApiNames)
     let tickers = tickerDetails.data.tickerApiNames;
-    let tokenExchangeRates: any
-    tokenExchangeRates = {}
+    let tokenExchangeRates: any = {}
     for (let i in wallettokens) {
-      if (wallettokens[i].name == "ADA") {
-        axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
+      console.log("wallettokens[i].name", wallettokens[i].name)
+      try {
+        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
         const rate = response.data[tickers[wallettokens[i].name]].usd;
-        let exchangeToken: any;
-        exchangeToken = wallettokens[i].name
-        tokenExchangeRates[exchangeToken] = 0.00
-        tokenExchangeRates[exchangeToken] = parseFloat(rate).toFixed(3)
-        currentXchangeRate = parseFloat(rate).toFixed(3);
-        console.log("exchangeAda",rate);
-        });
-      } else if (wallettokens[i].name != "GMBL") {
-        axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`).then(response => {
-        const rate = response.data[tickers[wallettokens[i].name]].usd;
-        let exchangeToken: any;
-        exchangeToken = wallettokens[i].name
-        tokenExchangeRates[exchangeToken] = 0.00
-        tokenExchangeRates[exchangeToken] = parseFloat(rate).toFixed(3)
-        console.log("exchangeAda",rate);
-        });
+        if (rate !== undefined) {
+          tokenExchangeRates[wallettokens[i].name] = parseFloat(rate).toFixed(3)
+          console.log("exchangeRate", rate);
+          if (wallettokens[i].name == "ADA") {
+            let xrates: HTMLElement | any
+            xrates = document.getElementById('xrate')
+            xrates.value = parseFloat(rate).toFixed(3);
+          }
+        } else {
+          tokenExchangeRates[wallettokens[i].name] = 0.00
+        }
+      } catch (error) {
+        console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
+        tokenExchangeRates[wallettokens[i].name] = 0.00
       }
     }
     setTokenRates(tokenExchangeRates)
-    console.log("tokenExchangeRates",tokenExchangeRates)
-  }
+    console.log("tokenExchangeRates", tokenExchangeRates)
+  }  
 
   async function getTotalTokens(results: [] | any) {
     let totalTokensPrep = ""
@@ -457,7 +454,7 @@ function Newwallet() {
                   <option value="TreasuryWallet">Treasury Wallet</option>
                   <option value="Proposal">Proposal</option>
                 </select>
-                <span className={styles.tag}>Task Type</span>
+                <span className={styles.tag}>Wallet Type</span>
               </label>
             </div>
             <div className={styles.formitem}>

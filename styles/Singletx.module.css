@@ -50,6 +50,7 @@
   border-radius: 5px;
   font-size: large;
   background-color: rgb(61, 67, 68);
+  cursor: pointer;
 }
 
 .addtoken {

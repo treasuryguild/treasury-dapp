@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
 import { updateTxDatabase } from '../utils/updateTxDatabase'
 import { sendDiscordMessage } from '../utils/sendDiscordMessage'
+import { commitFile } from '../utils/commitFile'
 
 export type TransactionBuilderProps = {
   executeTransaction: (
@@ -66,44 +67,23 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddress, metaData, walletTokens)
     //await sendDiscordMessage(myVariable); // temp sendMessage for testing
     let thash = await executeTransaction(assetsPerAddress, adaPerAddress, metaData)
-    //console.log("thash",thash)
-    let newMetaData = metaData
+    console.log("thash",thash)
+    //let newMetaData = metaData
     //newMetaData['txid'] = thash
-    console.log("newMetaData",newMetaData)
-    customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
-    let pType = ''
-    if (myVariable.project_type == 'Treasury Wallet') {
-      pType = 'TreasuryWallet'
-    }
-    customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/TEst2.json`;
-    await updateTxDatabase(myVariable, metaData, thash)
+    //console.log("newMetaData",newMetaData)
+    //customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+    //let pType = ''
+    //if (myVariable.project_type == 'Treasury Wallet') {
+    //  pType = 'TreasuryWallet'
+    //}
+    //customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-TEst2.json`;
+    //await updateTxDatabase(myVariable, metaData, thash)
     //await commitFile(customFilePath, customFileContent)
     
     setTimeout(async function() {
       //await sendDiscordMessage(myVariable)
       //router.push(`/transactions/${thash}`)
     }, 1000); // 3000 milliseconds = 3 seconds
-  }
-
-  async function commitFile(filePath: string, fileContent: string) {
-    const commitMessage = 'Transaction';
-  
-    try {
-      const response = await fetch('/api/commit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath, fileContent, commitMessage }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Error committing file');
-      }
-  
-      const result = await response.json();
-      console.log(result.message);
-    } catch (error) {
-      console.error('Error committing file to GitHub:', error);
-    }
   }
  
   return (
@@ -120,6 +100,7 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
         </label>
       </div>
       <div className={styles.submit}>
+      {Object.keys(tokenRates).length !== 0 && (
         <button
           className={styles.submitbut}
           type="button"
@@ -132,7 +113,7 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
           }}
         >
           Build
-        </button>
+        </button>)}
       </div>
     </div>
   );
