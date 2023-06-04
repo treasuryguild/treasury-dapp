@@ -1,5 +1,3 @@
-import axios from 'axios';
-import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 
 interface Transaction {
@@ -10,17 +8,6 @@ interface Transaction {
 interface ContributionInsertResult {
   contribution_id: string;
   // Include other properties as necessary
-}
-interface Contributor {
-  contributor_id: string;
-  wallet: string;
-}
-interface Distribution {
-  contribution_id: number;
-  project_id: number;
-  contributor_id: string;
-  tokens: string[];
-  amounts: number[];
 }
 
 export async function updateTxDatabase(myVariable:any, metaData:any, thash: any, customFilePath: any) {
@@ -66,7 +53,7 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
   
     return finalResult;
   }
-  
+  console.log("myVariable inside update Database", myVariable)
   const total_tokens = Object.keys(myVariable.totalAmounts);
   const total_amounts = Object.values(myVariable.totalAmounts);
   
@@ -93,7 +80,7 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
             exchange_rate: myVariable.tokenRates.ADA,
             recipients: recipients,
             fee: myVariable.fee,
-            tx_type: 'Outgoing',
+            tx_type: myVariable.txtype,
             total_ada: myVariable.totalAmounts.ADA,
             project_id: myVariable.project_id,
             total_tokens: total_tokens,
@@ -152,12 +139,9 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
 
       if (error) throw error;
 
-      // Cast the returned data to the ContributionInsertResult interface
       const data = insertResult as unknown as ContributionInsertResult;
-
       const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
 
-      console.log("testing contribution_id", contribution_id, tx_id)
       for (const contributorKey in contribution.contributors) {
         const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
         console.log("Uploading dist")

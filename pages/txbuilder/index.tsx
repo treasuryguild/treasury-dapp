@@ -399,7 +399,6 @@ function TxBuilder() {
         // handle the error as appropriate
       }
       console.log("metaData", metaData)
-      await updateTxDatabase(txdata, metaData, '2324dwfsfe', 'Transactions/Swarm/TreasuryWallet/Swarm-Treasury-Wallet/Bounty/1666819862051-zum4wh.json')
       let signedTx = ""
       try {
         signedTx = await wallet.signTx(unsignedTx);
@@ -424,6 +423,8 @@ function TxBuilder() {
     console.log("executeTransaction",assetsPerAddress, adaPerAddress, metaData)
     let customFilePath = '';
     let customFileContent = '';
+    let completedTxFilePath = '';
+    let completedTxFileContent = '';
     const txid: string = await buildTx(assetsPerAddress, adaPerAddress, metaData);
     
     setDoneTxHash(txid)
@@ -439,8 +440,7 @@ function TxBuilder() {
         setMyVariable(updatedVariable);
         
         try {
-            // Wait for sendDiscordMessage to complete
-            await sendDiscordMessage(updatedVariable);
+            setLoading(true)
             let newMetaData = metaData
             newMetaData['txid'] = txid
             console.log("newMetaData",newMetaData)
@@ -451,8 +451,11 @@ function TxBuilder() {
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-TEst2.json`;
             await commitFile(customFilePath, customFileContent)
-            //await updateTxDatabase(myVariable, newMetaData, txid, customFilePath)
+            await updateTxDatabase(updatedVariable, newMetaData, txid, customFilePath)
+            await sendDiscordMessage(updatedVariable);
+            setLoading(false)
             resolve(txid);
+            router.push(`/transactions/${txid}`)
         } catch (error) {
             console.error("Error sending Discord message:", error);
             reject(error);
@@ -497,6 +500,7 @@ function TxBuilder() {
         <div className={styles.heading}>
           <h1>{projectName}</h1>
         </div>
+        {!loading && (<div>Test</div>)}
         <div className={styles.body}>
           <div className={styles.form}>
             <div className={styles.formitem}>
@@ -513,12 +517,12 @@ function TxBuilder() {
               </label>
             </div>
             <div>
-            <SwitchingComponent
-              onClick={toggleVisibility}
-              transactionBuilderProps={transactionBuilderProps}
-              contributionBuilderProps={contributionBuilderProps}
-            />
-        </div>
+              <SwitchingComponent
+                onClick={toggleVisibility}
+                transactionBuilderProps={transactionBuilderProps}
+                contributionBuilderProps={contributionBuilderProps}
+              />
+            </div>
           </div>
           <div className={styles.balances}>
             <div>
@@ -533,11 +537,11 @@ function TxBuilder() {
                 );
               })}
               {isVisible && (
-        <div className={styles.preContainer}>
-          <h3>Metadata</h3>
-          <pre>{contributionsJSON}</pre>
-        </div>
-      )}
+                <div className={styles.preContainer}>
+                  <h3>Metadata</h3>
+                  <pre>{contributionsJSON}</pre>
+                </div>
+              )}
             </div>
           </div>
         </div>

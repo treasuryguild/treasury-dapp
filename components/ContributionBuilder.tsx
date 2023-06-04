@@ -350,14 +350,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       finalMetaData = JSON.parse(metaData)
     console.log("assetsPerAddress",assetsPerAddress, adaPerAddressString, finalMetaData, walletTokens);
     let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
-    //console.log("thash",thash)
-    let newMetaData = JSON.parse(metaData)
-    newMetaData['txid'] = 'test tx ID'
-    console.log("newMetaData",newMetaData)
-    customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
-    customFilePath = 'Transactions/Test/TEst2.json';
-    //await commitFile(customFilePath, customFileContent)
-    //await sendMessage();
+    console.log("thash",thash)
     //setTimeout(function() {
     //  router.push(`/transactions/${thash}`)
     //}, 1000); // 3000 milliseconds = 3 seconds
