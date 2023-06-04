@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from("transactions")
-        .select('project_id, wallet_balance_after')
+        .select('transaction_id, wallet_balance_after')
         .eq("tx_id", tx_id);
 
       if (error) {
@@ -20,8 +20,8 @@ export default async function handler(req, res) {
       .upsert([
         { 
           tx_id: tx_id, 
-          txhash: txhash,
-          txfilepath: data.wallet_balance_after
+          txhash: 'txhash',
+          txfilepath: 'data.wallet_balance_after'
         }
       ]);
   
