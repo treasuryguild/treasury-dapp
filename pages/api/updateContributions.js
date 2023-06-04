@@ -7,9 +7,9 @@ export default async function handler(req, res) {
       const txhash = req.body.record.transaction_id;
 
       const { data, error } = await supabase
-        .from("projects")
-        .select('project_name, project_type, groups(group_name)')
-        .eq("wallet", wallet);
+        .from("transactions")
+        .select('project_id, wallet_balance_after')
+        .eq("tx_id", tx_id);
 
       if (error) {
         throw error;
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         { 
           tx_id: tx_id, 
           txhash: txhash,
-          txfilepath: data.project_name
+          txfilepath: data.wallet_balance_after
         }
       ]);
   
