@@ -132,7 +132,6 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     // Set the default token to 'ADA' with an empty value
     newContributions[index].contributors[contributorWalletId] = { ADA: "" };
     setContributions(newContributions);
-    console.log("contributorWallets", contributorWallets)
   };
 
   const getWalletValue = (contributorId: string) => {
@@ -220,18 +219,11 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
         totalTokensPrep = `${totalTokensPrep}
       "${gmblNumber2} USD in ${aggregatedTokens[i]} ${i}",`
     }
-    console.log("totalTokensPrep",totalTokensPrep)
     return totalTokensPrep;
   }
 
   async function getValues(contributionsJSON: string, contributorWalletsJSON: string) {
-    let customFilePath = '';
-    let customFileContent = '';
-    let addresses: any[] = [];
-    let sendAssets: any[] = [];
-    let sendAda: any[] = [];
     let totalTokens: any;
-    let totalReps: any;
     let assetsPerAddress: any;
     const adaPerAddress: { [address: string]: Asset[] } = {};
     let metaData: any;
@@ -257,8 +249,6 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   }
     
     for (const content of contJson) {
-      console.log("Test", content.contributors);
-    
       for (const [contributorAddress, tokens] of Object.entries<ContributorTokens>(content.contributors)) {
         for (const walletAddress of walletsArray) {
           if (walletAddress.includes(contributorAddress)) {
@@ -305,8 +295,6 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
                 }
               }
             }
-    
-            console.log("Match", walletAddress, tokens);
           }
         }
       }
@@ -348,12 +336,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
       `
       let finalMetaData = {}
       finalMetaData = JSON.parse(metaData)
-    console.log("assetsPerAddress",assetsPerAddress, adaPerAddressString, finalMetaData, walletTokens);
     let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
-    console.log("thash",thash)
-    //setTimeout(function() {
-    //  router.push(`/transactions/${thash}`)
-    //}, 1000); // 3000 milliseconds = 3 seconds
   }
 
   const handleClick = async () => {
@@ -361,85 +344,6 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
-
-  async function commitFile(filePath: string, fileContent: string) {
-    const commitMessage = 'Transaction';
-  
-    try {
-      const response = await fetch('/api/commit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath, fileContent, commitMessage }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Error committing file');
-      }
-  
-      const result = await response.json();
-      console.log(result.message);
-    } catch (error) {
-      console.error('Error committing file to GitHub:', error);
-    }
-  }
-
-  async function sendMessage() {
-    
-    // Define your data from the client-side
-    const header = 'Testing!';
-    const wallet = 'addr32r2r3r3'
-    const content = `${header}`;
-    const embeds = [
-      {
-        color: 0xff0000,
-        title: 'Title',
-        url: 'https://www.example.com',
-        author: {
-          name: 'Author Name',
-          url: 'https://www.example.com',
-          icon_url: 'https://www.example.com/icon.png',
-        },
-        description: 'Description',
-        thumbnail: {
-          url: 'https://www.example.com/thumbnail.png',
-        },
-        fields: [
-          {
-            name: 'Field Name',
-            value: 'Field Value',
-            inline: true,
-          },
-        ],
-        image: {
-          url: 'https://www.example.com/image.png',
-        },
-        footer: {
-          text: 'Footer Text',
-          icon_url: 'https://www.example.com/icon.png',
-        },
-      },
-    ];
-  
-    try {
-      const response = await fetch('/api/discord', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Send the data to the API route
-        body: JSON.stringify({ content, embeds, wallet }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-  
-      const data = await response.json();
-      console.log(data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
 
   return (
     <div>

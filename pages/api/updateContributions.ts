@@ -1,5 +1,4 @@
 import supabase from "../../lib/supabaseClient";
-//import updateTxDatabase from '../../utils/updateTxDatabase'
 interface Transaction {
   tx_id: string;
   total_tokens?: string[];
@@ -7,17 +6,13 @@ interface Transaction {
 }
 interface ContributionInsertResult {
   contribution_id: string;
-  // Include other properties as necessary
 }
 
 export default async function handler(req: any, res: any) {
-    
-        //const id = req.body.record.id;
         const thash = req.body.record.txhash;
         const myVariable = req.body.record.txinfo;
         const customFilePath = req.body.record.txfilepath;
         const metaData = req.body.record.metadata;
-        //await updateTxDatabase(myVariable, metaData, txhash, customFilePath)
 
         function getTaskType(name: any, label: any, description: any) {
           var tasktypes: any = {
@@ -61,7 +56,6 @@ export default async function handler(req: any, res: any) {
         
           return finalResult;
         }
-        console.log("myVariable inside update Database", myVariable)
         const total_tokens = Object.keys(myVariable.totalAmounts);
         const total_amounts = Object.values(myVariable.totalAmounts);
         
@@ -152,7 +146,6 @@ export default async function handler(req: any, res: any) {
       
             for (const contributorKey in contribution.contributors) {
               const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
-              console.log("Uploading dist")
               if (walletAddress) {
                 const contributor_id = await updateContributors(walletAddress, contributorKey);
       
