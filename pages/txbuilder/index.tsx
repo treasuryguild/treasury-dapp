@@ -13,6 +13,7 @@ import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
 import { updateTxDatabase } from '../../utils/updateTxDatabase'
+import { updateTxInfo } from '../../utils/updateTxInfo'
 
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -451,7 +452,7 @@ function TxBuilder() {
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-TEst2.json`;
             await commitFile(customFilePath, customFileContent)
-            await updateTxDatabase(updatedVariable, newMetaData, txid, customFilePath)
+            await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             await sendDiscordMessage(updatedVariable);
             setLoading(false)
             resolve(txid);

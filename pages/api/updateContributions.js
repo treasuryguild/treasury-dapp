@@ -1,35 +1,14 @@
-import supabase from "../../lib/supabaseClient";
+import updateTxDatabase from '../../utils/updateTxDatabase'
 
 export default async function handler(req, res) {
     try {
-        const tx_id = req.body.record.tx_id;
-        const txhash = req.body.record.transaction_id;
+        const txhash = req.body.record.txhash;
+        const myVariable = req.body.record.txinfo;
+        const customFilePath = req.body.record.txfilepath;
+        const metaData = req.body.record.metadata;
+        await updateTxDatabase(myVariable, metaData, txhash, customFilePath)
 
-        const { data, error } = await supabase
-            .from("transactions")
-            .select('transaction_id, wallet_balance_after')
-            .eq("tx_id", tx_id);
-
-        if (error) {
-            throw error;
-        }
-
-        const wallet_balance_after = data[0].wallet_balance_after?data[0].wallet_balance_after:0;
-
-        const { data: data2, error: error2 } = await supabase
-            .from("transactioninfo")
-            .upsert([
-                {
-                    tx_id: tx_id,
-                    txhash: txhash,
-                    txfilepath: wallet_balance_after
-                }
-            ]);
-
-        if (error2) throw error2;
-        console.log("api data", data)
-
-        res.status(200).json(data2);
+        res.status(200).json({message: "Success"});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
