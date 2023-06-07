@@ -90,7 +90,7 @@ export default async function handler(req: any, res: any) {
               }
           ])
           .select(`tx_id`)
-          .single();;
+          .single();
       
           if (error) throw error;
           const data = insertResult as unknown as Transaction;

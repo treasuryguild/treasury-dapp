@@ -118,7 +118,6 @@ function TxBuilder() {
         tokenFingerprint.push(asset.fingerprint)
         tokenUnits.push(asset.unit)
         if (asset.fingerprint === tickerDetails.data.tickerFingerprints[asset.assetName]) {
-          console.log("asset.assetName",asset.assetName)
           finalTokenAmount = (parseFloat(asset.quantity))
         } else {
           finalTokenAmount = (parseFloat(asset.quantity))
@@ -417,7 +416,7 @@ function TxBuilder() {
             if (myVariable.project_type == 'Treasury Wallet') {
               pType = 'TreasuryWallet'
             }
-            customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-TEst2.json`;
+            customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
             await commitFile(customFilePath, customFileContent)
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             await sendDiscordMessage(updatedVariable);
@@ -450,7 +449,7 @@ function TxBuilder() {
           tokenExchangeRates[wallettokens[i].name] = 0.00
         }
       } catch (error) {
-        console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
+        //console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
         tokenExchangeRates[wallettokens[i].name] = 0.00
       }
     }
