@@ -1,53 +1,66 @@
 import Link from 'next/link'
 import axios from 'axios';
-import { useEffect, SetStateAction, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWallet } from '@meshsdk/react';
+import supabase from "../../lib/supabaseClient";
+import { getProject } from '../../utils/getProject'
 
 function TransactionsList() {
 
   const { connected, wallet } = useWallet();
   const [txs, setTxs] = useState([])
+  const [txsNotRecorded, setTxsNotRecorded] = useState([])
 
   useEffect(() => {
     if (connected) {
-      getDandelion()
+      getDandelion();
     }
   }, [connected]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function getDandelion() {
     const usedAddresses = await wallet.getUsedAddresses();
-    /*await axios.get('https://postgrest-api.mainnet.dandelion.link')
-      .then(response => {
-        console.log(response.data);
-      })
-      .catch(error => {
-        console.log(error);
-      });*/
+    const projectInfo = await getProject(usedAddresses[0]);
+    console.log(projectInfo.project_id)
+
     const data = {
       "data": {
         "addresses" : [usedAddresses[0]]
       }
     };
-    
+
     const headers = {
       'Content-Type': 'application/json'
     };
     
-    await axios.post('https://postgrest-api.mainnet.dandelion.link/rpc/get_tx_history_for_addresses', data, {headers})
-      .then(response => {
-        console.log(response.data);
-        setTxs(response.data.slice(0, 10))
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    const response = await axios.post('https://postgrest-api.mainnet.dandelion.link/rpc/get_tx_history_for_addresses', data, {headers})
+    console.log("dandelion query",response.data);
+    setTxs(response.data.slice(0, 30))
+
+    const notRecorded = await checkDatabase(projectInfo.project_id, response.data.slice(0, 30));
+    console.log("notRecorded", notRecorded)
+    setTxsNotRecorded(notRecorded);
   }
-  
+
+  async function checkDatabase(project_id, newTxs) {
+    const { data: existingTransactions, error: error1 } = await supabase
+      .from("transactions")
+      .select("transaction_id")
+      .eq("project_id", project_id);
+        
+    if (error1) throw error1;
+    console.log("existingTransactions", existingTransactions, newTxs)
+
+    const existingTransactionIds = existingTransactions.map(transaction => transaction.transaction_id);
+    const txsNotRecorded = newTxs.filter(tx => !existingTransactionIds.includes(tx.tx_hash));
+    console.log("Txs not recorded", txsNotRecorded);
+    
+    return txsNotRecorded;
+  }
+
   return (
     <>
-      <h1>List of TX Ids</h1>
-      {txs.map(tx => {
+      <h1>List of TX Ids not recorded in the database</h1>
+      {txsNotRecorded.map(tx => {
         return (
           <div key={tx.tx_hash}>
             <Link href={`transactions/${tx.tx_hash}`}>

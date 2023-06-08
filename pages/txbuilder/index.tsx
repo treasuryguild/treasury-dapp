@@ -12,8 +12,10 @@ import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
+import { getProject } from '../../utils/getProject'
 //import { updateTxDatabase } from '../../utils/updateTxDatabase'
 import { updateTxInfo } from '../../utils/updateTxInfo'
+import { checkAndUpdate } from '../../utils/checkAndUpdate'
 
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -93,6 +95,8 @@ function TxBuilder() {
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
+    console.log(projectInfo)
+    setProjectName(projectInfo.project);
     setMyVariable({
       ...myVariable,
       ...projectInfo,
@@ -140,7 +144,7 @@ function TxBuilder() {
     }
   }
 
-  async function getProject(address: string) {
+  async function getProject2(address: string) {
     let projectname = ''
     let projectWebsite = ''
     let projectId = ''
@@ -159,7 +163,7 @@ function TxBuilder() {
             groupInfo = {}
             router.push('/newwallet')
           } else {
-            setProjectName(project[0].project_name);
+            
             projectname = project[0].project_name;
             projectWebsite = project[0].website;
             projectId = project[0].project_id;
@@ -369,7 +373,7 @@ function TxBuilder() {
           formattedDate: formattedDate,
           tokenRates: tokenRates
         }
-        
+        await checkAndUpdate(txdata, metaData, 'f23r23r');
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
@@ -420,9 +424,9 @@ function TxBuilder() {
             await commitFile(customFilePath, customFileContent)
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             await sendDiscordMessage(updatedVariable);
-            setLoading(false)
             resolve(txid);
             router.push(`/transactions/${txid}`)
+            setLoading(false)
         } catch (error) {
             console.error("Error sending Discord message:", error);
             reject(error);
@@ -462,51 +466,58 @@ function TxBuilder() {
         <div className={styles.heading}>
           <h1>{projectName}</h1>
         </div>
-        {!loading && (<div>Test</div>)}
-        <div className={styles.body}>
-          <div className={styles.form}>
-            <div className={styles.formitem}>
-              <label className={styles.custom}>
-                <input
-                  type="text"
-                  id="xrate"
-                  name="xrate"
-                  autoComplete="off"
-                  required
-                />
-                <span className={styles.placeholder}>Ex. 0.3</span>
-                <span className={styles.tag}>Exchange Rate</span>
-              </label>
+        {loading && (
+          <div className={styles.body}>
+            <div className={styles.form}>
+              <div className={styles.loading}>Executing...</div>
             </div>
-            <div>
-              <SwitchingComponent
-                onClick={toggleVisibility}
-                transactionBuilderProps={transactionBuilderProps}
-                contributionBuilderProps={contributionBuilderProps}
-              />
-            </div>
-          </div>
-          <div className={styles.balances}>
-            <div>
-              <h2>Token Balances</h2>
-            </div>
-            <div>
-              {walletTokens.map((token: Token) => {
-                return (
-                  <p key={token.id}>
-                    {token.name} {token.amount}
-                  </p>
-                );
-              })}
-              {isVisible && (
-                <div className={styles.preContainer}>
-                  <h3>Metadata</h3>
-                  <pre>{contributionsJSON}</pre>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          </div>)}
+        {!loading && (
+           <div className={styles.body}>
+           <div className={styles.form}>
+             <div className={styles.formitem}>
+               <label className={styles.custom}>
+                 <input
+                   type="text"
+                   id="xrate"
+                   name="xrate"
+                   autoComplete="off"
+                   required
+                 />
+                 <span className={styles.placeholder}>Ex. 0.3</span>
+                 <span className={styles.tag}>Exchange Rate</span>
+               </label>
+             </div>
+             <div>
+               <SwitchingComponent
+                 onClick={toggleVisibility}
+                 transactionBuilderProps={transactionBuilderProps}
+                 contributionBuilderProps={contributionBuilderProps}
+               />
+             </div>
+           </div>
+           <div className={styles.balances}>
+             <div>
+               <h2>Token Balances</h2>
+             </div>
+             <div>
+               {walletTokens.map((token: Token) => {
+                 return (
+                   <p key={token.id}>
+                     {token.name} {token.amount}
+                   </p>
+                 );
+               })}
+               {isVisible && (
+                 <div className={styles.preContainer}>
+                   <h3>Metadata</h3>
+                   <pre>{contributionsJSON}</pre>
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
+        )} 
       </div>
     </>
   )

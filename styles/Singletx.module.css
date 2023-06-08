@@ -192,3 +192,17 @@
     font-size: 10px;
     color: var(--text-color);
   }
+
+  @keyframes fade-in-out {
+    0% { opacity: 0; } /* Start with 0% opacity */
+    50% { opacity: 1; } /* Fade in to 100% opacity */
+    100% { opacity: 0; } /* Fade out to 0% opacity */
+  }
+  
+  /* Apply the animation to the text element */
+  .loading {
+    margin: 1.0em;
+    font-size: 2.5em;
+    animation: fade-in-out 2s ease-in-out infinite; /* Use the defined animation */
+    color: aquamarine;
+  }
