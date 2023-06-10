@@ -121,7 +121,13 @@ export default async function handler(req: any, res: any) {
       
             const task_name = contribution.name ? contribution.name.join(' ') : null;
             const task_description = contribution.description ? contribution.description.join(' ') : null;
-            let taskType = getTaskType(task_name, contribution.label.join(','), task_description)
+            let taskType: any = ''
+            if (myVariable.txtype == "Incoming") {
+              taskType = "Incoming"
+            } else {
+              taskType = getTaskType(task_name, contribution.label.join(','), task_description)
+            }
+            
             
             const { data: insertResult, error } = await supabase
               .from('contributions')

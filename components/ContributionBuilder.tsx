@@ -327,6 +327,8 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     metaData = `{
       "mdVersion": ["1.4"],
       "msg": [
+      "${myVariable.project} Transaction",
+      "Website: ${myVariable.project_website}",
       "Recipients: ${walletsArray.length}",${totalTokens}
       "Transaction made by Treasury Guild @${tokenRates['ADA']}",
       "https://www.treasuryguild.io/"
