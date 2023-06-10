@@ -45,7 +45,7 @@ const Nav = () => {
   
       if (verificationResponse.data.status === 'Verification successful') {
         // Set the session manually after successful verification
-        setSession({user: {id: currentAddress}});
+        //setSession({user: {id: currentAddress}});
 
       }
     } else {
