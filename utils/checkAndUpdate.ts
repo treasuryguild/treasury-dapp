@@ -161,7 +161,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
       `
       let finalMetaData: any = {}
       finalMetaData = JSON.parse(metaData)
-      finalMetaData.msg.splice(1, 0, ...formatAmounts(newMyVariable.totalAmounts, newMyVariable.tokenRates));
+      finalMetaData.msg.splice(3, 0, ...formatAmounts(newMyVariable.totalAmounts, newMyVariable.tokenRates));
       return finalMetaData;
   }
   interface Token {
