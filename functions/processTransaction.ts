@@ -121,70 +121,70 @@ const handler: Handler = async (event: any, context: any) => {
         
       
         async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
-          for (const contribution of metaData.contributions) {
-      
-            const task_name = contribution.name ? contribution.name.join(' ') : null;
-            const task_description = contribution.description ? contribution.description.join(' ') : null;
-            let taskType: any = ''
-            if (myVariable.txtype == "Incoming") {
-              taskType = "Incoming"
-            } else {
-              taskType = getTaskType(task_name, contribution.label.join(','), task_description)
-            }
-            
-            
-            const { data: insertResult, error } = await supabase
-              .from('contributions')
-              .insert([
-                {
-                  project_id: myVariable.project_id,
-                  tx_id: tx_id,
-                  task_creator: myVariable.group,
-                  task_name: task_name,
-                  task_label: contribution.label.join(','),
-                  task_description: task_description, 
-                  task_type: taskType,
-                },
-              ])
-              .select(`contribution_id`)
-              .single();
-      
-            if (error) throw error;
-      
-            const data = insertResult as unknown as ContributionInsertResult;
-            const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
-      
-            for (const contributorKey in contribution.contributors) {
-              const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
-              if (walletAddress) {
-                const contributor_id = await updateContributors(walletAddress, contributorKey);
-      
-                const tokens: string[] = [];
-                const amounts: number[] = [];
-      
-                for (const token in contribution.contributors[contributorKey]) {
-                  tokens.push(token);
-                  amounts.push(Number(contribution.contributors[contributorKey][token]));
+            for (const contribution of metaData.contributions) {
+              const task_name = contribution.name ? contribution.name.join(' ') : null;
+              const task_description = contribution.description ? contribution.description.join(' ') : null;
+          
+              let taskType: any = '';
+              const task_label = Array.isArray(contribution.label) ? contribution.label.join(',') : contribution.label;
+              if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
+                taskType = "Incoming";
+              } else {
+                taskType = getTaskType(task_name, task_label, task_description);
+              }
+          
+              const { data: insertResult, error } = await supabase
+                .from('contributions')
+                .insert([
+                  {
+                    project_id: myVariable.project_id,
+                    tx_id: tx_id,
+                    task_creator: myVariable.group,
+                    task_name: task_name,
+                    task_label: task_label,
+                    task_description: task_description,
+                    task_type: taskType,
+                  },
+                ])
+                .select(`contribution_id`)
+                .single();
+          
+              if (error) throw error;
+          
+              const data = insertResult as unknown as ContributionInsertResult;
+              const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
+          
+              for (const contributorKey in contribution.contributors) {
+                const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
+                if (walletAddress) {
+                  const contributor_id = await updateContributors(walletAddress, contributorKey);
+          
+                  const tokens: string[] = [];
+                  const amounts: number[] = [];
+          
+                  for (const token in contribution.contributors[contributorKey]) {
+                    tokens.push(token);
+                    amounts.push(Number(contribution.contributors[contributorKey][token]));
+                  }
+          
+                  const { error: distributionError } = await supabase
+                    .from('distributions')
+                    .insert([
+                      {
+                        tx_id,
+                        contribution_id,
+                        project_id: myVariable.project_id,
+                        contributor_id,
+                        tokens,
+                        amounts,
+                      },
+                    ]);
+          
+                  if (distributionError) throw distributionError;
                 }
-      
-                const { error: distributionError } = await supabase
-                  .from('distributions')
-                  .insert([
-                    {
-                      tx_id,
-                      contribution_id,
-                      project_id: myVariable.project_id,
-                      contributor_id,
-                      tokens,
-                      amounts,
-                    },
-                  ]);
-      
-                if (distributionError) throw distributionError;
               }
             }
-          }
-        }
+          }          
       
         let { tx_id } = await updateTransactions(myVariable, thash);
         await updateContributionsAndDistributions(myVariable, tx_id, metaData);
