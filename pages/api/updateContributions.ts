@@ -1,4 +1,8 @@
 import supabase from "../../lib/supabaseClient";
+import { checkAndUpdate } from '../../utils/checkAndUpdate'
+import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
+import { commitFile } from '../../utils/commitFile'
+
 interface Transaction {
   tx_id: string;
   total_tokens?: string[];
@@ -184,4 +188,11 @@ export default async function handler(req: any, res: any) {
       
         let { tx_id } = await updateTransactions(myVariable, thash);
         await updateContributionsAndDistributions(myVariable, tx_id, metaData);
+        let customFileContent = '';
+        let newMetaData = metaData
+        newMetaData['txid'] = thash
+        customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+        await commitFile(customFilePath, customFileContent)
+        await sendDiscordMessage(myVariable);
+        await checkAndUpdate(myVariable, thash);
 }
