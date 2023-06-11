@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 export async function sendDiscordMessage(myVariable) {
   // Define your data from the client-side
   const header = ''; //incoming or outgoing
