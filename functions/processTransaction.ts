@@ -1,3 +1,4 @@
+import { Handler } from "@netlify/functions";
 import supabase from "../lib/supabaseClient";
 import { sendDiscordMessage } from '../utils/sendDiscordMessage'
 import { commitFile } from '../utils/commitFile'
@@ -13,7 +14,7 @@ interface ContributionInsertResult {
   contribution_id: string;
 }
 
-export async function handler(req: any, res: any) {
+const handler: Handler = async (req: any, res: any) => {
 
   const thash = req.body.record.txhash;
   const myVariable = req.body.record.txinfo;
@@ -204,3 +205,4 @@ export async function handler(req: any, res: any) {
   };
 };
 
+export { handler };
