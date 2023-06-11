@@ -4,7 +4,7 @@ export async function commitFile(filePath, fileContent) {
     const commitMessage = 'Transaction';
   
     try {
-      const response = await fetch('/api/commit', {
+      const response = await fetch('https://lambent-kelpie-e8b15c.netlify.app/api/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath, fileContent, commitMessage }),
