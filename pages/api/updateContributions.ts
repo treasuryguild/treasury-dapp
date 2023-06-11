@@ -192,7 +192,7 @@ export default async function handler(req: any, res: any) {
         let newMetaData = metaData
         newMetaData['txid'] = thash
         customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
-        await commitFile(customFilePath, customFileContent)
-        await sendDiscordMessage(myVariable);
+        //await commitFile(customFilePath, customFileContent)
+        //await sendDiscordMessage(myVariable);
         await checkAndUpdate(myVariable, thash);
 }

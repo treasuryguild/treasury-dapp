@@ -363,6 +363,7 @@ function TxBuilder() {
 
   async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
     let customFilePath = '';
+    let customFileContent = '';
     const txid: string = await buildTx(assetsPerAddress, adaPerAddress, metaData);
     setDoneTxHash(txid)
     // Use a promise to wait for state update
@@ -378,12 +379,16 @@ function TxBuilder() {
             setLoading(true)
             let newMetaData = metaData
             newMetaData['txid'] = txid
+            customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
             let pType = ''
             if (myVariable.project_type == 'Treasury Wallet') {
               pType = 'TreasuryWallet'
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
+            await commitFile(customFilePath, customFileContent)
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
+            //await checkAndUpdate(txdata, txid);
+            await sendDiscordMessage(updatedVariable);
             resolve(txid);
             router.push(`/transactions/${txid}`)
             setLoading(false)

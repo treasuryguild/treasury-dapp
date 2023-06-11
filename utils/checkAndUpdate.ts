@@ -75,6 +75,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     }
   async function getBalance(wallet: any) {
     let customFilePath = '';
+    let customFileContent = '';
     let pType = ''
             if (myVariable.project_type == 'Treasury Wallet') {
               pType = 'TreasuryWallet'
@@ -98,8 +99,11 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     let key = keys[0];
     let lastSix = key.slice(-6);
     let metadata = await getMetaData()
+    customFileContent = `${JSON.stringify(metadata, null, 2)}`;
     customFilePath = `Transactions/${(newMyVariable.group).replace(/\s/g, '-')}/${pType}/${(newMyVariable.project).replace(/\s/g, '-')}/Incoming/${new Date().getTime().toString()}-${lastSix}.json`;
+    await commitFile(customFilePath, customFileContent)
     await updateTransactionInfo(newMyVariable, metadata, thash, customFilePath)
+    await sendDiscordMessage(newMyVariable);
     console.log("metadata",metadata);
   }
 
