@@ -1,18 +1,25 @@
-import supabase from "../../lib/supabaseClient";
+import { Handler } from "@netlify/functions";
+import supabase from "../lib/supabaseClient";
+import { sendDiscordMessage } from '../utils/sendDiscordMessage'
+import { commitFile } from '../utils/commitFile'
+import { checkAndUpdate } from '../utils/checkAndUpdate'
+
 interface Transaction {
   tx_id: string;
   total_tokens?: string[];
   total_amounts?: number[];
 }
+
 interface ContributionInsertResult {
   contribution_id: string;
 }
 
-export default async function handler(req: any, res: any) {
-        const thash = req.body.record.txhash;
-        const myVariable = req.body.record.txinfo;
-        const customFilePath = req.body.record.txfilepath;
-        const metaData = req.body.record.metadata;
+const handler: Handler = async (req: any, res: any) => {
+
+  const thash = req.body.record.txhash;
+  const myVariable = req.body.record.txinfo;
+  const customFilePath = req.body.record.txfilepath;
+  const metaData = req.body.record.metadata;
 
         function getTaskType(name: any, label: any, description: any) {
           var tasktypes: any = {
@@ -184,4 +191,18 @@ export default async function handler(req: any, res: any) {
       
         let { tx_id } = await updateTransactions(myVariable, thash);
         await updateContributionsAndDistributions(myVariable, tx_id, metaData);
-}
+        let customFileContent = ''
+        let newMetaData = metaData
+        newMetaData['txid'] = thash
+        customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+        await commitFile(customFilePath, customFileContent)
+        await sendDiscordMessage(myVariable);
+        await checkAndUpdate(myVariable, thash);
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: "Operation completed successfully." }),
+  };
+};
+
+export { handler };

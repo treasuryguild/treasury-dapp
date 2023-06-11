@@ -34,7 +34,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
         
       console.log("checking", myVariable, thash);  // Removed undefined variables
   
-      if (data) {
+      if (data && myVariable.txtype != "Incoming") {
         const matchingWallets: DataType = Object.keys(myVariable.txamounts)
           .map((key) => data.find((d) => d.wallet === key))
           .filter((wallet): wallet is { wallet: string } => Boolean(wallet));
@@ -101,9 +101,9 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     let metadata = await getMetaData()
     customFileContent = `${JSON.stringify(metadata, null, 2)}`;
     customFilePath = `Transactions/${(newMyVariable.group).replace(/\s/g, '-')}/${pType}/${(newMyVariable.project).replace(/\s/g, '-')}/Incoming/${new Date().getTime().toString()}-${lastSix}.json`;
-    await commitFile(customFilePath, customFileContent)
+    //await commitFile(customFilePath, customFileContent)
     await updateTransactionInfo(newMyVariable, metadata, thash, customFilePath)
-    await sendDiscordMessage(newMyVariable);
+    //await sendDiscordMessage(newMyVariable);
     console.log("metadata",metadata);
   }
 
