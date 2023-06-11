@@ -13,12 +13,9 @@ interface ContributionInsertResult {
   contribution_id: string;
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(event: any, context: any) {
 
-  const thash = req.body.record.txhash;
-  const myVariable = req.body.record.txinfo;
-  const customFilePath = req.body.record.txfilepath;
-  const metaData = req.body.record.metadata;
+    const { thash, myVariable, customFilePath, metaData } = JSON.parse(event.body)
 
         function getTaskType(name: any, label: any, description: any) {
           var tasktypes: any = {
