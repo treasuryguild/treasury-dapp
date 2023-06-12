@@ -27,8 +27,7 @@ type Token = {
 let txdata = {}
 
 function TxBuilder() {
-  const tickerAPI = 'http://localhost:3000/api/tickers'
-  //const tickerAPI = 'https://treasury-dapp.netlify.app/api/tickers'
+  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` //process.env.NEXT_PUBLIC_LIVE_TICKER_API
   let project: any[] = [];
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);

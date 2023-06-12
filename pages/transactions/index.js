@@ -13,10 +13,41 @@ function TransactionsList() {
 
   useEffect(() => {
     if (connected) {
-      getDandelion();
+      //getDandelion();;
+      koiosFetch()
     }
   }, [connected]);
 
+  async function getWalletInfo() {}
+
+  async function koiosFetch() {
+    const usedAddresses = await wallet.getUsedAddresses();
+    const projectInfo = await getProject(usedAddresses[0]);
+    console.log(projectInfo.project_id)
+    const url = "https://api.koios.rest/api/v0/address_txs";
+    const data = {
+      _addresses: [
+        usedAddresses[0]
+      ]
+    };
+    
+    await axios.post(url, data, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(async function (response) {
+      console.log(response.data);
+      setTxs(response.data.slice(0, 30))
+      const notRecorded = await checkDatabase(projectInfo.project_id, response.data.slice(0, 30));
+      console.log("notRecorded", notRecorded)
+      setTxsNotRecorded(notRecorded);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+  }
   async function getDandelion() {
     const usedAddresses = await wallet.getUsedAddresses();
     const projectInfo = await getProject(usedAddresses[0]);
