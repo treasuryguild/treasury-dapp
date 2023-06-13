@@ -353,7 +353,7 @@ function TxBuilder() {
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
-        window.location.reload();
+        //window.location.reload();
       }
     txHash = await wallet.submitTx(signedTx);
     txdata = {
