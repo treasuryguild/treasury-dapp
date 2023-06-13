@@ -12,6 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const webhookUrls: { [key: string]: string | undefined } = {
     'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
     '7zxn7j': process.env.TEST_DISCORD_WEBHOOK_URL,
+    '3ynval': process.env.DISCORD_WEBHOOK_SNET,
     // other wallet addresses
   };
   
