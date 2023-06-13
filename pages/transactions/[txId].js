@@ -1,143 +1,145 @@
-import { useRouter } from 'next/router'
-import { useEffect, SetStateAction, useState } from 'react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
-import axios from 'axios'
-
+import { getTxInfo } from '../../utils/getTxInfo';
+import axios from 'axios';
+import CreatableSelect from 'react-select/creatable';
 
 function Txid() {
-  const router = useRouter()
-  const { txId } = router.query
+  const router = useRouter();
+  const { txId } = router.query;
   const { connected, wallet } = useWallet();
+
+  const [addressAssets, setAddressAssets] = useState({});
+  const [labelOptions, setLabelOptions] = useState([
+    { value: 'Operations', label: 'Operations' },
+    { value: 'Fixed Costs', label: 'Fixed Costs' },
+    { value: 'Content Creation', label: 'Content Creation' },
+  ]);
 
   useEffect(() => {
     if (connected) {
-      console.log("pid",txId)
-      checkTransactionType()
+      checkTransactionType();
     }
   }, [connected]);
 
   if (router.isFallback) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
-  async function transactionType(usedAddresses, txData, assets) {
-    const inputs = txData.inputs;
-    const outputs = txData.outputs;
-  
-    let totalIncoming = 0;
-    let incomingAssetList = [];
-    let outgoingAddressesInfo = [];
-    let incomingAddressesInfo = [];  // add this line to store information about incoming addresses
-  
-    // Determine if it's an outgoing transaction
-    let isOutgoing = false;
-    for (const input of inputs) {
-      if (usedAddresses.includes(input.payment_addr.bech32)) {
-        isOutgoing = true;
-        break;
-      }
-    }
-  
-    if (isOutgoing) {
-      // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
-      for (const output of outputs) {
-        if (!usedAddresses.includes(output.payment_addr.bech32)) {
-          const assetList = output.asset_list.map(outgoingAsset => {
-            for (let asset of assets) {
-              if (asset.fingerprint === outgoingAsset.fingerprint) {
-                outgoingAsset.assetName = asset.assetName;
-                outgoingAsset.unit = asset.unit;
-                break;
-              }
-            }
-            return outgoingAsset;
-          });
-  
-          outgoingAddressesInfo.push({
-            address: output.payment_addr.bech32,
-            value: output.value,
-            assetList: assetList,
-          });
-        }
-      }
-      console.log('Outgoing transactions info:', outgoingAddressesInfo);
-      return 'Outgoing transaction';
-    } else {
-      // If it's an incoming transaction, calculate total incoming value, gather asset lists, and capture the sender's addresses
-      for (const input of inputs) {
-        if (!usedAddresses.includes(input.payment_addr.bech32)) {
-          incomingAddressesInfo.push(input.payment_addr.bech32);
-        }
-      }
-  
-      for (const output of outputs) {
-        if (usedAddresses.includes(output.payment_addr.bech32)) {
-          totalIncoming += parseInt(output.value);
-          const assetList = output.asset_list.map(incomingAsset => {
-            for (let asset of assets) {
-              if (asset.fingerprint === incomingAsset.fingerprint) {
-                incomingAsset.assetName = asset.assetName;
-                incomingAsset.unit = asset.unit;
-                break;
-              }
-            }
-            return incomingAsset;
-          });
-  
-          incomingAssetList = [...incomingAssetList, ...assetList];
-        }
-      }
-      console.log('Total incoming value:', totalIncoming);
-      console.log('Incoming asset list:', incomingAssetList);
-      console.log('Incoming addresses:', incomingAddressesInfo);  // add this line to log incoming addresses
-      return 'Incoming transaction';
-    }
-  }
-  
-  
+  const handleInputChange = (address, name, value) => {
+    setAddressAssets({
+      ...addressAssets,
+      [address]: {
+        ...addressAssets[address],
+        [name]: value,
+      },
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(addressAssets);
+  };
+
   async function checkTransactionType() {
     if (connected) {
       const usedAddresses = await wallet.getUsedAddresses();
       const assets = await wallet.getAssets();
       const txData = await koiosFetch();
-      const type = await transactionType(usedAddresses, txData[0], assets);
-      console.log(type, assets);
-      console.log(txData[0]);
+      const addressAssetsData = await getTxInfo(usedAddresses, txData[0], assets);
+      setAddressAssets(
+        Object.fromEntries(
+          Object.entries(addressAssetsData).map(([address, tokens]) => [
+            address,
+            {
+              tokens,
+              description: '',
+              selectedLabels: [],
+              userDefinedLabels: [],
+            },
+          ])
+        )
+      );
     }
   }
+
   async function koiosFetch() {
-    let txData = []
     const url = "https://api.koios.rest/api/v0/tx_info";
     const data = {
-      _tx_hashes: [
-        txId
-      ]
+      _tx_hashes: [txId],
     };
-    
-    await axios.post(url, data, {
+
+    const response = await axios.post(url, data, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(async function (response) {
-      console.log(response.data);
-      txData = response.data
-    })
-    .catch(function (error) {
-      console.log(error);
+        'Content-Type': 'application/json',
+      },
     });
-    return txData
+
+    return response.data;
   }
 
   return (
-    <>
-      <h2>
-        Test
-      </h2>
-      <p>{txId}</p>
-    </>
-  )
+    <form onSubmit={handleSubmit}>
+      {Object.entries(addressAssets).map(([address, data], index) => (
+        <div key={address}>
+          <h3>Address: ...{address.slice(-6)}</h3>
+          {data.tokens.map((token, tokenIndex) => (
+            <p key={tokenIndex}>
+              {token.name}: {token.amount}
+            </p>
+          ))}
+          <CreatableSelect
+            isMulti
+            options={[...labelOptions]}
+            value={data.selectedLabels}
+            onChange={(selected) => {
+              handleInputChange(address, 'selectedLabels', selected || []);
+            }}
+            styles={{
+              control: (baseStyles, state) => ({
+                ...baseStyles,
+                borderColor: state.isFocused ? 'grey' : 'white',
+                backgroundColor: 'black',
+                color: 'white',
+              }),
+              option: (baseStyles, { isFocused, isSelected }) => ({
+                ...baseStyles,
+                backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
+                color: 'white',
+              }),
+              multiValue: (baseStyles) => ({
+                ...baseStyles,
+                backgroundColor: 'darkblue',
+              }),
+              multiValueLabel: (baseStyles) => ({
+                ...baseStyles,
+                color: 'white',
+              }),
+              input: (baseStyles) => ({
+                ...baseStyles,
+                color: 'white',
+              }),
+              menu: (baseStyles) => ({
+                ...baseStyles,
+                backgroundColor: 'black',
+              }),
+            }}
+          />
+          <label>
+            Description:
+            <textarea
+              name="description"
+              value={data.description}
+              onChange={(e) => handleInputChange(address, 'description', e.target.value)}
+            />
+          </label>
+        </div>
+      ))}
+      <button type="submit">Update</button>
+    </form>
+  );
 }
 
-export default Txid
+export default Txid;

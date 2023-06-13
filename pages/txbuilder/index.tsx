@@ -343,6 +343,7 @@ function TxBuilder() {
         //window.location.reload();
       }
       let signedTx = ""
+      console.log("txdata", txdata)
       try {
         signedTx = await wallet.signTx(unsignedTx);
         // continue with the signed transaction
