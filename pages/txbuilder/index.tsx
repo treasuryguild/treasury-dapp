@@ -94,7 +94,10 @@ function TxBuilder() {
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
-    console.log(projectInfo)
+    console.log("projectInfo",projectInfo)
+    if (Object.keys(projectInfo).length === 0) {
+      router.push('/newwallet')
+    }
     setProjectName(projectInfo.project);
     setMyVariable({
       ...myVariable,

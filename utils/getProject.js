@@ -18,9 +18,7 @@ export async function getProject(address) {
           if (project.length == 0) {
             projectname = ''
             groupInfo = {}
-            router.push('/newwallet')
           } else {
-            
             projectname = project[0].project_name;
             projectWebsite = project[0].website;
             projectId = project[0].project_id;
