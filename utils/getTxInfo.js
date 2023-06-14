@@ -4,6 +4,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
 
   let addressAssets = {};
   let idCounter = 1;
+  let transactionType = "";
 
   // Determine if it's an outgoing transaction
   let isOutgoing = false;
@@ -15,6 +16,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
   }
 
   if (isOutgoing) {
+    transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
     for (const output of outputs) {
       if (!usedAddresses.includes(output.payment_addr.bech32)) {
@@ -79,6 +81,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     }
     console.log('Outgoing transactions info:', addressAssets);
   } else {
+    transactionType = "Incoming";
     // If it's an incoming transaction, calculate total incoming value and gather asset lists
     for (const output of outputs) {
       if (usedAddresses.includes(output.payment_addr.bech32)) {
@@ -151,5 +154,5 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     });
   }
 
-  return addressAssets;
+  return { addressAssets, transactionType };
 }
