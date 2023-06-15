@@ -172,7 +172,7 @@ function Txid() {
         let key = keys[i];
         if (txdata.txtype == "Incoming") {
           contributor[lastSix] = txdata.txamounts[key];
-          metaDescription = `Incoming rewards from ${projectInfo2.project}`
+          metaDescription = `Incoming rewards from ${projectInfo2.project?projectInfo2.project:lastSix}`
           setDescription(metaDescription)
           label = txdata.txtype
         } else {
@@ -319,6 +319,7 @@ function processMetadata(metadata: Metadata): string {
   }  
   
   async function assignTokens() {
+    setDescription('')
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
