@@ -6,16 +6,80 @@ export async function getTxInfo(usedAddresses, txData, assets) {
   let idCounter = 1;
   let transactionType = "";
 
-  // Determine if it's an outgoing transaction
   let isOutgoing = false;
+  let isStaking = false;
+
+  let totalInputValue = 0;
+  let totalOutputValue = 0;
+
+  let firstInputAddress = null;
+
   for (const input of inputs) {
     if (usedAddresses.includes(input.payment_addr.bech32)) {
-      isOutgoing = true;
+      totalInputValue += parseFloat(input.value);
+      if (!firstInputAddress) {
+        firstInputAddress = input.payment_addr.bech32;
+      }
+        if (inputs.length === 1 && outputs.length === 1 && inputs[0].payment_addr.bech32 === outputs[0].payment_addr.bech32
+          || txData.withdrawals && txData.withdrawals.length > 0) {
+          isStaking = true;
+        }
+      if (!isStaking) {
+        isOutgoing = true;
+      }
       break;
     }
   }
 
-  if (isOutgoing) {
+  if (isStaking) {
+    let adaAmount = 0;
+
+    // If there are withdrawals, use the withdrawal amount for ADA
+    if (txData.withdrawals && txData.withdrawals.length > 0) {
+      transactionType = "Rewards Withdrawal";
+      adaAmount = parseFloat(txData.withdrawals[0].amount);
+      if (!addressAssets[firstInputAddress]) {
+        addressAssets[firstInputAddress] = [];
+      }
+      addressAssets[firstInputAddress].push({
+        id: idCounter.toString(),
+        name: 'ADA',
+        amount: adaAmount,
+        unit: 'lovelace',
+        fingerprint: '',
+        decimals: 6
+      });
+      idCounter++;
+    } else {
+      transactionType = "Staking";
+      for (const output of outputs) {
+        if (usedAddresses.includes(output.payment_addr.bech32)) {
+          totalOutputValue += parseFloat(output.value);
+          const difference = totalInputValue - totalOutputValue - parseFloat(txData.fee);
+
+          // If difference is not zero, it means ADA has been gained or lost
+          if (difference !== 0) {
+            adaAmount = difference;
+          }
+
+          if (!addressAssets[output.payment_addr.bech32]) {
+            addressAssets[output.payment_addr.bech32] = [];
+          }
+          addressAssets[output.payment_addr.bech32].push({
+            id: idCounter.toString(),
+            name: 'ADA',
+            amount: adaAmount,
+            unit: 'lovelace',
+            fingerprint: '',
+            decimals: 6
+          });
+          idCounter++;
+        }
+      }
+    }
+
+    console.log('Staking transaction info:', addressAssets);
+  } else if (isOutgoing) {
     transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
     for (const output of outputs) {

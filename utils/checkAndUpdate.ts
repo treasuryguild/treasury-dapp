@@ -32,7 +32,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
         
       console.log("checking", myVariable, thash);  // Removed undefined variables
   
-      if (data && myVariable.txtype != "Incoming") {
+      if (data && myVariable.txtype != ("Incoming" || "Staking" || "Rewards Withdrawal")) {
         const matchingWallets: DataType = Object.keys(myVariable.txamounts)
           .map((key) => data.find((d) => d.wallet === key))
           .filter((wallet): wallet is { wallet: string } => Boolean(wallet));
@@ -145,7 +145,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
       ],
       "contributions": [
         {
-          "taskCreator": "${myVariable.project}",
+          "taskCreator": "${newMyVariable.project}",
           "label": "Incoming",
           "description": [
             "Incoming rewards from ${myVariable.project}"

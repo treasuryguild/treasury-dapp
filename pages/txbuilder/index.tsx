@@ -319,7 +319,7 @@ function TxBuilder() {
         const day = String(originalDate.getUTCDate()).padStart(2, '0');
         const hours = String(originalDate.getUTCHours()).padStart(2, '0');
         const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}: UTC`;
+        const formattedDate = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
         const txdescription = processMetadata(metaData)
         totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
@@ -396,7 +396,7 @@ function TxBuilder() {
             router.push(`/transactions/${txid}`)
             setLoading(false)
         } catch (error) {
-            console.error("Error sending Discord message:", error);
+            console.error("Error updating TxInfo message:", error);
             reject(error);
         }
     });

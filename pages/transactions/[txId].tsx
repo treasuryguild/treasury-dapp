@@ -5,6 +5,7 @@ import { getTxInfo } from '../../utils/getTxInfo';
 import { getProject } from '../../utils/getProject'
 import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
+import { updateTxInfo } from '../../utils/updateTxInfo'
 
 interface Token {
   id: string;
@@ -34,10 +35,10 @@ interface AddressAsset {
 let txdata: any = {};
 let txtype: any = '';
 let txHash: any = '';
-let txdescription: any = '';
 let fee: any = '';
 let wallet2: any = ''
 let projectInfo2: any;
+let metadata: any = {};
 
 function Txid() {
   const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
@@ -46,6 +47,7 @@ function Txid() {
   const { connected, wallet } = useWallet();
   const [addressAssets, setAddressAssets] = useState<Record<string, AddressAsset>>({});
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
+  const [description, setDescription] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
   const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
@@ -53,6 +55,7 @@ function Txid() {
     { value: 'Operations', label: 'Operations' },
     { value: 'Fixed Costs', label: 'Fixed Costs' },
     { value: 'Content Creation', label: 'Content Creation' },
+    { value: 'Staking', label: 'Staking' },
   ]);
 
   useEffect(() => {
@@ -80,14 +83,50 @@ function Txid() {
     });
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
+    let customFilePath = '';
+    let customFileContent = '';
+    let folder = ''
+    let lastSix = wallet2.slice(-6);
+    let filename = ''
     e.preventDefault();
-    console.log(addressAssets);
+    if (txdata.txtype != "Outgoing") {
+      filename = lastSix
+      folder = (txdata.txtype).replace(/\s/g, '-')
+      for (let i in addressAssets) {
+        metadata.contributions[0].label = [`${txdata.txtype}`]
+        metadata.contributions[0].description = [`${addressAssets[i].description?addressAssets[i].description:description}`]
+      }
+    } else {
+      filename = `${(txdata.group).replace(/\s/g, '-')}-bulkTransactions`
+      folder = "bulkTransactions"
+      metadata.contributions[0].label = []
+      metadata.contributions[0].description = []
+      for (let i in addressAssets) {
+        metadata.contributions[0].description.push(addressAssets[i].description)
+        for (let j in addressAssets[i].selectedLabels) {
+          metadata.contributions[0].label.push(addressAssets[i].selectedLabels[j].value)
+        }
+      }
+    }
+    
+    let newMetaData = metadata
+    newMetaData['txid'] = txId
+    customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+    let pType = ''
+    if (txdata.project_type == 'Treasury Wallet') {
+      pType = 'TreasuryWallet'
+    }
+    
+    customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
+    await updateTxInfo(txdata, newMetaData, txId, customFilePath)
+    console.log("Final values",txdata, newMetaData, customFilePath);
+    router.push(`/transactions/`)
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
     const formattedBalances = walletBalanceAfterTx.map((item: Token) => {
-        return `${item.amount} ${item.name}`;
+        return `${parseFloat(item.amount).toFixed(2)} ${item.name}`;
     });
   
     return formattedBalances.join(' ');
@@ -124,13 +163,35 @@ function Txid() {
 }
 
   async function getMetaData() {
-    let keys = Object.keys(txdata.txamounts); // Get all keys from the object
-    let key = keys[0];
+    let keys = Object.keys(txdata.txamounts); 
     let lastSix = wallet2.slice(-6);
     let contributor: any = {}
-    contributor[lastSix] = txdata.totalAmounts
-    let textContributor = JSON.stringify(contributor)
+    let metaDescription = '';
+    let label = ''
+    for (let i = 0; i < keys.length; i++) {
+        let key = keys[i];
+        if (txdata.txtype == "Incoming") {
+          contributor[lastSix] = txdata.txamounts[key];
+          metaDescription = `Incoming rewards from ${projectInfo2.project}`
+          setDescription(metaDescription)
+          label = txdata.txtype
+        } else {
+          contributor[key.slice(-6)] = txdata.txamounts[key];
+          metaDescription = `Rewards to ${keys.length} contributors`
+          setDescription(metaDescription)
+          if (txdata.txtype == "Staking") {
+            label = txdata.txtype
+            metaDescription = 'Staking to Pool'
+            setDescription(metaDescription)
+          } else if (txdata.txtype == "Rewards Withdrawal") {
+            label = txdata.txtype
+            metaDescription = 'Rewards Withdrawal'
+            setDescription(metaDescription)
+          }
+        }
+    }
 
+    let textContributor = JSON.stringify(contributor)
     console.log("View msg amounts",lastSix, formatAmounts(txdata.totalAmounts, txdata.tokenRates), contributor)
     let metaData = `{
       "mdVersion": ["1.4"],
@@ -145,9 +206,9 @@ function Txid() {
       "contributions": [
         {
           "taskCreator": "${txdata.project}",
-          "label": ["Incoming"],
+          "label": ["${label}"],
           "description": [
-            "Incoming rewards from ${projectInfo2.project}"
+            "${metaDescription}"
           ],
           "contributors": ${textContributor}
         }
@@ -224,7 +285,7 @@ function processMetadata(metadata: Metadata): string {
       const day = String(originalDate.getUTCDate()).padStart(2, '0');
       const hours = String(originalDate.getUTCHours()).padStart(2, '0');
       const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
-      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}: UTC`;
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
       console.log("txData", txData )
       let totalAmounts: any = {};
           for (let i in txamounts) {
@@ -306,7 +367,7 @@ function processMetadata(metadata: Metadata): string {
       await getEchangeRate(tokens);
     }
     const balanceString = formatWalletBalance(tokens)
-    let metadata = await getMetaData()
+    metadata = await getMetaData()
     const txdescription = processMetadata(metadata)
     txdata = {...txdata,
       walletTokens: tokens,
@@ -407,48 +468,53 @@ function processMetadata(metadata: Metadata): string {
               {token.name}: {token.amount}
             </p>
           ))}
+          {txdata.txtype == "Incoming" && (<div>Incoming</div>)}
+          {txdata.txtype == "Staking" && (<div>Staking</div>)}
+          {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
+          {txdata.txtype == "Outgoing" && (
           <CreatableSelect
-            isMulti
-            options={[...labelOptions]}
-            value={data.selectedLabels}
-            onChange={(selected) => {
-              handleInputChange(address, 'selectedLabels', selected || []);
-            }}
-            styles={{
-              control: (baseStyles, state) => ({
-                ...baseStyles,
-                borderColor: state.isFocused ? 'grey' : 'white',
-                backgroundColor: 'black',
-                color: 'white',
-              }),
-              option: (baseStyles, { isFocused, isSelected }) => ({
-                ...baseStyles,
-                backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
-                color: 'white',
-              }),
-              multiValue: (baseStyles) => ({
-                ...baseStyles,
-                backgroundColor: 'darkblue',
-              }),
-              multiValueLabel: (baseStyles) => ({
-                ...baseStyles,
-                color: 'white',
-              }),
-              input: (baseStyles) => ({
-                ...baseStyles,
-                color: 'white',
-              }),
-              menu: (baseStyles) => ({
-                ...baseStyles,
-                backgroundColor: 'black',
-              }),
-            }}
-          />
+          isMulti
+          options={[...labelOptions]}
+          value={data.selectedLabels}
+          onChange={(selected) => {
+            handleInputChange(address, 'selectedLabels', selected || []);
+          }}
+          styles={{
+            control: (baseStyles, state) => ({
+              ...baseStyles,
+              borderColor: state.isFocused ? 'grey' : 'white',
+              backgroundColor: 'black',
+              color: 'white',
+            }),
+            option: (baseStyles, { isFocused, isSelected }) => ({
+              ...baseStyles,
+              backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
+              color: 'white',
+            }),
+            multiValue: (baseStyles) => ({
+              ...baseStyles,
+              backgroundColor: 'darkblue',
+            }),
+            multiValueLabel: (baseStyles) => ({
+              ...baseStyles,
+              color: 'white',
+            }),
+            input: (baseStyles) => ({
+              ...baseStyles,
+              color: 'white',
+            }),
+            menu: (baseStyles) => ({
+              ...baseStyles,
+              backgroundColor: 'black',
+            }),
+          }}
+        />
+          )}
           <label>
             Description:
             <textarea
               name="description"
-              value={data.description}
+              defaultValue={description}
               onChange={(e) => handleInputChange(address, 'description', e.target.value)}
             />
           </label>
