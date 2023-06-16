@@ -388,9 +388,9 @@ function TxBuilder() {
               pType = 'TreasuryWallet'
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
-            //await commitFile(customFilePath, customFileContent)
+            await commitFile(customFilePath, customFileContent)
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
-            //await sendDiscordMessage(updatedVariable);
+            await sendDiscordMessage(updatedVariable);
             //await checkAndUpdate(txdata, txid);
             resolve(txid);
             router.push(`/transactions/${txid}`)

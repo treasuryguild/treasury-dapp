@@ -1,6 +1,8 @@
 import { supabase } from "../lib/supabaseClient";
 import axios from 'axios'
 import { getProject } from '../utils/getProject'
+import { commitFile } from '../utils/commitFile'
+import { sendDiscordMessage } from '../utils/sendDiscordMessage'
 
 interface Transaction {
   id: string;
@@ -99,7 +101,9 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     let metadata = await getMetaData()
     customFileContent = `${JSON.stringify(metadata, null, 2)}`;
     customFilePath = `Transactions/${(newMyVariable.group).replace(/\s/g, '-')}/${pType}/${(newMyVariable.project).replace(/\s/g, '-')}/Incoming/${new Date().getTime().toString()}-${lastSix}.json`;
+    await commitFile(customFilePath, customFileContent)
     await updateTransactionInfo(newMyVariable, metadata, thash, customFilePath)
+    await sendDiscordMessage(newMyVariable);
     console.log("metadata",metadata);
   }
 
