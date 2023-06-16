@@ -6,6 +6,8 @@ import { getProject } from '../../utils/getProject'
 import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
 import { updateTxInfo } from '../../utils/updateTxInfo'
+import { commitFile } from '../../utils/commitFile'
+import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 
 interface Token {
   id: string;
@@ -119,7 +121,9 @@ function Txid() {
     }
     
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
+    await commitFile(customFilePath, customFileContent)
     await updateTxInfo(txdata, newMetaData, txId, customFilePath)
+    await sendDiscordMessage(txdata);
     console.log("Final values",txdata, newMetaData, customFilePath);
     router.push(`/transactions/`)
   };

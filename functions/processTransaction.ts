@@ -1,7 +1,5 @@
 import { Handler } from "@netlify/functions";
 import supabase from "../lib/supabaseClient";
-import { sendDiscordMessage } from '../utils/sendDiscordMessage'
-import { commitFile } from '../utils/commitFile'
 import { checkAndUpdate } from '../utils/checkAndUpdate'
 
 interface Transaction {
@@ -193,9 +191,6 @@ const handler: Handler = async (event: any, context: any) => {
         customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
         await checkAndUpdate(myVariable, thash);
         await updateContributionsAndDistributions(myVariable, tx_id, metaData);
-        //await commitFile(customFilePath, customFileContent)
-        //await sendDiscordMessage(myVariable);
-        
 
   return {
     statusCode: 200,
