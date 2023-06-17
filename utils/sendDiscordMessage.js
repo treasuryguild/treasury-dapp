@@ -54,7 +54,7 @@ export async function sendDiscordMessage(myVariable) {
   ];
 
   try {
-    const response = await fetch('https://lambent-kelpie-e8b15c.netlify.app/api/discord', {
+    const response = await fetch('/api/discord', { //https://lambent-kelpie-e8b15c.netlify.app/api/discord
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
