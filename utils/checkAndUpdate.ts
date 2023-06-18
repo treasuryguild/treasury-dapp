@@ -184,7 +184,7 @@ function updateWalletBalanceAfterTx(
 
       if (tokenIndex !== -1) {
           // If the token is found, add the value from totalAmounts to the amount of the token
-          let updatedAmount = parseFloat(walletBalanceAfterTx[tokenIndex].amount) + totalAmounts[key];
+          let updatedAmount = parseFloat(walletBalanceAfterTx[tokenIndex].amount) // + totalAmounts[key]; //testing speed problem
           // If the token is ADA, format it with 6 decimal places
           walletBalanceAfterTx[tokenIndex].amount = key === 'ADA' ? updatedAmount.toFixed(6) : updatedAmount.toString();
       } else {
