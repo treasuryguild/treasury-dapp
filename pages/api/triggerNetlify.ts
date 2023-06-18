@@ -1,22 +1,25 @@
+import axios from 'axios';
+
 export default async function handler(req: any, res: any) {
   const thash = req.body.record.txhash;
   const myVariable = req.body.record.txinfo;
   const customFilePath = req.body.record.txfilepath;
   const metaData = req.body.record.metadata;
-  const response = await fetch('https://lambent-kelpie-e8b15c.netlify.app/.netlify/functions/processTransaction', {
-    method: 'POST',
-    body: JSON.stringify({
+  
+  try {
+    const response = await axios.post('https://lambent-kelpie-e8b15c.netlify.app/.netlify/functions/processTransaction', {
       thash,
       myVariable,
       customFilePath,
       metaData
-    }),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
 
-  const data = await response.json()
-
-  res.status(200).json(data)
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(500).send(error.message);
+  }
 }
