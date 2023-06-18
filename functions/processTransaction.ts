@@ -190,11 +190,11 @@ const handler: Handler = async (event: any, context: any) => {
         let customFileContent = ''
         let newMetaData = metaData
         newMetaData['txid'] = thash
-        customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
-        //await commitFile(customFilePath, customFileContent)
-        //await checkAndUpdate(myVariable, thash);
+        customFileContent = `${JSON.stringify(newMetaData, null, 2)}`; 
+        await checkAndUpdate(myVariable, thash);
         await updateContributionsAndDistributions(myVariable, tx_id, metaData);
-        //await sendDiscordMessage(myVariable);
+        await commitFile(customFilePath, customFileContent)
+        await sendDiscordMessage(myVariable);
 
   return {
     statusCode: 200,

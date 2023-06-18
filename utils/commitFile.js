@@ -1,21 +1,19 @@
-//import fetch from 'node-fetch';
+//https://lambent-kelpie-e8b15c.netlify.app/api/commit
+import axios from 'axios';
 
 export async function commitFile(filePath, fileContent) {
     const commitMessage = 'Transaction';
   
     try {
-      const response = await fetch('/api/commit', { //https://lambent-kelpie-e8b15c.netlify.app/api/commit
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath, fileContent, commitMessage }),
+      const response = await axios.post('https://lambent-kelpie-e8b15c.netlify.app/api/commit', { filePath, fileContent, commitMessage }, { 
+        headers: { 'Content-Type': 'application/json' }
       });
   
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Error committing file');
       }
   
-      const result = await response.json();
-      console.log(result.message);
+      console.log(response.data.message);
     } catch (error) {
       console.error('Error committing file to GitHub:', error);
     }

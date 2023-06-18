@@ -122,8 +122,8 @@ function Txid() {
     
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
     await updateTxInfo(txdata, newMetaData, txId, customFilePath)
-    await commitFile(customFilePath, customFileContent)
-    await sendDiscordMessage(txdata);
+    //await commitFile(customFilePath, customFileContent)
+    //await sendDiscordMessage(txdata);
     console.log("Final values",txdata, newMetaData, customFilePath);
     router.push(`/transactions/`)
   };

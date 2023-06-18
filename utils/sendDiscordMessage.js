@@ -1,4 +1,5 @@
-//import fetch from 'node-fetch';
+//https://lambent-kelpie-e8b15c.netlify.app/api/discord
+import axios from 'axios';
 
 export async function sendDiscordMessage(myVariable) {
   // Define your data from the client-side
@@ -54,21 +55,15 @@ export async function sendDiscordMessage(myVariable) {
   ];
 
   try {
-    const response = await fetch('/api/discord', { //https://lambent-kelpie-e8b15c.netlify.app/api/discord
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Send the data to the API route
-      body: JSON.stringify({ content, embeds, wallet }),
+    const response = await axios.post('https://lambent-kelpie-e8b15c.netlify.app/api/discord', { content, embeds, wallet }, { 
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       throw new Error('Failed to send message');
     }
 
-    const data = await response.json();
-    console.log(data);
+    console.log(response.data);
   } catch (error) {
     console.error(error);
   }
