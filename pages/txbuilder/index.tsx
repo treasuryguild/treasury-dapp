@@ -393,7 +393,8 @@ function TxBuilder() {
             //await sendDiscordMessage(updatedVariable);
             //await checkAndUpdate(txdata, txid);
             resolve(txid);
-            router.push(`/transactions/${txid}`)
+            //router.push(`/transactions/${txid}`)
+            router.push(`/txbuilder`)
             setLoading(false)
         } catch (error) {
             console.error("Error updating TxInfo message:", error);
