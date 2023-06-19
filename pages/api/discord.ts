@@ -25,11 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
   
   const walletSuffix = wallet.substr(-6);
-  webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL //remember to change to webhookUrls[walletSuffix];
+  webhookUrl = webhookUrls[walletSuffix] //remember to change to webhookUrls[walletSuffix];
 
   const avatarUrl = 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png';
 
   if (typeof webhookUrl === 'undefined') {
+    webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL
     return res.status(500).json({ error: 'Discord webhook URL is not defined' });
   }
   // Get data from the client-side
