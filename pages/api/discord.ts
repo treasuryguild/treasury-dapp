@@ -13,6 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
     '7zxn7j': process.env.TEST_DISCORD_WEBHOOK_URL,
     '3ynval': process.env.SNET_DISCORD_WEBHOOK_URL,
+    't49ftp': process.env.GG_DISCORD_WEBHOOK_URL
     // other wallet addresses
   };
   
