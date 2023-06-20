@@ -4,7 +4,7 @@ import axios from 'axios';
 export async function sendDiscordMessage(myVariable) {
   // Define your data from the client-side
   const header = ''; //incoming or outgoing
-  const wallet = myVariable.wallet
+  let wallet = myVariable.wallet
   let website = myVariable.project_website?myVariable.project_website:''
   let txtype = myVariable.txtype
   let txtype2 = ''
@@ -15,6 +15,7 @@ export async function sendDiscordMessage(myVariable) {
   } else {
     txtype2 = 'Amount received'
     color = 0x16fa3c
+    wallet = myVariable.incomingwallet
   }
   let balTokens = myVariable
   const thash = balTokens.txHash

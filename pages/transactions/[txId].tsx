@@ -271,7 +271,8 @@ function processMetadata(metadata: Metadata): string {
       if (result.transactionType == "Incoming") {
         projectInfo2 = await getProject(wallet2);
         txdata = {...txdata,
-          wallet: wallet2,}
+          wallet: wallet2,
+          incomingwallet: usedAddresses[0]}
       }
       for(let address in result.addressAssets) {
         let array: Token[] = result.addressAssets[address];
