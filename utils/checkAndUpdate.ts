@@ -56,6 +56,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
         let incomingWallet = myVariable.wallet
         newMyVariable.txtype = "Incoming"
         newMyVariable.wallet = wallet
+        newMyVariable.incomingwallet = wallet
         newMyVariable.txamounts = {}
         newMyVariable.txamounts[incomingWallet] = myVariable.txamounts[wallet]
         let totalAmounts: any = {};
