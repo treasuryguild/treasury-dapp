@@ -22,7 +22,7 @@ export async function sendDiscordMessage(myVariable) {
   console.log("balTokens",balTokens, myVariable)
   const balance = `${myVariable.balanceString}`
   let txdetail = `${myVariable.totalAmountsString}`
-  let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${myVariable.wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
+  let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
   const content = `${header}`;
   const embeds = [
     {
