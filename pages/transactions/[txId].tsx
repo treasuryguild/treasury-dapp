@@ -52,7 +52,7 @@ function Txid() {
   const [description, setDescription] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
-  const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
+  //const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
   const [labelOptions, setLabelOptions] = useState<{ value: string; label: string }[]>([
     { value: 'Operations', label: 'Operations' },
     { value: 'Fixed Costs', label: 'Fixed Costs' },
@@ -375,14 +375,14 @@ function processMetadata(metadata: Metadata): string {
       tokens = await getAssetDetails(tokens);
       await getEchangeRate(tokens);
     }
-    const balanceString = formatWalletBalance(tokens)
+    /*const balanceString = formatWalletBalance(tokens)
     metadata = await getMetaData()
     const txdescription = processMetadata(metadata)
     txdata = {...txdata,
       walletTokens: tokens,
       balanceString,
       txdescription,
-      walletBalanceAfterTx: tokens}
+      walletBalanceAfterTx: tokens}*/
     console.log("txdata", txdata, addressAssets, metadata)
   }
 
@@ -424,6 +424,14 @@ function processMetadata(metadata: Metadata): string {
       // handle the error as appropriate
     }
     setWalletTokens(updatedTokens);
+    const balanceString = formatWalletBalance(updatedTokens)
+    metadata = await getMetaData()
+    const txdescription = processMetadata(metadata)
+    txdata = {...txdata,
+      walletTokens: updatedTokens,
+      balanceString,
+      txdescription,
+      walletBalanceAfterTx: updatedTokens}
     return updatedTokens
   }
 
