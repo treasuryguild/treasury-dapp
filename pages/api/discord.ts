@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let webhookUrl: string | undefined;
   const webhookUrls: { [key: string]: string | undefined } = {
     'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
-    '7zxn7j': process.env.TEST_DISCORD_WEBHOOK_URL,
+    '7zxn7j': process.env.TEST2_DISCORD_WEBHOOK_URL,
     '3ynval': process.env.SNET_DISCORD_WEBHOOK_URL,
     't49ftp': process.env.GG_DISCORD_WEBHOOK_URL,
     'msx826': process.env.CGO_DISCORD_WEBHOOK_URL,
