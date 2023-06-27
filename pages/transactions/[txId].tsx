@@ -130,11 +130,11 @@ function Txid() {
     }
     
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
-    await updateTxInfo(txdata, newMetaData, txId, customFilePath)
+    //await updateTxInfo(txdata, newMetaData, txId, customFilePath)
     //await commitFile(customFilePath, customFileContent)
     //await sendDiscordMessage(txdata);
     console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
-    router.push(`/transactions/`)
+    //router.push(`/transactions/`)
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
@@ -283,14 +283,7 @@ function processMetadata(metadata: Metadata): string {
           wallet: wallet2,
           incomingwallet: usedAddresses[0]}
       }
-      for(let address in result.addressAssets) {
-        let array: Token[] = result.addressAssets[address];
-        
-        txamounts[address] = array.reduce((obj: Amounts, item: Token) => {
-          obj[item.name] = parseFloat(item.amount);
-          return obj;
-        }, {});
-      }
+      
       let date = new Date(txData[0].tx_timestamp*1000);
       let originalDateString = date.toISOString();
       const originalDate = new Date(originalDateString);
@@ -301,21 +294,12 @@ function processMetadata(metadata: Metadata): string {
       const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
       const formattedDate = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
       console.log("txData", txData )
-      let totalAmounts: any = {};
-          for (let i in txamounts) {
-            for (let j in txamounts[i]) {
-              if (totalAmounts[j] === undefined) {
-                totalAmounts[j] = 0;
-              }
-              totalAmounts[j] += txamounts[i][j];
-            }
-          }
-      totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
-      const totalAmountsString = formatTotalAmounts(totalAmounts)
+      
       txHash = txId
       txtype = result.transactionType
       
-      txdata = {...txdata, txamounts, fee, formattedDate, txHash, txtype, totalAmounts, totalAmountsString};
+      txdata = {...txdata, fee, formattedDate, txHash, txtype};
+
       for (let address in result.addressAssets) {
         result.addressAssets[address].forEach((token: Token) => {
           for (let k in txdata.walletTokens) {
@@ -325,9 +309,6 @@ function processMetadata(metadata: Metadata): string {
           }
         });
       }
-      metadata = await getMetaData()
-      const txdescription = processMetadata(metadata)
-      txdata = {...txdata, txdescription}
       setAddressAssets(
         Object.fromEntries(
           Object.entries(result.addressAssets).map(([address, tokens]: [string, Token[]]) => [
@@ -341,6 +322,29 @@ function processMetadata(metadata: Metadata): string {
           ])
         )
       );
+      for(let address in result.addressAssets) {
+        let array: Token[] = result.addressAssets[address];
+        
+        txamounts[address] = array.reduce((obj: Amounts, item: Token) => {
+          obj[item.name] = parseFloat(item.amount);
+          return obj;
+        }, {});
+      }
+      txdata = {...txdata, txamounts}
+      metadata = await getMetaData()
+      const txdescription = processMetadata(metadata)
+      let totalAmounts: any = {};
+          for (let i in txamounts) {
+            for (let j in txamounts[i]) {
+              if (totalAmounts[j] === undefined) {
+                totalAmounts[j] = 0;
+              }
+              totalAmounts[j] += txamounts[i][j];
+            }
+          }
+      totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
+      const totalAmountsString = formatTotalAmounts(totalAmounts)
+      txdata = {...txdata, txdescription, totalAmounts, totalAmountsString}
     }
   }  
   
