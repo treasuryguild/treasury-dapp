@@ -15,7 +15,7 @@ export async function sendDiscordMessage(myVariable) {
   } else {
     txtype2 = 'Amount received'
     color = 0x16fa3c
-    wallet = myVariable.incomingwallet
+    wallet = myVariable.incomingwallet?myVariable.incomingwallet:myVariable.wallet
   }
   let balTokens = myVariable
   const thash = balTokens.txHash
