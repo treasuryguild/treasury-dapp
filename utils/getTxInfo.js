@@ -78,7 +78,6 @@ export async function getTxInfo(usedAddresses, txData, assets) {
       }
     }
 
-    console.log('Staking transaction info:', addressAssets);
   } else if (isOutgoing) {
     transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
@@ -143,7 +142,6 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         }
       }
     }
-    console.log('Outgoing transactions info:', addressAssets);
   } else {
     transactionType = "Incoming";
     // If it's an incoming transaction, calculate total incoming value and gather asset lists
@@ -208,7 +206,6 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         }
       }
     }
-    console.log('Incoming transactions info:', addressAssets);
   }
 
   // Divide amounts by 10**decimals after all aggregation has happened

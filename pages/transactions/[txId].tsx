@@ -1,4 +1,5 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import styles from '../../styles/Singletx.module.css'
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { getTxInfo } from '../../utils/getTxInfo';
@@ -53,6 +54,7 @@ function Txid() {
   const [description, setDescription] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
+  const [loading, setLoading] = useState<boolean>(false);
   //const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
   const [labelOptions, setLabelOptions] = useState<{ value: string; label: string }[]>([
     { value: 'Operations', label: 'Operations' },
@@ -74,7 +76,7 @@ function Txid() {
   
 
   useEffect(() => {
-    console.log("Changed", walletTokens)
+    console.log("Changed")
   }, [walletTokens]);
 
   if (router.isFallback) {
@@ -130,11 +132,11 @@ function Txid() {
     }
     
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
-    //await updateTxInfo(txdata, newMetaData, txId, customFilePath)
+    await updateTxInfo(txdata, newMetaData, txId, customFilePath)
     //await commitFile(customFilePath, customFileContent)
     //await sendDiscordMessage(txdata);
-    console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
-    //router.push(`/transactions/`)
+    //console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
+    router.push(`/transactions/`)
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
@@ -205,7 +207,6 @@ function Txid() {
     }
 
     let textContributor = JSON.stringify(contributor)
-    console.log("View msg amounts",lastSix, formatAmounts(txdata.totalAmounts, txdata.tokenRates), contributor)
     let metaData = `{
       "mdVersion": ["1.4"],
       "txid": "${txId}",
@@ -273,7 +274,6 @@ function processMetadata(metadata: Metadata): string {
       const assets = await wallet.getAssets();
       const txData = await txInfo();
       const result = await getTxInfo(usedAddresses, txData[0], assets) as GetTxInfoResult;
-      console.log("txData",txData)
       fee = parseInt(txData[0].fee)
       let txamounts: Record<string, Amounts> = {};
       wallet2 = txData[0].inputs[0].payment_addr.bech32
@@ -293,11 +293,9 @@ function processMetadata(metadata: Metadata): string {
       const hours = String(originalDate.getUTCHours()).padStart(2, '0');
       const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
       const formattedDate = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
-      console.log("txData", txData )
       
       txHash = txId
       txtype = result.transactionType
-      
       txdata = {...txdata, fee, formattedDate, txHash, txtype};
 
       for (let address in result.addressAssets) {
@@ -346,14 +344,15 @@ function processMetadata(metadata: Metadata): string {
       const totalAmountsString = formatTotalAmounts(totalAmounts)
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString}
     }
+    setLoading(false);
   }  
   
   async function assignTokens() {
+    setLoading(true);
     setDescription('')
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
-    console.log("projectInfo",projectInfo)
     if (Object.keys(projectInfo).length === 0) {
       router.push('/newwallet')
     }
@@ -402,7 +401,6 @@ function processMetadata(metadata: Metadata): string {
       walletTokens: tokens,
       balanceString,
       walletBalanceAfterTx: tokens}
-    console.log("txdata", txdata, addressAssets, metadata)
   }
 
   async function getAssetDetails(tokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
@@ -450,7 +448,6 @@ function processMetadata(metadata: Metadata): string {
     let tickerDetails = await axios.get(tickerAPI)
     let tickers = tickerDetails.data.tickerApiNames;
     let tokenExchangeRates: any = {}
-    console.log("tokens inside exchange", wallettokens)
     for (let i in wallettokens) {
       try {
         const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
@@ -487,69 +484,79 @@ function processMetadata(metadata: Metadata): string {
   }
   
   return (
-    <form onSubmit={handleSubmit}>
-      {Object.entries(addressAssets).map(([address, data], index) => (
-        <div key={address}>
-          <h3>Address: ...{address.slice(-6)}</h3>
-          {data.tokens.map((token, tokenIndex) => (
-            <p key={tokenIndex}>
-              {token.name}: {token.amount}
-            </p>
-          ))}
-          {txdata.txtype == "Incoming" && (<div>Incoming</div>)}
-          {txdata.txtype == "Staking" && (<div>Staking</div>)}
-          {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
-          {txdata.txtype == "Outgoing" && (
-          <CreatableSelect
-          isMulti
-          options={[...labelOptions]}
-          value={data.selectedLabels}
-          onChange={(selected) => {
-            handleInputChange(address, 'selectedLabels', selected || []);
-          }}
-          styles={{
-            control: (baseStyles, state) => ({
-              ...baseStyles,
-              borderColor: state.isFocused ? 'grey' : 'white',
-              backgroundColor: 'black',
-              color: 'white',
-            }),
-            option: (baseStyles, { isFocused, isSelected }) => ({
-              ...baseStyles,
-              backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
-              color: 'white',
-            }),
-            multiValue: (baseStyles) => ({
-              ...baseStyles,
-              backgroundColor: 'darkblue',
-            }),
-            multiValueLabel: (baseStyles) => ({
-              ...baseStyles,
-              color: 'white',
-            }),
-            input: (baseStyles) => ({
-              ...baseStyles,
-              color: 'white',
-            }),
-            menu: (baseStyles) => ({
-              ...baseStyles,
-              backgroundColor: 'black',
-            }),
-          }}
-        />
-          )}
-          <label>
-            Description:
-            <textarea
-              name="description"
-              defaultValue={description}
-              onChange={(e) => handleInputChange(address, 'description', e.target.value)}
-            />
-          </label>
+    <div>
+      <form onSubmit={handleSubmit}>
+        {Object.entries(addressAssets).map(([address, data], index) => (
+          <div key={address}>
+            <h3>Address: ...{address.slice(-6)}</h3>
+            {data.tokens.map((token, tokenIndex) => (
+              <p key={tokenIndex}>
+                {token.name}: {token.amount}
+              </p>
+            ))}
+            {txdata.txtype == "Incoming" && (<div>Incoming</div>)}
+            {txdata.txtype == "Staking" && (<div>Staking</div>)}
+            {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
+            {txdata.txtype == "Outgoing" && (
+            <CreatableSelect
+            isMulti
+            options={[...labelOptions]}
+            value={data.selectedLabels}
+            onChange={(selected) => {
+              handleInputChange(address, 'selectedLabels', selected || []);
+            }}
+            styles={{
+              control: (baseStyles, state) => ({
+                ...baseStyles,
+                borderColor: state.isFocused ? 'grey' : 'white',
+                backgroundColor: 'black',
+                color: 'white',
+              }),
+              option: (baseStyles, { isFocused, isSelected }) => ({
+                ...baseStyles,
+                backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
+                color: 'white',
+              }),
+              multiValue: (baseStyles) => ({
+                ...baseStyles,
+                backgroundColor: 'darkblue',
+              }),
+              multiValueLabel: (baseStyles) => ({
+                ...baseStyles,
+                color: 'white',
+              }),
+              input: (baseStyles) => ({
+                ...baseStyles,
+                color: 'white',
+              }),
+              menu: (baseStyles) => ({
+                ...baseStyles,
+                backgroundColor: 'black',
+              }),
+            }}
+          />
+            )}
+            <label>
+              Description:
+              <textarea
+                name="description"
+                defaultValue={description}
+                onChange={(e) => handleInputChange(address, 'description', e.target.value)}
+              />
+            </label>
+          </div>
+        ))}
+        <button type="submit">Update</button>
+      </form>
+      {loading && (
+        <div className={styles.body}>
+            <div className={styles.form}>
+              <div className={styles.loading}>Loading...</div>
+            </div>
         </div>
-      ))}
-      <button type="submit">Update</button>
-    </form>
+      )}
+    </div>
+    
   );
 }
 
