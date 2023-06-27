@@ -15,6 +15,7 @@ interface Token {
   amount: string;
   unit: string;
   fingerprint: string;
+  decimals: number;
 }
 
 interface Amounts {
@@ -52,7 +53,7 @@ function Txid() {
   const [description, setDescription] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
-  const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
+  //const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
   const [labelOptions, setLabelOptions] = useState<{ value: string; label: string }[]>([
     { value: 'Operations', label: 'Operations' },
     { value: 'Fixed Costs', label: 'Fixed Costs' },
@@ -61,11 +62,16 @@ function Txid() {
   ]);
 
   useEffect(() => {
-    if (connected) {
-      assignTokens()
-      checkTransactionType();
-    }
+    const executeAsync = async () => {
+      if (connected) {
+        await assignTokens();
+        await checkTransactionType();
+      }
+    };
+  
+    executeAsync();
   }, [connected]);
+  
 
   useEffect(() => {
     console.log("Changed", walletTokens)
@@ -127,7 +133,7 @@ function Txid() {
     await updateTxInfo(txdata, newMetaData, txId, customFilePath)
     //await commitFile(customFilePath, customFileContent)
     //await sendDiscordMessage(txdata);
-    console.log("Final values",txdata, newMetaData, customFilePath);
+    console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
     router.push(`/transactions/`)
   };
 
@@ -308,8 +314,20 @@ function processMetadata(metadata: Metadata): string {
       const totalAmountsString = formatTotalAmounts(totalAmounts)
       txHash = txId
       txtype = result.transactionType
+      
       txdata = {...txdata, txamounts, fee, formattedDate, txHash, txtype, totalAmounts, totalAmountsString};
-    
+      for (let address in result.addressAssets) {
+        result.addressAssets[address].forEach((token: Token) => {
+          for (let k in txdata.walletTokens) {
+            if (txdata.walletTokens[k].fingerprint === token.fingerprint) {
+              token.name = txdata.walletTokens[k].name;
+            }
+          }
+        });
+      }
+      metadata = await getMetaData()
+      const txdescription = processMetadata(metadata)
+      txdata = {...txdata, txdescription}
       setAddressAssets(
         Object.fromEntries(
           Object.entries(result.addressAssets).map(([address, tokens]: [string, Token[]]) => [
@@ -376,12 +394,11 @@ function processMetadata(metadata: Metadata): string {
       await getEchangeRate(tokens);
     }
     const balanceString = formatWalletBalance(tokens)
-    metadata = await getMetaData()
-    const txdescription = processMetadata(metadata)
+    //metadata = await getMetaData()
+    //const txdescription = processMetadata(metadata)
     txdata = {...txdata,
       walletTokens: tokens,
       balanceString,
-      txdescription,
       walletBalanceAfterTx: tokens}
     console.log("txdata", txdata, addressAssets, metadata)
   }
