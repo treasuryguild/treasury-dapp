@@ -76,10 +76,10 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     let customFilePath = '';
     let customFileContent = '';
     let pType = ''
-    if (newMyVariable.project_type == 'Treasury Wallet') {
+    if (myVariable.project_type == 'Treasury Wallet') {
       pType = 'TreasuryWallet'
     } else {
-      let prepType = newMyVariable.project_type.replace(/\s/g, '')
+      let prepType = myVariable.project_type.replace(/\s/g, '')
       pType = prepType.replace("Proposal", '')
     }
     await axios.get(`https://pool.pm/wallet/${wallet}`).then(response => {
@@ -141,18 +141,18 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
       "mdVersion": ["1.4"],
       "txid": "${thash}",
       "msg": [
-      "${newMyVariable.project} Transaction",
-      "Website: ${newMyVariable.project_website}",
+      "${myVariable.project} Transaction",
+      "Website: ${myVariable.project_website}",
       "Recipients: 1",
       "Transaction made by Treasury Guild @${newMyVariable.tokenRates['ADA']}",
       "https://www.treasuryguild.io/"
       ],
       "contributions": [
         {
-          "taskCreator": "${newMyVariable.project}",
+          "taskCreator": "${myVariable.project}",
           "label": "Incoming",
           "description": [
-            "Incoming rewards from ${myVariable.project}"
+            "Incoming rewards from ${newMyVariable.project}"
           ],
           "contributors": ${textContributor}
         }
