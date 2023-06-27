@@ -398,8 +398,6 @@ function processMetadata(metadata: Metadata): string {
       await getEchangeRate(tokens);
     }
     const balanceString = formatWalletBalance(tokens)
-    //metadata = await getMetaData()
-    //const txdescription = processMetadata(metadata)
     txdata = {...txdata,
       walletTokens: tokens,
       balanceString,
