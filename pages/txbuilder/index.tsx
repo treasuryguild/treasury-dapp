@@ -386,6 +386,9 @@ function TxBuilder() {
             let pType = ''
             if (myVariable.project_type == 'Treasury Wallet') {
               pType = 'TreasuryWallet'
+            } else {
+              let prepType = myVariable.project_type.replace(/\s/g, '')
+              pType = prepType.replace("Proposal", '')
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)

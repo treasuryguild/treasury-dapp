@@ -118,6 +118,9 @@ function Txid() {
     let pType = ''
     if (txdata.project_type == 'Treasury Wallet') {
       pType = 'TreasuryWallet'
+    } else {
+      let prepType = txdata.project_type.replace(/\s/g, '')
+      pType = prepType.replace("Proposal", '')
     }
     
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;

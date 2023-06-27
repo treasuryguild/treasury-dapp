@@ -76,9 +76,12 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
     let customFilePath = '';
     let customFileContent = '';
     let pType = ''
-            if (myVariable.project_type == 'Treasury Wallet') {
-              pType = 'TreasuryWallet'
-            }
+    if (myVariable.project_type == 'Treasury Wallet') {
+      pType = 'TreasuryWallet'
+    } else {
+      let prepType = myVariable.project_type.replace(/\s/g, '')
+      pType = prepType.replace("Proposal", '')
+    }
     await axios.get(`https://pool.pm/wallet/${wallet}`).then(response => {
         console.log("poolpm",response.data)
         const outputArray = convertObject(response.data);
