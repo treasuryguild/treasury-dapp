@@ -1,11 +1,12 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import styles from '../../styles/Singletx.module.css'
+import styles from '../../styles/Txid.module.css';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { getTxInfo } from '../../utils/getTxInfo';
 import { getProject } from '../../utils/getProject'
 import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
+import { getLabels } from '../../utils/getLabels'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
@@ -81,6 +82,21 @@ function Txid() {
 
   if (router.isFallback) {
     return <div>Loading...</div>;
+  }
+  interface InputLabels {
+    label: string;
+  }
+  
+  interface OutputLabels {
+    value: string;
+    label: string;
+  }
+  
+  function transformArrayToObject(arr: InputLabels[]): OutputLabels[] {
+    return arr.map(obj => ({
+      value: obj.label,
+      label: obj.label
+    }));
   }
 
   const handleInputChange = (address: string, name: string, value: any) => {
@@ -270,6 +286,10 @@ function processMetadata(metadata: Metadata): string {
   
   async function checkTransactionType() {
     if (connected) { 
+      const databaseLabels = await getLabels();
+      const output: OutputLabels[] = transformArrayToObject(databaseLabels);
+      console.log(databaseLabels, output)
+      setLabelOptions(output);
       const usedAddresses = await wallet.getUsedAddresses();
       const assets = await wallet.getAssets();
       const txData = await txInfo();
@@ -484,10 +504,18 @@ function processMetadata(metadata: Metadata): string {
   }
   
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <div className={styles.body}>
+      {loading && (
+        <div className={styles.body}>
+            <div className={styles.form}>
+              <div className={styles.loading}>Loading...</div>
+            </div>
+        </div>
+      )}
+      {!loading && (
+        <form className={styles.form} onSubmit={handleSubmit}>
         {Object.entries(addressAssets).map(([address, data], index) => (
-          <div key={address}>
+          <div  className={styles.address} key={address}>
             <h3>Address: ...{address.slice(-6)}</h3>
             {data.tokens.map((token, tokenIndex) => (
               <p key={tokenIndex}>
@@ -498,63 +526,62 @@ function processMetadata(metadata: Metadata): string {
             {txdata.txtype == "Staking" && (<div>Staking</div>)}
             {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
             {txdata.txtype == "Outgoing" && (
-            <CreatableSelect
-            isMulti
-            options={[...labelOptions]}
-            value={data.selectedLabels}
-            onChange={(selected) => {
-              handleInputChange(address, 'selectedLabels', selected || []);
-            }}
-            styles={{
-              control: (baseStyles, state) => ({
-                ...baseStyles,
-                borderColor: state.isFocused ? 'grey' : 'white',
-                backgroundColor: 'black',
-                color: 'white',
-              }),
-              option: (baseStyles, { isFocused, isSelected }) => ({
-                ...baseStyles,
-                backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
-                color: 'white',
-              }),
-              multiValue: (baseStyles) => ({
-                ...baseStyles,
-                backgroundColor: 'darkblue',
-              }),
-              multiValueLabel: (baseStyles) => ({
-                ...baseStyles,
-                color: 'white',
-              }),
-              input: (baseStyles) => ({
-                ...baseStyles,
-                color: 'white',
-              }),
-              menu: (baseStyles) => ({
-                ...baseStyles,
-                backgroundColor: 'black',
-              }),
-            }}
-          />
+            <div className={styles.labels}>
+              <CreatableSelect
+                isMulti
+                options={[...labelOptions]}
+                value={data.selectedLabels}
+                onChange={(selected) => {
+                  handleInputChange(address, 'selectedLabels', selected || []);
+                }}
+                styles={{
+                  control: (baseStyles, state) => ({
+                    ...baseStyles,
+                    borderColor: state.isFocused ? 'grey' : 'white',
+                    backgroundColor: 'black',
+                    color: 'white',
+                  }),
+                  option: (baseStyles, { isFocused, isSelected }) => ({
+                    ...baseStyles,
+                    backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
+                    color: 'white',
+                  }),
+                  multiValue: (baseStyles) => ({
+                    ...baseStyles,
+                    backgroundColor: 'darkblue',
+                  }),
+                  multiValueLabel: (baseStyles) => ({
+                    ...baseStyles,
+                    color: 'white',
+                  }),
+                  input: (baseStyles) => ({
+                    ...baseStyles,
+                    color: 'white',
+                  }),
+                  menu: (baseStyles) => ({
+                    ...baseStyles,
+                    backgroundColor: 'black',
+                  }),
+                }}
+              />
+            </div>
             )}
-            <label>
-              Description:
+            <div className={styles.description}>
+              <label>Description:</label>
               <textarea
                 name="description"
                 defaultValue={description}
                 onChange={(e) => handleInputChange(address, 'description', e.target.value)}
               />
-            </label>
+            </div>
           </div>
         ))}
-        <button type="submit">Update</button>
+        {connected && (
+          <button className={styles.update} type="submit">Update</button>
+        )}
       </form>
-      {loading && (
-        <div className={styles.body}>
-            <div className={styles.form}>
-              <div className={styles.loading}>Loading...</div>
-            </div>
-        </div>
       )}
+
     </div>
     
   );

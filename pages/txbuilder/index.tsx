@@ -13,6 +13,8 @@ import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
 import { getProject } from '../../utils/getProject'
+import { getLabels } from '../../utils/getLabels'
+import { setLabels } from '../../utils/setLabels'
 //import { updateTxDatabase } from '../../utils/updateTxDatabase'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { checkAndUpdate } from '../../utils/checkAndUpdate'
@@ -89,8 +91,28 @@ function TxBuilder() {
     console.log("Changed")
   }, [myVariable]);
 
+  interface InputLabels {
+    label: string;
+  }
+  
+  interface OutputLabels {
+    value: string;
+    label: string;
+  }
+  
+  function transformArrayToObject(arr: InputLabels[]): OutputLabels[] {
+    return arr.map(obj => ({
+      value: obj.label,
+      label: obj.label
+    }));
+  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
+    const databaseLabels = await getLabels();
+    const output: OutputLabels[] = transformArrayToObject(databaseLabels);
+    console.log(databaseLabels, output)
+    setLabelOptions(output);
+    //const status = await setLabels(["Test"]);
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
