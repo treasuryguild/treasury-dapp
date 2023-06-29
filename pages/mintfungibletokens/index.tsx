@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
-import { Transaction, ForgeScript } from '@meshsdk/core';
+import { Transaction, ForgeScript, resolvePaymentKeyHash, resolveSlotNo } from '@meshsdk/core';
 import type { Mint, AssetMetadata } from '@meshsdk/core';
+import type { NativeScript } from '@meshsdk/core';
 import styles from '../../styles/Minttokens.module.css';
 import { useState } from 'react';
 
@@ -12,84 +13,92 @@ function MintFungibleTokens() {
   const [ticker, setTicker] = useState('');
   const [decimals, setDecimals] = useState(0);
   const [website, setWebsite] = useState('');
+  const [assetQuantity, setAssetQuantity] = useState('');
+  const [image, setImage] = useState([]); 
 
-  async function mintTokens(event: any) {
-    event.preventDefault(); // prevent the default form submission behaviour
-
+  async function mintNative(event: any) {
+    event.preventDefault();
     const usedAddress = await wallet.getUsedAddresses();
     const address = usedAddress[0];
-    const forgingScript = ForgeScript.withOneSignature(address);
-
+    
+    const keyHash = resolvePaymentKeyHash(address);
+    let minutes = 1; // add 5 minutes
+    let nowDateTime = new Date();
+    let dateTimeAdd5Min = new Date(nowDateTime.getTime() + minutes*60000);
+    const slot = resolveSlotNo('mainnet', dateTimeAdd5Min.getTime());
+    const nativeScript: NativeScript = {
+      type: 'all',
+      scripts: [
+        {
+          type: 'before',
+          slot: slot,
+        },
+        {
+          type: 'sig',
+          keyHash: keyHash,
+        },
+      ],
+    };
+    
+    const forgingScript = ForgeScript.fromNativeScript(nativeScript);
+    
     const tx = new Transaction({ initiator: wallet });
-
+    
+    // define asset#1 metadata
     const assetMetadata1: AssetMetadata = {
       "name": tokenName,
       "decimals": decimals,
       "ticker": ticker,
       "website": website,
-      "image": "ipfs://QmRzicpReutwCkM6aotuKjErFCUD213DpwPq6ByuzMJaua",
+      "image": image, 
       "mediaType": "image/jpg",
-      "description": `This Token is minted by ${tokenName} (https://meshjs.dev/).`
+      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
-
+    //Treasury Guild ipfs://bafkreiccmrypkhje4iakdqdmqxol5x7lwc365akayyba74n2tx5pahfxxm
+    //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
     const asset1: Mint = {
       assetName: tokenName,
-      assetQuantity: '500000000',
+      assetQuantity: assetQuantity,
       metadata: assetMetadata1,
-      label: '20',
-      recipient: address,
+      label: '721',
+      recipient: usedAddress[0],
     };
-
     tx.mintAsset(
       forgingScript,
       asset1,
     );
-
+    
+    tx.setTimeToExpire(slot);
+    
     const unsignedTx = await tx.build();
     const signedTx = await wallet.signTx(unsignedTx);
     const txHash = await wallet.submitTx(signedTx);
-    
     return txHash;
+  }
+
+  const handleImageChange = (event: any) => {
+    const value = event.target.value;
+    setImage(value.match(/.{1,55}/g) || []); // break the string into chunks 
   }
 
   return (
     <>
-      <div>
-        <h1>Mint Fungible Tokens</h1>
-        <form onSubmit={mintTokens}>
-          <label>
-            Token Name:
-            <input
-              type="text"
-              value={tokenName}
-              onChange={(e) => setTokenName(e.target.value)}
-            />
-          </label>
-          <label>
-            Ticker:
-            <input
-              type="text"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-            />
-          </label>
-          <label>
-            Decimals:
-            <input
-              type="number"
-              value={decimals}
-              onChange={(e) => setDecimals(parseInt(e.target.value))}
-            />
-          </label>
-          <label>
-            Website:
-            <input
-              type="text"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-            />
-          </label>
-          <button type="submit">Mint</button>
+      <div className={styles.body}>
+        <form className={styles.form} onSubmit={mintNative}>
+          <h1>Mint Fungible Tokens</h1>
+          <label className={styles.input}>Token Name:</label>
+          <input type="text" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
+          <label className={styles.input}>Ticker:</label>
+          <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value)} />
+          <label className={styles.input}>Decimals:</label>
+          <input type="number" value={decimals} onChange={(e) => setDecimals(parseInt(e.target.value))} />
+          <label className={styles.input}>Website:</label>
+          <input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} />
+          <label className={styles.input}>Asset Quantity:</label>
+          <input type="text" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} />
+          <label className={styles.input}>Image URL:</label>
+          <input type="text" value={image.join('')} onChange={handleImageChange} />
+          <button className={styles.submit} type="submit">Mint</button>
         </form>
       </div>
     </>

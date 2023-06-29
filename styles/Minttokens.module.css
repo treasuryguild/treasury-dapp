@@ -1,0 +1,22 @@
+.body {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.form {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.submit {
+    margin: 40px;
+    padding: 10px;
+}
+
+.input {
+    margin-top: 15px;
+    margin-bottom: 4px;
+}
