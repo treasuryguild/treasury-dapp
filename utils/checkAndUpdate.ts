@@ -32,7 +32,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
         
       console.log("checking", myVariable, thash);  // Removed undefined variables
   
-      if (data && !["Incoming", "Staking", "Rewards Withdrawal"].includes(myVariable.txtype)) {
+      if (data && !["Incoming", "Staking", "Rewards Withdrawal","Minting"].includes(myVariable.txtype)) {
         const matchingWallets: DataType = Object.keys(myVariable.txamounts)
           .map((key) => data.find((d) => d.wallet === key))
           .filter((wallet): wallet is { wallet: string } => Boolean(wallet));
