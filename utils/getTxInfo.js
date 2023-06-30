@@ -8,6 +8,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
 
   let isOutgoing = false;
   let isStaking = false;
+  let isMinting = false;
 
   let totalInputValue = 0;
   let totalOutputValue = 0;
@@ -23,8 +24,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         if (inputs.length === 1 && outputs.length === 1 && inputs[0].payment_addr.bech32 === outputs[0].payment_addr.bech32
           || txData.withdrawals && txData.withdrawals.length > 0) {
           isStaking = true;
+        } else if (
+          inputs.length === 1 && 
+          outputs.length === 2 && 
+          inputs[0].payment_addr.bech32 === outputs[0].payment_addr.bech32 && 
+          outputs[0].asset_list && 
+          outputs[0].asset_list.length > 0
+        ) {
+          isMinting = true;
         }
-      if (!isStaking) {
+      if (!isStaking && !isMinting) {
         isOutgoing = true;
       }
       break;
@@ -78,6 +87,103 @@ export async function getTxInfo(usedAddresses, txData, assets) {
       }
     }
 
+  } else if (isMinting) {
+    transactionType = "Minting";
+  
+    // Calculate total input and output values
+    let totalInputValue = 0;
+    let totalOutputValue = 0;
+    
+    for (const input of inputs) {
+      if (usedAddresses.includes(input.payment_addr.bech32)) {
+        totalInputValue += parseFloat(input.value);
+      }
+    }
+    
+    for (const output of outputs) {
+      totalOutputValue += parseFloat(output.value);
+    }
+  
+    // The difference will be the outgoing ADA amount
+    let outgoingAdaAmount = totalInputValue - totalOutputValue;
+    console.log(totalInputValue, totalOutputValue, outgoingAdaAmount)
+    
+    // Handle outgoing ADA
+    for (const output of outputs) {
+      if (usedAddresses.includes(output.payment_addr.bech32)) {
+        let ada = {
+          id: idCounter.toString(),
+          name: 'ADA',
+          amount: outgoingAdaAmount,  // Use the calculated amount here
+          unit: 'lovelace',
+          fingerprint: '',
+          decimals: 6
+        };
+        idCounter++;
+        
+        if(addressAssets[output.payment_addr.bech32]) {
+          addressAssets[output.payment_addr.bech32].push(ada);
+        } else {
+          addressAssets[output.payment_addr.bech32] = [ada];
+        }
+        break;
+      }
+    }
+    
+    // Handle incoming tokens
+    for (const output of outputs) {
+      if (usedAddresses.includes(output.payment_addr.bech32)) {
+        const assetList = output.asset_list.map(incomingAsset => {
+          for (let asset of assets) {
+            if (asset.fingerprint === incomingAsset.fingerprint) {
+              let assetName = asset.assetName;
+              let decimals = incomingAsset.decimals;
+  
+              // Adjust name and decimals for gimbal
+              if (assetName.toLowerCase() === 'gimbal') {
+                assetName = 'GMBL';
+                decimals = 6;
+              }
+  
+              incomingAsset = {
+                id: idCounter.toString(),
+                name: assetName,
+                amount: parseFloat(incomingAsset.quantity),
+                unit: asset.unit,
+                fingerprint: asset.fingerprint,
+                decimals: decimals
+              };
+              idCounter++;
+              break;
+            }
+          }
+          return incomingAsset;
+        });
+        
+        idCounter++;
+  
+        if(addressAssets[output.payment_addr.bech32]) {
+          // Address already exists, update the token amounts and add new ones if they are not present yet
+          addressAssets[output.payment_addr.bech32].forEach((existingToken, index) => {
+            const correspondingNewToken = assetList.find(token => token.fingerprint === existingToken.fingerprint);
+            if(correspondingNewToken) {
+              // Update the amount of the existing token
+              existingToken.amount += parseFloat(correspondingNewToken.amount);
+              // Remove the token from the assetList as it's already in the addressAssets
+              const index = assetList.indexOf(correspondingNewToken);
+              assetList.splice(index, 1);
+            }
+          });
+  
+          // Add remaining new tokens from assetList to addressAssets
+          addressAssets[output.payment_addr.bech32].push(...assetList);
+        } else {
+          // New address, add it to the addressAssets
+          addressAssets[output.payment_addr.bech32] = assetList;
+        }
+      }
+    }
+  
   } else if (isOutgoing) {
     transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent

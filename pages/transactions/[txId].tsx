@@ -218,6 +218,10 @@ function Txid() {
             label = txdata.txtype
             metaDescription = 'Rewards Withdrawal'
             setDescription(metaDescription)
+          } else if (txdata.txtype == "Minting") {
+            label = txdata.txtype
+            metaDescription = 'Minted new tokens'
+            setDescription(metaDescription)
           }
         }
     }
@@ -523,6 +527,7 @@ function processMetadata(metadata: Metadata): string {
               </p>
             ))}
             {txdata.txtype == "Incoming" && (<div>Incoming</div>)}
+            {txdata.txtype == "Minting" && (<div>Minting</div>)}
             {txdata.txtype == "Staking" && (<div>Staking</div>)}
             {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
             {txdata.txtype == "Outgoing" && (
