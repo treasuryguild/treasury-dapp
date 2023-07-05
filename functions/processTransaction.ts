@@ -37,7 +37,7 @@ const handler: Handler = async (event: any, context: any) => {
             "Donation":["sent donation", "send donation", "donation sent"],
             "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties","incentives"],
             "Fixed costs":["Fixed costs","Comm Org Tools","Zoom","GitBook", "comm-org-tools", "expenses", "costs"],
-            "Internal transfer":["Internal wallet transfer","Internal transfer"],
+            "Internal Transfer":["Internal wallet transfer","Internal Transfer"],
             "Minting":["Minted new tokens","Minted tokens", "Minting tokens", "Minting new tokens"],
             "Rewards Withdrawal":["Rewards-Withdrawal","Internal wallet transfer and staking rewards","staking rewards", "Stake rewards", "Stake Pool Rewards","Withdrawal staking reward funds"],
             "Incoming":["Incoming","IOG", "received donation", "donation received"]

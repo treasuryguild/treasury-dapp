@@ -5,9 +5,10 @@ export async function getTxInfo(usedAddresses, txData, assets) {
   let addressAssets = {};
   let idCounter = 1;
   let transactionType = "";
-
+  
   let isOutgoing = false;
   let isStaking = false;
+  let isInternalTransfer = false;
   let isMinting = false;
 
   let totalInputValue = 0;
@@ -32,7 +33,11 @@ export async function getTxInfo(usedAddresses, txData, assets) {
           outputs[0].asset_list.length > 0
         ) {
           isMinting = true;
+        } else if (inputs.every(input => input.stake_addr === outputs[0].stake_addr)) {
+          isInternalTransfer = true;
+          isStaking = true;
         }
+        
       if (!isStaking && !isMinting) {
         isOutgoing = true;
       }
@@ -64,8 +69,13 @@ export async function getTxInfo(usedAddresses, txData, assets) {
       for (const output of outputs) {
         if (usedAddresses.includes(output.payment_addr.bech32)) {
           totalOutputValue += parseFloat(output.value);
-          const difference = totalInputValue - totalOutputValue - parseFloat(txData.fee);
-
+          let difference = 0.00
+          if (isInternalTransfer) {
+            transactionType = "Internal Transfer";
+            difference = parseFloat(txData.fee);
+          } else {
+            difference = totalInputValue - totalOutputValue - parseFloat(txData.fee);
+          }
           // If difference is not zero, it means ADA has been gained or lost
           if (difference !== 0) {
             adaAmount = difference;
@@ -84,6 +94,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
           });
           idCounter++;
         }
+        if (isInternalTransfer) {break;}
       }
     }
 

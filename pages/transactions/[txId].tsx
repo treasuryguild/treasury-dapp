@@ -218,6 +218,10 @@ function Txid() {
             label = txdata.txtype
             metaDescription = 'Rewards Withdrawal'
             setDescription(metaDescription)
+          } else if (txdata.txtype == "Internal Transfer") {
+            label = txdata.txtype
+            metaDescription = 'Internal Transfer'
+            setDescription(metaDescription)
           } else if (txdata.txtype == "Minting") {
             label = txdata.txtype
             metaDescription = 'Minted new tokens'
@@ -503,7 +507,7 @@ function processMetadata(metadata: Metadata): string {
         'Content-Type': 'application/json',
       },
     });
-
+    //console.log(response.data)
     return response.data;
   }
   
@@ -529,6 +533,7 @@ function processMetadata(metadata: Metadata): string {
             {txdata.txtype == "Incoming" && (<div>Incoming</div>)}
             {txdata.txtype == "Minting" && (<div>Minting</div>)}
             {txdata.txtype == "Staking" && (<div>Staking</div>)}
+            {txdata.txtype == "Internal Transfer" && (<div>Internal Transfer</div>)}
             {txdata.txtype == "Rewards Withdrawal" && (<div>Rewards Withdrawal</div>)}
             {txdata.txtype == "Outgoing" && (
             <div className={styles.labels}>
