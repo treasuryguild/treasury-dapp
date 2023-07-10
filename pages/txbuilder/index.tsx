@@ -347,7 +347,8 @@ function TxBuilder() {
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
         const totalAmountsString = formatTotalAmounts(totalAmounts)
-
+        const monthly_wallet_budget_string = formatTotalAmounts(myVariable['monthly_budget_balance'])
+        //console.log("monthly_wallet_budget_string", monthly_wallet_budget_string)
         txdata = {
           ...txdata,
           txamounts: txamounts,
@@ -357,6 +358,7 @@ function TxBuilder() {
           walletBalanceAfterTx: walletBalanceAfterTx,
           balanceString: balanceString,
           totalAmountsString: totalAmountsString,
+          monthly_wallet_budget_string: monthly_wallet_budget_string,
           txdescription: txdescription,
           formattedDate: formattedDate,
           tokenRates: tokenRates
@@ -413,11 +415,12 @@ function TxBuilder() {
               pType = prepType.replace("Proposal", '')
             }
             customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
-            await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
+            //await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             //await commitFile(customFilePath, customFileContent)
             //await sendDiscordMessage(updatedVariable);
             //await checkAndUpdate(txdata, txid);
             resolve(txid);
+            await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             //router.push(`/transactions/${txid}`)
             router.push(`/txbuilder`)
             setLoading(false)

@@ -20,7 +20,12 @@ export async function sendDiscordMessage(myVariable) {
   console.log("balTokens",balTokens, myVariable)
   const balance = `${myVariable.balanceString}`
   let txdetail = `${myVariable.totalAmountsString}`
-  let details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
+  let details = ''
+  if (myVariable.project == "Singularity Net Ambassador Wallet" || myVariable.project == "Test Wallet") {
+    details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`Monthly Budget Balance `+'```md\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
+  } else {
+    details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
+  }
   const content = `${header}`;
   const embeds = [
     {
