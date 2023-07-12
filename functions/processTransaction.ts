@@ -91,7 +91,8 @@ const handler: Handler = async (event: any, context: any) => {
                   total_ada: myVariable.totalAmounts.ADA,
                   project_id: myVariable.project_id,
                   total_tokens: total_tokens,
-                  total_amounts: total_amounts
+                  total_amounts: total_amounts,
+                  monthly_budget_balance: myVariable.monthly_budget_balance
               }
           ])
           .select(`tx_id`)

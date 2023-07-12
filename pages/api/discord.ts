@@ -19,7 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'pqfqwr': process.env.METH_DISCORD_WEBHOOK_URL,
     '94cqxx': process.env.SWARM_DISCORD_WEBHOOK_URL,
     'gfyvd3': process.env.SWARM_DISCORD_WEBHOOK_URL,
-    'l0lw53': process.env.SWARM_DISCORD_WEBHOOK_URL
+    'l0lw53': process.env.SWARM_DISCORD_WEBHOOK_URL,
+    '4tkmkp': process.env.HIVE_DISCORD_WEBHOOK_URL
     //'c6fs7m': process.env.SNET_DISCORD_WEBHOOK_URL,
     // other wallet addresses
   };

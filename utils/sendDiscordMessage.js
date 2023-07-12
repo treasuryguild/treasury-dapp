@@ -8,7 +8,11 @@ export async function sendDiscordMessage(myVariable) {
   let txtype = myVariable.txtype
   let txtype2 = ''
   let color = 0xeb3477
-  if (txtype == 'Outgoing') {
+  if (txtype == 'Incoming') {
+    txtype2 = 'Amount received'
+    wallet = myVariable.incomingwallet
+    color = 0x16fa3c
+  } else if (txtype == 'Outgoing') {
     txtype2 = 'Amount paid'
     color = 0xeb3477
   } else {

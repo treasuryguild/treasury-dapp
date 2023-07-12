@@ -369,9 +369,28 @@ function processMetadata(metadata: Metadata): string {
             }
           }
       totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
-      const totalAmountsString = formatTotalAmounts(totalAmounts)
-      txdata = {...txdata, txdescription, totalAmounts, totalAmountsString}
+      const totalAmountsString = formatTotalAmounts(totalAmounts);
+
+      let monthly_budget_balance: any = {}
+      if (txdata.txtype == "Incoming" && txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 10000) {
+        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) + totalAmounts.AGIX;
+      } else if (txdata.txtype != "Incoming" && txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
+        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
+      }
+      
+      for (let token in totalAmounts) {
+        if (totalAmounts[token] > 0) {
+          if (txdata.txtype == "Incoming" && txdata.project == "Test Wallet") {
+            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) + totalAmounts[token];
+          } else if (txdata.txtype != "Incoming" && txdata.project == "Test Wallet") {
+            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) - totalAmounts[token];
+          }
+        }
+      }        
+      const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+      txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
+    console.log("txdata", txdata)
     setLoading(false);
   }  
   
