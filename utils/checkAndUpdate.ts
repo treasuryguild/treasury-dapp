@@ -113,6 +113,7 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
           }
         }       
         const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+        newMyVariable.monthly_budget_balance = monthly_budget_balance
         newMyVariable.monthly_wallet_budget_string = monthly_wallet_budget_string
         newMyVariable.balanceString = balanceString
         newMyVariable.totalAmountsString = totalAmountsString
