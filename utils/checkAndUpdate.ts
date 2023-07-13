@@ -25,9 +25,6 @@ let newMyVariable: any = []
 
 export async function checkAndUpdate(myVariable:any, thash: any) {
     newMyVariable = {...myVariable};
-    newMyVariable.monthly_budget = {}
-    newMyVariable.monthly_budget_balance = {}
-    newMyVariable.monthly_wallet_budget_string = ''
     async function checkAddress(myVariable: MyVariableType) {
       const { data, error } = await supabase
         .from("projects")
@@ -54,6 +51,9 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
   
     async function updateVar(wallet: any) {
         let projectInfo: any
+        newMyVariable.monthly_budget = {}
+        newMyVariable.monthly_budget_balance = {}
+        newMyVariable.monthly_wallet_budget_string = ''
         projectInfo = await getProject(wallet);
         newMyVariable = {...newMyVariable,...projectInfo}
         let incomingWallet = myVariable.wallet
@@ -93,8 +93,27 @@ export async function checkAndUpdate(myVariable:any, thash: any) {
         const newwalletBal = updateWalletBalanceAfterTx(newMyVariable.walletBalanceAfterTx,newMyVariable.totalAmounts,newMyVariable.walletTokens)
         console.log("newwalletBal", newwalletBal)
         newMyVariable.walletTokens = []
+        let totalAmounts: any = newMyVariable.totalAmounts;
         const balanceString = formatWalletBalance(newMyVariable.walletBalanceAfterTx)
         const totalAmountsString = formatTotalAmounts(newMyVariable.totalAmounts)
+        let monthly_budget_balance: any = {...newMyVariable.monthly_budget}
+        if (newMyVariable.txtype == "Incoming" && newMyVariable.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 10000) {
+          monthly_budget_balance["AGIX"] = (newMyVariable.monthly_budget["AGIX"] || 0) + totalAmounts.AGIX;
+        } else if (newMyVariable.txtype != "Incoming" && newMyVariable.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
+          monthly_budget_balance["AGIX"] = (newMyVariable.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
+        }
+        
+        for (let token in totalAmounts) {
+          if (totalAmounts[token] > 0) {
+            if (newMyVariable.txtype == "Incoming" && newMyVariable.project == "Test Wallet") {
+              monthly_budget_balance[token] = (newMyVariable.monthly_budget[token] || 0) + totalAmounts[token];
+            } else if (newMyVariable.txtype != "Incoming" && newMyVariable.project == "Test Wallet") {
+              monthly_budget_balance[token] = (newMyVariable.monthly_budget[token] || 0) - totalAmounts[token];
+            }
+          }
+        }       
+        const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+        newMyVariable.monthly_wallet_budget_string = monthly_wallet_budget_string
         newMyVariable.balanceString = balanceString
         newMyVariable.totalAmountsString = totalAmountsString
         newMyVariable.txdescription = `Incoming rewards from ${myVariable.project}`
