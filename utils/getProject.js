@@ -59,6 +59,6 @@ export async function getProject(address) {
   await getProjectDetails();
   await getMonthlyBudget();
   groupInfo["monthly_budget"] = monthly_budget
-  console.log(address, "GroupInfo", groupInfo, "monthly_budget", monthly_budget)
+  //console.log(address, "GroupInfo", groupInfo, "monthly_budget", monthly_budget)
   return groupInfo
 }
