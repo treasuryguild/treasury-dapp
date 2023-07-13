@@ -362,7 +362,7 @@ function TxBuilder() {
           tokenRates: tokenRates,
           txtype: 'Outgoing'
         }
-        let monthly_budget_balance: any = {}
+        let monthly_budget_balance: any = {...txdata.monthly_budget}
       if (txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
         monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
       }
