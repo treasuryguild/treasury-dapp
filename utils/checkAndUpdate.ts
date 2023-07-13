@@ -25,6 +25,9 @@ let newMyVariable: any = []
 
 export async function checkAndUpdate(myVariable:any, thash: any) {
     newMyVariable = {...myVariable};
+    newMyVariable.monthly_budget = {}
+    newMyVariable.monthly_budget_balance = {}
+    newMyVariable.monthly_wallet_budget_string = ''
     async function checkAddress(myVariable: MyVariableType) {
       const { data, error } = await supabase
         .from("projects")
