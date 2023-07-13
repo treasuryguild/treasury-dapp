@@ -26,7 +26,7 @@ type Token = {
     name: React.ReactNode;
     amount: React.ReactNode;
   };
-let txdata = {}
+let txdata: any = {}
 
 function TxBuilder() {
   const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` //process.env.NEXT_PUBLIC_LIVE_TICKER_API
@@ -347,7 +347,6 @@ function TxBuilder() {
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
         const totalAmountsString = formatTotalAmounts(totalAmounts)
-        const monthly_wallet_budget_string = formatTotalAmounts(myVariable['monthly_budget_balance'])
         //console.log("monthly_wallet_budget_string", monthly_wallet_budget_string)
         txdata = {
           ...txdata,
@@ -358,12 +357,29 @@ function TxBuilder() {
           walletBalanceAfterTx: walletBalanceAfterTx,
           balanceString: balanceString,
           totalAmountsString: totalAmountsString,
-          monthly_wallet_budget_string: monthly_wallet_budget_string,
           txdescription: txdescription,
           formattedDate: formattedDate,
-          tokenRates: tokenRates
+          tokenRates: tokenRates,
+          txtype: 'Outgoing'
         }
-  
+        let monthly_budget_balance: any = {}
+      if (txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
+        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
+      }
+      
+      for (let token in totalAmounts) {
+        if (totalAmounts[token] > 0) {
+          if (txdata.project == "Test Wallet") {
+            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) - totalAmounts[token];
+          }
+        }
+      }        
+      const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+      txdata = {
+        ...txdata,
+        monthly_budget_balance,
+        monthly_wallet_budget_string
+      }
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
         //router.push('/cancelwallet')
@@ -382,8 +398,7 @@ function TxBuilder() {
     txHash = await wallet.submitTx(signedTx);
     txdata = {
       ...txdata,
-      txHash: txHash,
-      txtype: 'Outgoing'
+      txHash: txHash
     }
     return txHash;
   }
