@@ -296,7 +296,7 @@ function processMetadata(metadata: Metadata): string {
     if (connected) { 
       const databaseLabels = await getLabels();
       const output: OutputLabels[] = transformArrayToObject(databaseLabels);
-      console.log(databaseLabels, output)
+      //console.log(databaseLabels, output)
       setLabelOptions(output);
       const usedAddresses = await wallet.getUsedAddresses();
       const assets = await wallet.getAssets();

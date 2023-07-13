@@ -9,7 +9,7 @@ export async function getLabels() {
 
         if (error && status !== 406) throw error
         if (data) {
-          console.log(data)
+          //console.log(data)
           labels = data
         }
       } catch (error) {

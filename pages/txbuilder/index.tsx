@@ -110,7 +110,7 @@ function TxBuilder() {
   async function assignTokens() {
     const databaseLabels = await getLabels();
     const output: OutputLabels[] = transformArrayToObject(databaseLabels);
-    console.log(databaseLabels, output)
+    //console.log(databaseLabels, output)
     setLabelOptions(output);
     //const status = await setLabels(["Test"]);
     const usedAddresses = await wallet.getUsedAddresses();
@@ -437,7 +437,7 @@ function TxBuilder() {
             resolve(txid);
             await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
             //router.push(`/transactions/${txid}`)
-            router.push(`/txbuilder`)
+            router.push(`/done`)
             setLoading(false)
         } catch (error) {
             console.error("Error updating TxInfo message:", error);
