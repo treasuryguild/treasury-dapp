@@ -52,7 +52,7 @@ export async function getProject(address) {
         if (error) {
           alert(error.message);
         } else {
-          console.error('Unknown error:', error);
+          console.error('Unknown error: ', error);
         }
       }
     }
