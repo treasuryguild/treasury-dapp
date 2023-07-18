@@ -50,7 +50,9 @@ export async function getProject(address) {
         }
       } catch (error) {
         if (error) {
-          alert(error.message);
+          monthly_budget = {"ADA": 0}
+          console.log("error", error.message)
+          //alert(error.message);
         } else {
           console.error('Unknown error: ', error);
         }
