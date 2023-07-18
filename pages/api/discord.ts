@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { content, embeds, wallet } = req.body;
-
+  
   let webhookUrl: string | undefined;
   const webhookUrls: { [key: string]: string | undefined } = {
     '3ynval': process.env.SNET_DISCORD_WEBHOOK_URL,
@@ -20,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'l0lw53': process.env.SWARM_DISCORD_WEBHOOK_URL,
     '4tkmkp': process.env.HIVE_DISCORD_WEBHOOK_URL,
     'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
-    '2qpphm': process.env.TEST2_DISCORD_WEBHOOK_URL
+    '7zxn7j': process.env.TEST2_DISCORD_WEBHOOK_URL
   };
-    //'c6fs7m': process.env.SNET_DISCORD_WEBHOOK_URL, //GovWG
+    //'c6fs7m': process.env.SNET_DISCORD_WEBHOOK_URL, //GovWG 
     // other wallet addresses
   const walletSuffix = wallet.substr(-6);
   webhookUrl = webhookUrls[walletSuffix] //remember to change to webhookUrls[walletSuffix];
@@ -30,9 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const avatarUrl = 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png';
 
   if (typeof webhookUrl === 'undefined') {
-    webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL
-    return res.status(500).json({ error: 'Discord webhook URL is not defined' });
+    webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL;
+    if (!webhookUrl) {
+      return res.status(500).json({ error: 'Discord webhook URL is not defined' });
+    }
   }
+  
   // Get data from the client-side
   
   axios.post(webhookUrl, {
@@ -46,6 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ error: 'Failed to send message' });
+      res.status(500).json({ error: 'Failed to send message', axiosError: err.message });
     });
 }

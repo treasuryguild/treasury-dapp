@@ -196,7 +196,7 @@ const handler: Handler = async (event: any, context: any) => {
         await commitFile(customFilePath, customFileContent)  
         await updateContributionsAndDistributions(myVariable, tx_id, metaData); 
         await sendDiscordMessage(myVariable);
-        await checkAndUpdate(myVariable, thash);
+        //await checkAndUpdate(myVariable, thash);
 
   return {
     statusCode: 200,
