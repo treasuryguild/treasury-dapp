@@ -1,12 +1,9 @@
 import { useEffect, SetStateAction, useState, Key, ReactElement, ReactFragment, ReactPortal, JSXElementConstructor } from 'react'
 import styles from '../styles/Singletx.module.css'
 import { useWallet } from '@meshsdk/react';
-import { Transaction } from '@meshsdk/core';
-import type { Asset } from '@meshsdk/core';
 import { useRouter } from 'next/router'
 import axios from 'axios';
-import { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabaseClient";
+
 import { newWallet } from "../utils/newWallet";
 
 type Group = {
@@ -28,16 +25,11 @@ type ProjectData = {
 
 function Newwallet() {
 
-  const tickerAPI = 'http://localhost:3000/api/tickers'
+  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   
   const router = useRouter();
   const { connected, wallet } = useWallet();
-  const [assets, setAssets] = useState<null | any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [selectedOption, setSelectedOption] = useState<'' | any>('')
-  const [projectName, setProjectName] = useState<'' | any>('')
-  const [doneTxHash, setDoneTxHash] = useState<'' | any>('')
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
@@ -57,7 +49,6 @@ function Newwallet() {
     let finalTokenAmount = 0
     let tokenUnits: any[] = []
     let tickerDetails = await axios.get(tickerAPI)
-    console.log("tickerDetails",tickerDetails.data.tickerApiNames)
     let walletBalance = await wallet.getBalance();
     const assets = await wallet.getAssets();
     let totalAmount = parseFloat(walletBalance[0].quantity).toFixed(6)
@@ -69,7 +60,6 @@ function Newwallet() {
         tokenFingerprint.push(asset.fingerprint)
         tokenUnits.push(asset.unit)
         if (asset.fingerprint === tickerDetails.data.tickerFingerprints[asset.assetName]) {
-          console.log("asset.assetName",asset.assetName)
           finalTokenAmount = asset.quantity/(10**tickerDetails.data.tickerDecimals[asset.assetName])
         } else {
           finalTokenAmount = (parseFloat(asset.quantity)/1000000)
@@ -86,7 +76,6 @@ function Newwallet() {
       tokens.push(JSON.parse(`{"id":"${index+2}","name":"${name}","amount":${tokenAmounts[index]}, "unit":"${tokenUnits[index]}", "fingerprint":"${tokenFingerprint[index]}"}`))
     })
     setWalletTokens(tokens);
-    console.log("walletBalance", walletBalance[0].quantity, tokens)
     await getAssetDetails(tokens);
     await getEchangeRate(tokens);
   }
@@ -97,7 +86,6 @@ function Newwallet() {
     try {
       await axios.get(`https://pool.pm/wallet/${usedAddresses[0]}`).then(response => {
         const details = response.data;
-        console.log("AssestDetails",details);
         for (let i in response.data.tokens) {
           if (response.data.tokens[i].decimals) {
             for (let j in updatedTokens) {
@@ -116,7 +104,6 @@ function Newwallet() {
       //try api
       await axios.get(tickerAPI).then(response => {
         const details = response.data;
-        console.log("AssestDetails",details);
         for (let i in response.data.tickerApiNames) {
             for (let j in updatedTokens) {
               if (tokens[j].fingerprint == response.data.tickerFingerprints[i]) {
@@ -131,134 +118,7 @@ function Newwallet() {
         });
       // handle the error as appropriate
     }
-    
-    console.log("New Token Details", updatedTokens)
     setWalletTokens(updatedTokens);
-  }
-  async function getAssets() {
-    if (wallet) {
-      setLoading(true);
-      const _assets = await wallet.getAssets();
-      setAssets(_assets);
-      setLoading(false);
-    }
-  }
-  
-  async function buildTx(addr: any, sendAssets: Asset[], adaAmount: string, metadata: unknown) {
-    let txHash = ""
-    if (parseInt(adaAmount) > 0) {
-      const tx = new Transaction({ initiator: wallet })
-        .sendLovelace(
-          addr,
-          adaAmount
-        )
-        .sendAssets(
-          addr,
-          sendAssets
-        )
-      tx.setMetadata(674, metadata);;
-      let unsignedTx = ""
-      try {
-        unsignedTx = await tx.build();
-        // continue with the signed transaction
-      } catch (error) {
-        console.error('An error occurred while signing the transaction:', error);
-        //router.push('/cancelwallet')
-        window.location.reload();
-        // handle the error as appropriate
-      }
-      let signedTx = ""
-      try {
-        signedTx = await wallet.signTx(unsignedTx);
-        // continue with the signed transaction
-      } catch (error) {
-        console.error('An error occurred while signing the transaction:', error);
-        //router.push('/cancelwallet')
-        window.location.reload();
-        // handle the error as appropriate
-      }
-    txHash = await wallet.submitTx(signedTx);
-    console.log("txHash",txHash)
-    } else {
-      const tx = new Transaction({ initiator: wallet })
-        .sendAssets(
-          addr,
-          sendAssets
-        )
-      tx.setMetadata(674, metadata);
-    let unsignedTx = ""
-    try {
-      unsignedTx = await tx.build();
-      // continue with the signed transaction
-    } catch (error) {
-      console.error('An error occurred while signing the transaction:', error);
-      //router.push('/cancelwallet')
-      window.location.reload();
-      // handle the error as appropriate
-    }
-    let signedTx = ""
-    try {
-      signedTx = await wallet.signTx(unsignedTx);
-      // continue with the signed transaction
-    } catch (error) {
-      console.error('An error occurred while signing the transaction:', error);
-      //router.push('/cancelwallet')
-      window.location.reload();
-      // handle the error as appropriate
-    }
-    
-    //txHash = await wallet.submitTx(signedTx);
-    try {
-      txHash = await wallet.submitTx(signedTx);
-      // continue with the signed transaction
-      
-    } catch (error) {
-      console.error('An error occurred while signing the transaction:', error);
-      //router.push('/cancelwallet')
-      router.push('/error')
-      // handle the error as appropriate
-    }
-    console.log("txHash",txHash)
-    }
-    
-    return txHash;
-  }
-
-  async function executeTransaction(addr: any, sendAssets: any[], adaAmount: number, metadata: string) {
-    console.log("executeTransaction",addr, sendAssets, adaAmount, metadata)
-    const txid = await buildTx(addr, sendAssets, `${adaAmount}`, metadata);
-    setDoneTxHash(txid)
-    console.log("txid",txid, "doneTxHash", doneTxHash)
-    return txid;
-  }
-
-  function handleOptionChange(event: { target: { value: SetStateAction<string>, id: SetStateAction<any> }; }) {
-    let token = tokens
-    setSelectedOption(event.target.value)
-    token[event.target.id-1].name = event.target.value
-    for (let i in walletTokens) {
-      if (walletTokens[i].name == event.target.value) {
-        token[event.target.id-1].unit = walletTokens[i].unit
-        token[event.target.id-1].decimals = walletTokens[i].decimals
-      }
-    }
-    setTokens(token);
-    console.log("Selected option:", event.target.value , event.target.id, tokens)
-    // Call your function here based on the selected option
-  }
-
-  function handleTokenChange(event: { target: { value: string; id: any }; }) {
-    const token = tokens[event.target.id - 1];
-    token.amount = parseFloat((event.target.value).replace(/\s/g, '').replace(/,/g, '.'));
-    setTokens([...tokens]); // create a new array with updated values to trigger a re-render
-  }
-
-  async function addToken() {
-    if (tokens.length < walletTokens.length) {
-      const newToken = {"id": `${tokens.length + 1}`, "name": "ADA", "amount": 0, "decimals": 6, "fingerprint":""};
-      setTokens([...tokens, newToken]);
-      console.log("Adding Token", tokens);
-    }
   }
 
   function getValue(name: string){
@@ -268,19 +128,15 @@ function Newwallet() {
   }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    console.log("Exchange Rate wallet tokens", wallettokens)
     let tickerDetails = await axios.get(tickerAPI)
-    console.log("tickerDetails", tickerDetails.data.tickerApiNames)
     let tickers = tickerDetails.data.tickerApiNames;
     let tokenExchangeRates: any = {}
     for (let i in wallettokens) {
-      console.log("wallettokens[i].name", wallettokens[i].name)
       try {
         const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
         const rate = response.data[tickers[wallettokens[i].name]].usd;
         if (rate !== undefined) {
           tokenExchangeRates[wallettokens[i].name] = parseFloat(rate).toFixed(3)
-          console.log("exchangeRate", rate);
           if (wallettokens[i].name == "ADA") {
             let xrates: HTMLElement | any
             xrates = document.getElementById('xrate')
@@ -295,26 +151,7 @@ function Newwallet() {
       }
     }
     setTokenRates(tokenExchangeRates)
-    console.log("tokenExchangeRates", tokenExchangeRates)
   }  
-
-  async function getTotalTokens(results: [] | any) {
-    let totalTokensPrep = ""
-    for (let i in results) {
-      if (results[i].name != "GMBL") {
-        let gmblNumber: any
-        let gmblNumber2: any
-        gmblNumber = parseFloat(results[i].amount)
-        gmblNumber2 = (gmblNumber * tokenRates[results[i].name]).toFixed(3)
-        totalTokensPrep = `${totalTokensPrep}
-      "${gmblNumber2} USD in ${results[i].amount} ${results[i].name}",`
-      } else if (results[i].name == "GMBL") {
-        totalTokensPrep = `${totalTokensPrep}
-      "0 USD in ${results[i].amount} ${results[i].name}",`
-      }
-    }
-    return totalTokensPrep;
-  }
 
   async function promptPasswordAndRunFunction() {
     const password = prompt('Please enter the password:');
@@ -392,7 +229,6 @@ function Newwallet() {
     customFileContent = `${JSON.stringify(copyData, null, 2)}`;
     customFilePath = `proposals/${prename}-${name}.json`;
     await commitFile(customFilePath, customFileContent)
-    console.log("fileText",copyData, prename)
     let groupData = { group_name: group }
     let projectData = { project_name: project, project_type: projectType, website: website, wallet: usedAddresses[0], budget_items: budgetItems }
     await newWallet(groupData, projectData);

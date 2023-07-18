@@ -19,55 +19,84 @@ type ProjectData = {
 };
 
 export async function newWallet(groupData: any, projectData: any) {
-    async function getGroupByName(groupName: string) {
-        const { data: existingGroup, error } = await supabase
-          .from("groups")
-          .select("*")
-          .eq("group_name", groupName)
-          .single();
+  async function getGroupByName(groupName: string) {
+    const { data: groups, error } = await supabase
+        .from("groups")
+        .select("*")
+        .eq("group_name", groupName);
       
-        if (error) throw error;
-        console.log('existingGroup',error,existingGroup)
+    if (error) throw error;
       
-        return existingGroup;
-      }
+    return groups && groups.length > 0 ? groups[0] : null;
+  }
+
       
       async function updateGroup(groupData: GroupData, groupId: string): Promise<Group> {
-        
         const updates = {
             group_name: groupData.group_name,
             updated_at: new Date()
         }
+        
         let { data, error } = await supabase
             .from("groups")
             .upsert({ ...updates, group_id: groupId })
             .select('*')
-            .single()
-      
+        
         if (error) throw error;
-        console.log("updateGroup", error, data)
-      
-        if (!data) {
+        
+        if (data) {
+            const groupArray = data as Group[];
+            if (groupArray.length === 0) {
+                throw new Error("Failed to update the group");
+            }
+            return groupArray[0];
+        } else {
             throw new Error("Failed to update the group");
         }
-        console.log("updateGroup data", data)
-        return data as Group;
-    }
+    }    
+    
       
-      async function createGroup(groupData: GroupData): Promise<Group> {
-        const { data, error } = await supabase
+    async function createGroup(groupData: GroupData): Promise<Group> {
+      console.log("Creating group with data: ", groupData);
+    
+      const { data, error } = await supabase
           .from("groups")
-          .upsert(groupData);
-      
-        if (error) throw error;
-        console.log(error)
-        if (!data) {
-          throw new Error("Failed to update the group");
-        }
-      
-        return data as Group;
+          .insert(groupData)
+          .single();
+    
+      console.log("Insertion result: ", { data, error });
+    
+      if (error) {
+        console.error(error);
+        throw error;
       }
-      
+    
+      if (data) {
+        return data as Group;
+      } else {
+        // If data is null, assume the insertion succeeded and query for the inserted group.
+        console.log("Data is null after insertion, querying for inserted group.");
+    
+        const { data: fetchedGroup, error: fetchError } = await supabase
+            .from("groups")
+            .select("*")
+            .eq("group_name", groupData.group_name)
+            .single();
+    
+        if (fetchError) {
+          console.error(fetchError);
+          throw fetchError;
+        }
+    
+        if (fetchedGroup) {
+          return fetchedGroup as Group;
+        } else {
+          throw new Error("Failed to fetch the created group.");
+        }
+      }
+    }    
+    
+       
       async function insertOrUpdateProject(projectData: ProjectData, groupId: string) {
         // Check if projectData.wallet exists in 'projects'
         const { data: existingProjects, error: error1 } = await supabase
@@ -97,20 +126,33 @@ export async function newWallet(groupData: any, projectData: any) {
       
       async function updateProject(groupData: GroupData, projectData: ProjectData) {
         console.log(groupData, projectData);
+        let existingGroup;
         try {
-          const existingGroup = await getGroupByName(groupData.group_name);
-          const groupId = existingGroup
-            ? (await updateGroup(groupData, existingGroup.group_id)).group_id
-            : (await createGroup(groupData)).group_id;
-          console.log("passed");
-          await insertOrUpdateProject(projectData, groupId);
+            existingGroup = await getGroupByName(groupData.group_name);
         } catch (error) {
-          if (error instanceof Error) {
-            alert(error.message);
-          } else {
-            console.error("Unknown error:", error);
-          }
+            console.error("Could not fetch the group, creating a new one", error);
         }
-      }
+    
+        let groupId;
+    
+        if (existingGroup) {
+            groupId = (await updateGroup(groupData, existingGroup.group_id)).group_id;
+        } else {
+          console.log("groupData", groupData)
+            groupId = (await createGroup(groupData)).group_id;
+        }
+    
+        console.log("passed");
+        try {
+            await insertOrUpdateProject(projectData, groupId);
+        } catch (error) {
+            if (error instanceof Error) {
+                alert(error.message);
+            } else {
+                console.error("Unknown error:", error);
+            }
+        }
+    }    
+    
       return await updateProject(groupData, projectData)
   }
