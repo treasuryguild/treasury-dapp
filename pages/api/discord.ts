@@ -21,10 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     '4tkmkp': process.env.HIVE_DISCORD_WEBHOOK_URL,
     'lq69gt': process.env.TEST_DISCORD_WEBHOOK_URL,
     '2qpphm': process.env.TEST2_DISCORD_WEBHOOK_URL
-    //'c6fs7m': process.env.SNET_DISCORD_WEBHOOK_URL,
-    // other wallet addresses
   };
-  
+    //'c6fs7m': process.env.SNET_DISCORD_WEBHOOK_URL, //GovWG
+    // other wallet addresses
   const walletSuffix = wallet.substr(-6);
   webhookUrl = webhookUrls[walletSuffix] //remember to change to webhookUrls[walletSuffix];
 
