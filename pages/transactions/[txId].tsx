@@ -243,7 +243,7 @@ function Txid() {
       ],
       "contributions": [
         {
-          "taskCreator": "${txdata.project}",
+          "taskCreator": ["${txdata.project}"],
           "label": ["${label}"],
           "description": [
             "${metaDescription}"

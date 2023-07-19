@@ -6,7 +6,7 @@ interface SwitchingComponentProps {
     contributionBuilderProps: any; 
     transactionBuilderProps: any;
     onClick: () => void;
-  }
+}
 
 const SwitchingComponent = (props: SwitchingComponentProps) => {
   const { transactionBuilderProps, contributionBuilderProps } = props;
@@ -18,11 +18,14 @@ const SwitchingComponent = (props: SwitchingComponentProps) => {
   const toggleButton = () => {
     setIsOn(!isOn);
     props.onClick();
+    console.log(contributionBuilderProps.myVariable.group, transactionBuilderProps.myVariable.group);
   };
 
   return (
     <>
-      <button onClick={toggleButton}>{isOn ? 'Switch to Manual' : 'Switch to Dework'}</button>
+      {transactionBuilderProps.myVariable.group !== undefined && (
+        <button onClick={toggleButton}>{isOn ? 'Switch to Manual' : 'Switch to Dework'}</button>
+      )}
       {isOn ? (
         <TransactionBuilder {...transactionBuilderProps}/>
       ) : (
