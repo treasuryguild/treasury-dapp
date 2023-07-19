@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 
 type Contributor = Record<string, Partial<Record<Tokens, string>>>;
 export type Contribution = {
-  taskCreator: string;
+  taskCreator: string[];
   name: string[];
   label: string[];
   contributors: Contributor;
@@ -48,7 +48,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const tokensList: Tokens[] = walletTokens.map((token: any) => token.name);
   const [contributorWallets, setContributorWallets] = useState<any[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([{
-    taskCreator: myVariable.group,
+    taskCreator: [myVariable.group],
     name: [],
     label: [],
     contributors: {},
@@ -71,7 +71,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     setContributions([
       ...contributions,
       {
-        taskCreator: myVariable.group,
+        taskCreator: [myVariable.group],
         name: [],
         label: [],
         contributors: {},

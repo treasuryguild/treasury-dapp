@@ -407,59 +407,54 @@ function TxBuilder() {
   }
 
   async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
-    let customFilePath = '';
-    let customFileContent = '';
-    let txid: string = ''
-    try {
-    txid = await buildTx(assetsPerAddress, adaPerAddress, metaData);
-    
-    setDoneTxHash(txid)
-    // Use a promise to wait for state update
-    return new Promise<string>(async(resolve, reject) => {
+    return new Promise<string>(async (resolve, reject) => {
+      try {
+        let customFilePath = '';
+        let customFileContent = '';
+        let txid: string = '';
+        txid = await buildTx(assetsPerAddress, adaPerAddress, metaData);
+        setDoneTxHash(txid);
+  
         const updatedVariable = {
-            ...myVariable,
-            ...txdata
+          ...myVariable,
+          ...txdata
         };
         
         setMyVariable(updatedVariable);
-        
-        try {
-            setLoading(true)
-            let newMetaData = metaData
-            newMetaData['txid'] = txid
-            customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
-            let pType = ''
-            if (myVariable.project_type == 'Treasury Wallet') {
-              pType = 'TreasuryWallet'
-            } else {
-              let prepType = myVariable.project_type.replace(/\s/g, '')
-              pType = prepType.replace("Proposal", '')
-            }
-            customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
-            //await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
-            //await commitFile(customFilePath, customFileContent)
-            //await sendDiscordMessage(updatedVariable);
-            //await checkAndUpdate(txdata, txid);
-            resolve(txid);
-            await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath)
-            //router.push(`/transactions/${txid}`)
-            router.push(`/done`)
-            setLoading(false)
-        } catch (error) {
-            console.error("Error updating TxInfo message:", error);
-            reject(error);
+  
+        setLoading(true);
+        let newMetaData = metaData;
+        newMetaData['txid'] = txid;
+        customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
+        let pType = '';
+  
+        if (myVariable.project_type == 'Treasury Wallet') {
+          pType = 'TreasuryWallet';
+        } else {
+          let prepType = myVariable.project_type.replace(/\s/g, '');
+          pType = prepType.replace("Proposal", '');
         }
+  
+        customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
+  
+        await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
+        resolve(txid);
+  
+        router.push(`/done`);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error updating TxInfo message:", error);
+        reject(error);
+        if (typeof error === 'object' && error !== null && 'message' in error) {
+          alert((error as Error).message);
+          console.log((error as Error).message);
+        } else {
+          alert(error);
+          console.log(error);
+        }  
+      }
     });
-  } catch(error) {
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      alert((error as Error).message);
-      console.log((error as Error).message)
-    } else {
-      alert(error);
-      console.log(error)
-    }    
-  }
-}
+  }  
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
     let tickerDetails = await axios.get(tickerAPI)
@@ -493,13 +488,19 @@ function TxBuilder() {
         <div className={styles.heading}>
           <h1>{projectName}</h1>
         </div>
+        {!loading && !connected && (
+          <div className={styles.body}>
+            <div className={styles.form}>
+              <div className={styles.loading}>Please connect wallet</div>
+            </div>
+          </div>)}
         {loading && (
           <div className={styles.body}>
             <div className={styles.form}>
               <div className={styles.loading}>Executing...</div>
             </div>
           </div>)}
-        {!loading && (
+        {!loading && connected && (
            <div className={styles.body}>
            <div className={styles.form}>
              <div className={styles.formitem}>
