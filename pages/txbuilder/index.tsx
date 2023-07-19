@@ -394,6 +394,7 @@ function TxBuilder() {
         // continue with the signed transaction
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
+        //alert(error)
         //router.push('/cancelwallet')
         //window.location.reload();
       }
@@ -408,7 +409,10 @@ function TxBuilder() {
   async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
     let customFilePath = '';
     let customFileContent = '';
-    const txid: string = await buildTx(assetsPerAddress, adaPerAddress, metaData);
+    let txid: string = ''
+    try {
+    txid = await buildTx(assetsPerAddress, adaPerAddress, metaData);
+    
     setDoneTxHash(txid)
     // Use a promise to wait for state update
     return new Promise<string>(async(resolve, reject) => {
@@ -446,6 +450,15 @@ function TxBuilder() {
             reject(error);
         }
     });
+  } catch(error) {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      alert((error as Error).message);
+      console.log((error as Error).message)
+    } else {
+      alert(error);
+      console.log(error)
+    }    
+  }
 }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
