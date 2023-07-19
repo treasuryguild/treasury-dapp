@@ -26,9 +26,9 @@ export async function sendDiscordMessage(myVariable) {
   let txdetail = `${myVariable.totalAmountsString}`
   let details = ''
   if (myVariable.project === "Singularity Net Ambassador Wallet" || myVariable.project === "Test Wallet") {
-    details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`Monthly Budget Balance `+'```md\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
+    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`**Monthly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
   } else {
-    details = '```md\n' + `${txdetail}` + '\n```' + '\n`Wallet Balance of `'+`[${myVariable.project}](https://pool.pm/${wallet})`+'\n'+'```css\n'+`${balance}`+'\n```';
+    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```';
   }
   const content = `${header}`;
   const embeds = [

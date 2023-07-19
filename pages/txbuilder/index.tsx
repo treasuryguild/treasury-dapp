@@ -238,12 +238,13 @@ function TxBuilder() {
     return walletBalanceAfterTx;
   }
   
-  function formatWalletBalance(walletBalanceAfterTx: IToken[]): string {
-    const formattedBalances = walletBalanceAfterTx.map(item => {
-        return `${item.amount} ${item.name}`;
+  function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
+    const formattedBalances = walletBalanceAfterTx.map((item: Token) => {
+        const amount = typeof item.amount === 'number' ? item.amount : parseFloat(item.amount as string);
+        return `* ${amount.toFixed(2)} ${item.name}\n`;
     });
-
-    return formattedBalances.join(' ');
+  
+    return formattedBalances.join('');
   }
 
   function formatTotalAmounts(totalAmounts: ITotalAmounts): string {
@@ -370,7 +371,8 @@ function TxBuilder() {
       for (let token in totalAmounts) {
         if (totalAmounts[token] > 0) {
           if (txdata.project == "Test Wallet") {
-            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) - totalAmounts[token];
+            monthly_budget_balance[token] = ((txdata.monthly_budget[token] || 0) - totalAmounts[token]);
+            monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? (monthly_budget_balance[token]).toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
           }
         }
       }        

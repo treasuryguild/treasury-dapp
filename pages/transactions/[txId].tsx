@@ -157,10 +157,10 @@ function Txid() {
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
     const formattedBalances = walletBalanceAfterTx.map((item: Token) => {
-        return `${parseFloat(item.amount).toFixed(2)} ${item.name}`;
+        return `* ${parseFloat(item.amount).toFixed(2)} ${item.name}\n`;
     });
   
-    return formattedBalances.join(' ');
+    return formattedBalances.join('');
   }
   
 
