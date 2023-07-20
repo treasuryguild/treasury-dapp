@@ -428,13 +428,13 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
               <p style={{ fontSize: 'smaller' }}>wallet: {getWalletValue(contributorId)}</p>
               <br />
               <div className={styles.contributorBody}>
-              <div className={styles.contributorTokenButtons}>
-                {tokensList.map(token => (
-                  <button key={token} onClick={() => addToken(index, contributorId, token, '')}>
-                    + {token}
-                  </button>
-                ))}
-              </div>
+                <div className={styles.contributorTokenButtons}>
+                  {tokensList.map(token => (
+                    <button key={token} onClick={() => addToken(index, contributorId, token, '')}>
+                      + {token}
+                    </button>
+                  ))}
+                </div>
                 <div>
                   {Object.entries(contribution.contributors[contributorId]).map(([token, amount]) => (
                     <div className={styles.contributorToken} key={token}>

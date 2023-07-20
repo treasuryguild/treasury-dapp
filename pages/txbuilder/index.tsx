@@ -13,6 +13,7 @@ import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
 import { getProject } from '../../utils/getProject'
+import { getAssetList } from '../../utils/getassetlist'
 import { getLabels } from '../../utils/getLabels'
 import { setLabels } from '../../utils/setLabels'
 //import { updateTxDatabase } from '../../utils/updateTxDatabase'
@@ -206,6 +207,8 @@ function TxBuilder() {
       // handle the error as appropriate
     }
     setWalletTokens(updatedTokens);
+    //let assets = await getAssetList(usedAddresses[0]);
+    //console.log("getAssetlist", assets, updatedTokens)
   }
 
   interface IToken {
