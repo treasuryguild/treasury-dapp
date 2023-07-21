@@ -1,28 +1,31 @@
 import axios from "axios";
 
 function mapAssetData(assetDetails, assetList) {
-    return assetDetails.map((asset, index) => {
-        const matchingAsset = assetList.find(listAsset => listAsset.fingerprint === asset.fingerprint);
-        const name = asset.token_registry_metadata && asset.token_registry_metadata.ticker 
-                       ? asset.token_registry_metadata.ticker 
-                       : asset.asset_name_ascii;
-        const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
-        return {
-            id: String(index + 1),
-            name: name,
-            amount: (Number(matchingAsset.quantity) / Math.pow(10, matchingAsset.decimals)).toFixed(matchingAsset.decimals),
-            unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
-            fingerprint: asset.fingerprint,
-            decimals: matchingAsset.decimals,
-            tokenType: tokenType
-        };
-    });
+  return assetDetails.map((asset, index) => {
+      const matchingAsset = assetList.find(listAsset => listAsset.fingerprint === asset.fingerprint);
+      const name = asset.token_registry_metadata && asset.token_registry_metadata.ticker 
+                ? asset.token_registry_metadata.ticker 
+                : (asset.token_registry_metadata && asset.token_registry_metadata.name ? asset.token_registry_metadata.name : asset.asset_name_ascii);
+      const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
+      const decimals = asset.token_registry_metadata && asset.token_registry_metadata.decimals
+                     ? asset.token_registry_metadata.decimals 
+                     : null;
+      return {
+          id: String(index + 1),
+          name: name,
+          amount: (Number(matchingAsset.quantity) / Math.pow(10, decimals)).toFixed(decimals),
+          unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
+          fingerprint: asset.fingerprint,
+          decimals: decimals,
+          tokenType: tokenType
+      };
+  });
 }
 
-
 export async function getAssetList(wallet) {
-    async function getList() {
-        const url = "https://api.koios.rest/api/v0/address_assets";
+    
+    async function getBalance() {
+        const url = "https://api.koios.rest/api/v0/address_info?select=balance";
         const data = {
           _addresses: [wallet],
         };
@@ -33,8 +36,22 @@ export async function getAssetList(wallet) {
             'Content-Type': 'application/json',
           },
         });
-        //console.log(response.data)
         return response.data;
+    }
+
+    async function getList() {
+      const url = "https://api.koios.rest/api/v0/address_assets";
+      const data = {
+        _addresses: [wallet],
+      };
+  
+      const response = await axios.post(url, data, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
     }
 
     function transformArray(assetList) {
@@ -43,7 +60,7 @@ export async function getAssetList(wallet) {
 
     async function getAssetDetails(transformedArray) {
         const url = "https://api.koios.rest/api/v0/asset_info?select=fingerprint,asset_name_ascii,total_supply,token_registry_metadata";
-        const data = {
+        const data = {     
           _asset_list: transformedArray,
         };
     
@@ -57,13 +74,33 @@ export async function getAssetList(wallet) {
         return response.data;
     }
 
+    let balance = await getBalance();
     let list = await getList();
     let transformedArray = transformArray(list[0].asset_list);
     let assetDetails = await getAssetDetails(transformedArray);
     let mappedAssetData = mapAssetData(assetDetails, list[0].asset_list);
-    console.log("mappedAssetData", mappedAssetData);
-    console.log("transformedArray",transformedArray);
-    console.log("assetDetails", assetDetails);
 
-    return list;
+    // Sort the array so that 'nft' items are at the end
+    mappedAssetData.sort((a, b) => (a.tokenType === 'nft') - (b.tokenType === 'nft'));
+    
+    // Create ADA item
+    const adaItem = {
+      id: "1",  // make ADA always the first item
+      name: "ADA",
+      amount: (Number(balance[0].balance) / Math.pow(10, 6)).toFixed(6), 
+      unit: "lovelace",
+      fingerprint: "", 
+      decimals: 6,
+      tokenType: "fungible"  
+    };
+    
+    // Add ADA item to the start of the array
+    mappedAssetData.unshift(adaItem);
+    
+    // Adjust the id for other items
+    for (let i = 1; i < mappedAssetData.length; i++) {
+      mappedAssetData[i].id = String(i + 1);
+    }
+
+    return mappedAssetData;
 }

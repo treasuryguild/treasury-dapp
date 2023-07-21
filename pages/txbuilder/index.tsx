@@ -109,6 +109,7 @@ function TxBuilder() {
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
+    setTokenRates({})
     const databaseLabels = await getLabels();
     const output: OutputLabels[] = transformArrayToObject(databaseLabels);
     //console.log(databaseLabels, output)
@@ -208,7 +209,7 @@ function TxBuilder() {
     }
     setWalletTokens(updatedTokens);
     //let assets = await getAssetList(usedAddresses[0]);
-    //console.log("getAssetlist", assets, updatedTokens)
+    //console.log("getAssetList", assets, "updatedTokens", updatedTokens)
   }
 
   interface IToken {
