@@ -67,6 +67,17 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
     onContributorWalletsUpdate(contributorWallets);
   }, [contributorWallets]);
 
+  const [tokenDisplayNames, setTokenDisplayNames] = useState<any>({});
+
+useEffect(() => {
+  // create a mapping of token names to display names
+  const newTokenDisplayNames = walletTokens.reduce((map: any, token: any) => {
+    map[token.name] = token.displayname;
+    return map;
+  }, {});
+  setTokenDisplayNames(newTokenDisplayNames);
+}, [walletTokens]);
+
   const addContribution = () => {
     setContributions([
       ...contributions,
@@ -429,9 +440,9 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
               <br />
               <div className={styles.contributorBody}>
                 <div className={styles.contributorTokenButtons}>
-                  {tokensList.map(token => (
-                    <button key={token} onClick={() => addToken(index, contributorId, token, '')}>
-                      + {token}
+                  {walletTokens.map((token: any) => (
+                    <button key={token.name} onClick={() => addToken(index, contributorId, token.name, '')}>
+                      + {token.displayname}
                     </button>
                   ))}
                 </div>
@@ -439,7 +450,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
                   {Object.entries(contribution.contributors[contributorId]).map(([token, amount]) => (
                     <div className={styles.contributorToken} key={token}>
                       <label>
-                        {token} &nbsp;
+                        {tokenDisplayNames[token] || token} &nbsp;
                         <input
                           style={{ width: '100px', padding: '0.2em'}}
                           type="text"

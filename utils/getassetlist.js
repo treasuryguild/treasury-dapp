@@ -1,24 +1,47 @@
 import axios from "axios";
 
+function isValidKey(key) {
+  if (typeof key !== 'string') return false;
+  if (key.length > 40) return false;
+  // Start with a letter, not contain any special characters or spaces
+  return /^[A-Za-z][A-Za-z0-9]*$/.test(key);
+}
+
 function mapAssetData(assetDetails, assetList) {
   return assetDetails.map((asset, index) => {
-      const matchingAsset = assetList.find(listAsset => listAsset.fingerprint === asset.fingerprint);
-      const name = asset.token_registry_metadata && asset.token_registry_metadata.ticker 
-                ? asset.token_registry_metadata.ticker 
-                : (asset.token_registry_metadata && asset.token_registry_metadata.name ? asset.token_registry_metadata.name : asset.asset_name_ascii);
-      const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
-      const decimals = asset.token_registry_metadata && asset.token_registry_metadata.decimals
-                     ? asset.token_registry_metadata.decimals 
-                     : null;
-      return {
-          id: String(index + 1),
-          name: name,
-          amount: (Number(matchingAsset.quantity) / Math.pow(10, decimals)).toFixed(decimals),
-          unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
-          fingerprint: asset.fingerprint,
-          decimals: decimals,
-          tokenType: tokenType
-      };
+    const matchingAsset = assetList.find(listAsset => listAsset.fingerprint === asset.fingerprint);
+    const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
+    let name;
+    let displayname;
+
+    if (tokenType === 'nft') {
+      const nameAscii = asset.asset_name_ascii;
+      name = asset.fingerprint;
+      if (isValidKey(nameAscii)) {
+        displayname = nameAscii;
+      } else {
+        displayname = asset.fingerprint;
+      }
+    } else {
+      displayname = asset.token_registry_metadata && asset.token_registry_metadata.ticker 
+            ? asset.token_registry_metadata.ticker 
+            : (asset.token_registry_metadata && asset.token_registry_metadata.name ? asset.token_registry_metadata.name : asset.asset_name_ascii);
+      name = displayname
+    }
+
+    const decimals = asset.token_registry_metadata && asset.token_registry_metadata.decimals
+                   ? asset.token_registry_metadata.decimals 
+                   : null;
+    return {
+        id: String(index + 1),
+        name: name,
+        displayname: displayname,
+        amount: (Number(matchingAsset.quantity) / Math.pow(10, decimals)).toFixed(decimals),
+        unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
+        fingerprint: asset.fingerprint,
+        decimals: decimals,
+        tokenType: tokenType
+    };
   });
 }
 

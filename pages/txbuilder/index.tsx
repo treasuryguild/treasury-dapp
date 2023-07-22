@@ -12,8 +12,11 @@ import axios from 'axios';
 import supabase from "../../lib/supabaseClient";
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
+import { get, set } from '../../utils/cache'
 import { getProject } from '../../utils/getProject'
 import { getAssetList } from '../../utils/getassetlist'
+import { getAssetList2 } from '../../utils/getassetlist2'
+import { getExchangeRate } from '../../utils/getexchangerate'
 import { getLabels } from '../../utils/getLabels'
 import { setLabels } from '../../utils/setLabels'
 //import { updateTxDatabase } from '../../utils/updateTxDatabase'
@@ -25,7 +28,9 @@ type OptionsType = Array<{value: string, label: string}>;
 type Token = {
     id: string | number;
     name: React.ReactNode;
+    displayname: React.ReactNode;
     amount: React.ReactNode;
+    tokenType: string;
   };
 let txdata: any = {}
 
@@ -131,85 +136,12 @@ function TxBuilder() {
     txdata = {...txdata,
       ...projectInfo,
       wallet: usedAddresses[0],}
-    let tokenNames: string[] = []
-    let tokenFingerprint: any[] = []
-    let tokenAmounts: any[] = []
-    let finalTokenAmount = 0
-    let tokenUnits: any[] = []
-    let tickerDetails = await axios.get(tickerAPI);
-    let walletBalance = await wallet.getBalance();
-    const assets = await wallet.getAssets();
-    let totalAmount = parseFloat(walletBalance[0].quantity).toFixed(6)
-    let finalamount = (parseFloat(totalAmount)/1000000).toFixed(6)
-    let tokens = [{"id":"1","name":"ADA","amount":parseFloat(finalamount).toFixed(6),"unit":"lovelace", "decimals": 6, "fingerprint":""}]
-    assets.map(asset => {
-      if (asset.quantity > 1) {
-        tokenNames.push((asset.assetName))
-        tokenFingerprint.push(asset.fingerprint)
-        tokenUnits.push(asset.unit)
-        if (asset.fingerprint === tickerDetails.data.tickerFingerprints[asset.assetName]) {
-          finalTokenAmount = (parseFloat(asset.quantity))
-        } else {
-          finalTokenAmount = (parseFloat(asset.quantity))
-        }
-        tokenAmounts.push((finalTokenAmount).toFixed(6))
-      }
-    })
-    setWalletTokenUnits(tokenUnits);
-    if (tokenNames.includes("gimbal")) {
-      const index = tokenNames.indexOf("gimbal");
-      tokenNames[index] = "GMBL";
-    }
-    tokenNames.map((name, index) => {
-      tokens.push(JSON.parse(`{"id":"${index+2}","name":"${name}","amount":${tokenAmounts[index]}, "unit":"${tokenUnits[index]}", "fingerprint":"${tokenFingerprint[index]}"}`))
-    })
-    setWalletTokens(tokens);
+      let assets = await getAssetList(usedAddresses[0]);
+      setWalletTokens(assets);
+      console.log("getAssetList", assets)
     if (projectInfo.project != undefined) {
-      await getAssetDetails(tokens);
-      await getEchangeRate(tokens);
+      await getTokenRates(assets);
     }
-  }
-
-  async function getAssetDetails(tokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    let updatedTokens = tokens
-    const usedAddresses = await wallet.getUsedAddresses();
-    try {
-      await axios.get(`https://pool.pm/wallet/${usedAddresses[0]}`).then(response => {
-        for (let i in response.data.tokens) {
-          if (response.data.tokens[i].quantity > 1) {
-            for (let j in updatedTokens) {
-              if (tokens[j].fingerprint == response.data.tokens[i].fingerprint) {
-                updatedTokens[j]['name'] = response.data.tokens[i].metadata.ticker?response.data.tokens[i].metadata.ticker:response.data.tokens[i].metadata.symbol
-                updatedTokens[j]['decimals'] = 0;
-                updatedTokens[j]['decimals'] = response.data.tokens[i].metadata.decimals?response.data.tokens[i].metadata.decimals:0;
-                updatedTokens[j]['amount'] = (parseFloat(updatedTokens[j]['amount'])/10**updatedTokens[j]['decimals']).toFixed(updatedTokens[j]['decimals'])
-              }
-            }
-          }
-        }
-        });
-      // continue with the signed transaction
-    } catch (error) {
-      console.error('An error occurred while signing the transaction:', error);
-      //try api
-      await axios.get(tickerAPI).then(response => {
-        const details = response.data;
-        for (let i in response.data.tickerApiNames) {
-            for (let j in updatedTokens) {
-              if (tokens[j].fingerprint == response.data.tickerFingerprints[i]) {
-                updatedTokens[j]['name'] = i;
-                updatedTokens[j]['decimals'] = 0;
-                updatedTokens[j]['decimals'] = response.data.tickerDecimals[i]?response.data.tickerDecimals[i]:0;
-                updatedTokens[j]['amount'] = (parseFloat(updatedTokens[j]['amount'])/10**updatedTokens[j]['decimals']).toFixed(updatedTokens[j]['decimals'])
-              }
-            }
-        }
-        });
-      // handle the error as appropriate
-    }
-    setWalletTokens(updatedTokens);
-    //let assets = await getAssetList(usedAddresses[0]);
-    //console.log("getAssetList", assets, "updatedTokens", updatedTokens)
   }
 
   interface IToken {
@@ -217,8 +149,10 @@ function TxBuilder() {
     decimals: number;
     id: string;
     name: string;
+    displayname: string;
     unit: string;
     fingerprint?: string;
+    tokenType: string;
   }
   
   interface ITotalAmounts {
@@ -245,7 +179,9 @@ function TxBuilder() {
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
     const formattedBalances = walletBalanceAfterTx.map((item: Token) => {
         const amount = typeof item.amount === 'number' ? item.amount : parseFloat(item.amount as string);
-        return `* ${amount.toFixed(2)} ${item.name}\n`;
+        if (item.tokenType == "fungible") {
+          return `* ${amount.toFixed(2)} ${item.name}\n`;
+        }
     });
   
     return formattedBalances.join('');
@@ -322,7 +258,7 @@ function TxBuilder() {
                 if (txamounts[i][walletTokens[k].name] == undefined) {
                   txamounts[i][walletTokens[k].name] = 0
                 }
-                txamounts[i][walletTokens[k].name] = txamounts[i][walletTokens[k].name] + (parseInt(assetsPerAddress[i][j].quantity)/(10**parseInt(walletTokens[k].decimals)))
+                txamounts[i][walletTokens[k].name] = txamounts[i][walletTokens[k].name] + (parseInt(assetsPerAddress[i][j].quantity)/(10**parseInt(walletTokens[k].decimals?walletTokens[k].decimals:0)))
               }
             }
           }
@@ -392,7 +328,7 @@ function TxBuilder() {
         //window.location.reload();
       }
       let signedTx = ""
-      //console.log("txdata", txdata)
+      console.log("txdata", txdata)
       try {
         signedTx = await wallet.signTx(unsignedTx);
         // continue with the signed transaction
@@ -460,31 +396,29 @@ function TxBuilder() {
     });
   }  
 
-  async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    let tickerDetails = await axios.get(tickerAPI)
-    let tickers = tickerDetails.data.tickerApiNames;
-    let tokenExchangeRates: any = {}
-    for (let i in wallettokens) {
-      try {
-        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
-        const rate = response.data[tickers[wallettokens[i].name]].usd;
-        if (rate !== undefined) {
-          tokenExchangeRates[wallettokens[i].name] = parseFloat(rate).toFixed(3)
-          if (wallettokens[i].name == "ADA") {
-            let xrates: HTMLElement | any
-            xrates = document.getElementById('xrate')
-            xrates.value = parseFloat(rate).toFixed(3);
-          }
-        } else {
-          tokenExchangeRates[wallettokens[i].name] = 0.00
-        }
-      } catch (error) {
-        //console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
-        tokenExchangeRates[wallettokens[i].name] = 0.00
+  async function getTokenRates(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
+    // Extract token names from wallettokens
+    const tokenNames = wallettokens.map(token => token.name);
+    const cachedData = get('rates');
+  
+    let tokenExchangeRates:any = {};
+    
+    // If we have cachedData and the token names have not changed, use the cached rates
+    if (cachedData && JSON.stringify(cachedData.tokens) === JSON.stringify(tokenNames)) {
+      tokenExchangeRates = cachedData.data;
+      setTokenRates(tokenExchangeRates);
+      if (tokenExchangeRates['ADA'] !== undefined) {
+        let xrates:any = document.getElementById('xrate');
+        xrates.value = tokenExchangeRates['ADA'];
       }
+    } else {
+      // If the token names have changed, or we don't have cached data, fetch the rates
+      tokenExchangeRates = await getExchangeRate(wallettokens);
+      set('rates', tokenExchangeRates, tokenNames); // Save the new rates and token names in cache
+      setTokenRates(tokenExchangeRates);
     }
-    setTokenRates(tokenExchangeRates)
-  }  
+    console.log("tokenrates", tokenExchangeRates, wallettokens);
+  }   
   
   return (
     <>
@@ -536,7 +470,7 @@ function TxBuilder() {
                {walletTokens.map((token: Token) => {
                  return (
                    <p key={token.id}>
-                     {token.name} {token.amount}
+                     {token.displayname} {token.amount}
                    </p>
                  );
                })}
