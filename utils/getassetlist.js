@@ -110,6 +110,7 @@ export async function getAssetList(wallet) {
     const adaItem = {
       id: "1",  // make ADA always the first item
       name: "ADA",
+      displayname: "ADA",
       amount: (Number(balance[0].balance) / Math.pow(10, 6)).toFixed(6), 
       unit: "lovelace",
       fingerprint: "", 

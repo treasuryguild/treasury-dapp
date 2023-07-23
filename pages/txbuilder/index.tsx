@@ -309,7 +309,7 @@ function TxBuilder() {
       }
       
       for (let token in totalAmounts) {
-        if (totalAmounts[token] > 0) {
+        if (totalAmounts[token] > 0 && token == "fungible") {
           if (txdata.project == "Test Wallet") {
             monthly_budget_balance[token] = ((txdata.monthly_budget[token] || 0) - totalAmounts[token]);
             monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? (monthly_budget_balance[token]).toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);

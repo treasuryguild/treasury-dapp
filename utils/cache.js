@@ -1,4 +1,4 @@
-let cacheLifetime = 5 * 60 * 1000; // 5 minutes
+let cacheLifetime = 1 * 10 * 1000; // 5 minutes
 
 export function get(key) {
   const item = JSON.parse(localStorage.getItem(key));
