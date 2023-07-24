@@ -379,25 +379,33 @@ function processMetadata(metadata: Metadata): string {
       const totalAmountsString = formatTotalAmounts(totalAmounts);
 
       let monthly_budget_balance: any = {...txdata.monthly_budget}
-      if (txdata.txtype == "Incoming" && txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 10000) {
-        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) + totalAmounts.AGIX;
-      } else if (txdata.txtype != "Incoming" && txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
-        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
-      }
+      if (txdata.project == "Singularity Net Ambassador Wallet") {
+        if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
+          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) + Number(totalAmounts.AGIX);
+        } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
+          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+        }
+        monthly_budget_balance["AGIX"] = typeof monthly_budget_balance["AGIX"] === 'number' ? monthly_budget_balance["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance["AGIX"] as string).toFixed(2);
+      }     
       
-      for (let token in totalAmounts) {
-        if (totalAmounts[token] > 0 && token == "fungible") {
-          if (txdata.txtype == "Incoming" && txdata.project == "Test Wallet") {
-            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) + totalAmounts[token];
-          } else if (txdata.txtype != "Incoming" && txdata.project == "Test Wallet") {
-            monthly_budget_balance[token] = (txdata.monthly_budget[token] || 0) - totalAmounts[token];
+      if (txdata.project == "Test Wallet") {
+        for (let token in totalAmounts) {
+          const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+          if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+            if (txdata.txtype == "Incoming") {
+              monthly_budget_balance[token] = (Number(txdata.monthly_budget[token]) || 0) + Number(totalAmounts[token]);
+            } else if (txdata.txtype != "Incoming") {
+              monthly_budget_balance[token] = (Number(txdata.monthly_budget[token]) || 0) - Number(totalAmounts[token]);
+            }
+            monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? monthly_budget_balance[token].toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
           }
         }
-      }       
+      }      
+     
       const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
-    console.log("txdata", txdata)
+    //console.log("txdata", txdata)
     setLoading(false);
   }  
   
@@ -417,7 +425,7 @@ function processMetadata(metadata: Metadata): string {
       
     let assetList = await getAssetList(usedAddresses[0]);
       setWalletTokens(assetList);
-      console.log("getAssetList", assetList)
+      //console.log("getAssetList", assetList)
     if (projectInfo.project != undefined) {
       await getTokenRates(assetList);
     }

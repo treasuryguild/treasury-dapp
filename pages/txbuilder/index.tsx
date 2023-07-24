@@ -138,7 +138,7 @@ function TxBuilder() {
       wallet: usedAddresses[0],}
       let assets = await getAssetList(usedAddresses[0]);
       setWalletTokens(assets);
-      console.log("getAssetList", assets)
+      //console.log("getAssetList", assets)
     if (projectInfo.project != undefined) {
       await getTokenRates(assets);
     }
@@ -304,18 +304,21 @@ function TxBuilder() {
           txtype: 'Outgoing'
         }
         let monthly_budget_balance: any = {...txdata.monthly_budget}
-      if (txdata.project == "Singularity Net Ambassador Wallet" && totalAmounts.AGIX > 0) {
-        monthly_budget_balance["AGIX"] = (txdata.monthly_budget["AGIX"] || 0) - totalAmounts.AGIX;
-      }
-      
-      for (let token in totalAmounts) {
-        if (totalAmounts[token] > 0 && token == "fungible") {
-          if (txdata.project == "Test Wallet") {
-            monthly_budget_balance[token] = ((txdata.monthly_budget[token] || 0) - totalAmounts[token]);
-            monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? (monthly_budget_balance[token]).toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
-          }
+        if (txdata.project == "Singularity Net Ambassador Wallet" && Number(totalAmounts.AGIX) > 0) {
+          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+          monthly_budget_balance["AGIX"] = typeof monthly_budget_balance["AGIX"] === 'number' ? monthly_budget_balance["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance["AGIX"] as string).toFixed(2);
         }
-      }        
+      
+        if (txdata.project == "Test Wallet") {
+          for (let token in totalAmounts) {
+            const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+            if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+              monthly_budget_balance[token] = ((Number(txdata.monthly_budget[token]) || 0) - Number(totalAmounts[token]));
+              monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? monthly_budget_balance[token].toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
+            }
+          }
+        }        
+                   
       const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
       txdata = {
         ...txdata,
@@ -417,7 +420,7 @@ function TxBuilder() {
       set('rates', tokenExchangeRates, tokenNames); // Save the new rates and token names in cache
       setTokenRates(tokenExchangeRates);
     }
-    console.log("tokenrates", tokenExchangeRates, wallettokens);
+    //console.log("tokenrates", tokenExchangeRates, wallettokens);
   }   
   
   return (
@@ -467,13 +470,30 @@ function TxBuilder() {
                <h2>Token Balances</h2>
              </div>
              <div>
-               {walletTokens.map((token: Token) => {
-                 return (
-                   <p key={token.id}>
-                     {token.displayname} {token.amount}
-                   </p>
-                 );
-               })}
+              {walletTokens.some((token: Token) => token.tokenType === "fungible") && <h3>Fungible Tokens</h3>}
+                {walletTokens.map((token: Token) => {
+                  if (token.tokenType === "fungible") {
+                    return (
+                      <p key={token.id}>
+                        {token.displayname} {token.amount}
+                      </p>
+                    );
+                  }
+                  return null; // Return null if tokenType is not "fungible"
+                })}
+                
+                {walletTokens.some((token: Token) => token.tokenType === "nft") && <h3>NFTs</h3>}
+                {walletTokens.map((token: Token) => {
+                  if (token.tokenType === "nft") {
+                    return (
+                      <p key={token.id}>
+                        {token.displayname} {token.amount}
+                      </p>
+                    );
+                  }
+                return null; // Return null if tokenType is not "nft"
+              })}
+
                {isVisible && (
                  <div className={styles.preContainer}>
                    <h3>Metadata</h3>
