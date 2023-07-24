@@ -470,7 +470,7 @@ function TxBuilder() {
                <h2>Token Balances</h2>
              </div>
              <div>
-              {walletTokens.some((token: Token) => token.tokenType === "fungible") && <h3>Fungible Tokens</h3>}
+              {walletTokens.some((token: Token) => token.tokenType === "fungible") && <h3 className={styles.tokenheading}>Fungible Tokens</h3>}
                 {walletTokens.map((token: Token) => {
                   if (token.tokenType === "fungible") {
                     return (
@@ -482,7 +482,7 @@ function TxBuilder() {
                   return null; // Return null if tokenType is not "fungible"
                 })}
                 
-                {walletTokens.some((token: Token) => token.tokenType === "nft") && <h3>NFTs</h3>}
+                {walletTokens.some((token: Token) => token.tokenType === "nft") && <h3 className={styles.tokenheading}>NFTs</h3>}
                 {walletTokens.map((token: Token) => {
                   if (token.tokenType === "nft") {
                     return (

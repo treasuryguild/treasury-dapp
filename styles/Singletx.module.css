@@ -37,6 +37,10 @@
   min-width: 200px;
 }
 
+.tokenheading {
+  color: rgb(125, 219, 219);
+}
+
 .submit {
   display: flex;
   justify-content: center;

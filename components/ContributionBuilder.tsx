@@ -141,7 +141,7 @@ useEffect(() => {
       setContributorWallets([...contributorWallets, contributorId]);
     }
     // Set the default token to 'ADA' with an empty value
-    newContributions[index].contributors[contributorWalletId] = { ADA: "" };
+    newContributions[index].contributors[contributorWalletId] = { ADA: "0" };
     setContributions(newContributions);
   };
 
@@ -162,6 +162,9 @@ useEffect(() => {
     token: Tokens,
     amount: string
   ) => {
+    if (amount) {
+      updateTokenAmount(contributionIndex, contributorId, token as Tokens, amount);
+    }
     const newContributions = [...contributions];
     newContributions[contributionIndex].contributors[contributorId][token] = amount;
     setContributions(newContributions);
@@ -439,13 +442,44 @@ useEffect(() => {
               <p style={{ fontSize: 'smaller' }}>wallet: {getWalletValue(contributorId)}</p>
               <br />
               <div className={styles.contributorBody}>
-                <div className={styles.contributorTokenButtons}>
-                  {walletTokens.map((token: any) => (
-                    <button key={token.name} onClick={() => addToken(index, contributorId, token.name, '')}>
-                      + {token.displayname}
-                    </button>
-                  ))}
-                </div>
+              <div className={styles.contributorTokenButtons}>
+                {walletTokens.some((token: any) => token.tokenType === "fungible") && 
+                  <div>
+                    <h2 className={styles.tokenheadings}>Fungible Tokens</h2>
+                    <div className={styles.tokenButtons}>
+                      {walletTokens.map((token: any) => {
+                        if (token.tokenType === "fungible") {
+                          return (
+                            <button className={styles.tokenbtn} key={token.name} onClick={() => addToken(index, contributorId, token.name, '')}>
+                              + {token.displayname}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                }
+              
+                {walletTokens.some((token: any) => token.tokenType === "nft") &&
+                  <div>
+                    <h2 className={styles.tokenheadings}>NFTs</h2>
+                    <div className={styles.tokenButtons}>
+                      {walletTokens.map((token: any) => {
+                        if (token.tokenType === "nft") {
+                          return (
+                            <button className={styles.tokenbtn} key={token.name} onClick={() => addToken(index, contributorId, token.name, '1')}>
+                              + {token.displayname}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                }
+              </div>
+
                 <div>
                   {Object.entries(contribution.contributors[contributorId]).map(([token, amount]) => (
                     <div className={styles.contributorToken} key={token}>
