@@ -226,12 +226,14 @@ useEffect(() => {
   async function getTotalTokens(aggregatedTokens: {} | any) {
     let totalTokensPrep = ""
     for (let i in aggregatedTokens) {
+      if (!i.startsWith('asset')) {
         let gmblNumber: any
         let gmblNumber2: any
         gmblNumber = parseFloat(aggregatedTokens[i])
         gmblNumber2 = (gmblNumber * tokenRates[i]).toFixed(3)
         totalTokensPrep = `${totalTokensPrep}
       "${gmblNumber2} USD in ${aggregatedTokens[i]} ${i}",`
+      }
     }
     return totalTokensPrep;
   }
@@ -337,7 +339,6 @@ useEffect(() => {
     const aggregatedTokens = aggregateTokens(contributions);
     totalTokens = await getTotalTokens(aggregatedTokens);
 
-    console.log("aggregatedTokens",aggregatedTokens)
     metaData = `{
       "mdVersion": ["1.4"],
       "msg": [

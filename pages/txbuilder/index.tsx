@@ -35,7 +35,7 @@ type Token = {
 let txdata: any = {}
 
 function TxBuilder() {
-  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` //process.env.NEXT_PUBLIC_LIVE_TICKER_API
+  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` 
   let project: any[] = [];
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
@@ -70,7 +70,7 @@ function TxBuilder() {
     setIsVisible(!isVisible);
   };
 
-  const contributionBuilderProps: ContributionBuilderProps = { // create an object with the props you want to pass
+  const contributionBuilderProps: ContributionBuilderProps = { 
     executeTransaction: executeTransaction,
     onContributionsUpdate: handleContributionsUpdate,
     onContributorWalletsUpdate: handleContributorWalletsUpdate,
@@ -80,7 +80,7 @@ function TxBuilder() {
     tokenRates: tokenRates
   }
 
-  const transactionBuilderProps: TransactionBuilderProps = { // create an object with the props you want to pass
+  const transactionBuilderProps: TransactionBuilderProps = { 
     executeTransaction: executeTransaction,
     myVariable: myVariable,
     walletTokens: walletTokens,
@@ -189,9 +189,18 @@ function TxBuilder() {
 
   function formatTotalAmounts(totalAmounts: ITotalAmounts): string {
     let totalAmountsString = '';
-    Object.entries(totalAmounts).forEach(([key, value]) => {
+    for (let token in totalAmounts) {
+      const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+      if (walletToken.tokenType === 'fungible') {
+        totalAmountsString += `* ${totalAmounts[token]} ${token}\n`;
+      } else {
+        totalAmountsString += `* ${totalAmounts[token]} ${walletToken.displayname}\n`;
+      }
+    }
+    /*Object.entries(totalAmounts).forEach(([key, value]) => {
       totalAmountsString += `* ${value} ${key}\n`;
-    });
+    });*/
+    //console.log("totalAmountsString", totalAmountsString)
     return totalAmountsString;
   }
 
@@ -199,8 +208,8 @@ function TxBuilder() {
     taskCreator: string;
     label: string;
     name?: string[];
-    description?: string[]; // description might be undefined
-    contributors: { [key: string]: { [key: string]: string } }; // can contain any token, not just ADA or AGIX
+    description?: string[]; 
+    contributors: { [key: string]: { [key: string]: string } }; 
 }
   
   interface Metadata {
@@ -287,7 +296,7 @@ function TxBuilder() {
         totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
-        const totalAmountsString = formatTotalAmounts(totalAmounts)
+        
         //console.log("monthly_wallet_budget_string", monthly_wallet_budget_string)
         txdata = {
           ...txdata,
@@ -297,7 +306,6 @@ function TxBuilder() {
           walletTokens: walletTokens,
           walletBalanceAfterTx: walletBalanceAfterTx,
           balanceString: balanceString,
-          totalAmountsString: totalAmountsString,
           txdescription: txdescription,
           formattedDate: formattedDate,
           tokenRates: tokenRates,
@@ -318,12 +326,13 @@ function TxBuilder() {
             }
           }
         }        
-                   
+      const totalAmountsString = formatTotalAmounts(totalAmounts)             
       const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
       txdata = {
         ...txdata,
         monthly_budget_balance,
-        monthly_wallet_budget_string
+        monthly_wallet_budget_string,
+        totalAmountsString,
       }
       } catch (error) {
         console.error('An error occurred while signing the transaction:', error);
@@ -331,7 +340,7 @@ function TxBuilder() {
         //window.location.reload();
       }
       let signedTx = ""
-      console.log("txdata", txdata)
+      //console.log("txdata", txdata)
       try {
         signedTx = await wallet.signTx(unsignedTx);
         // continue with the signed transaction
@@ -377,12 +386,11 @@ function TxBuilder() {
           let prepType = myVariable.project_type.replace(/\s/g, '');
           pType = prepType.replace("Proposal", '');
         }
-  
+
         customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
-  
-        await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
+
         resolve(txid);
-  
+        await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
         router.push(`/done`);
         setLoading(false);
       } catch (error) {

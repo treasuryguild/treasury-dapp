@@ -173,9 +173,18 @@ function Txid() {
 
   function formatTotalAmounts(totalAmounts: any): string {
     let totalAmountsString = '';
-    Object.entries(totalAmounts).forEach(([key, value]) => {
+    for (let token in totalAmounts) {
+      const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+      if (walletToken.tokenType === 'fungible') {
+        totalAmountsString += `* ${totalAmounts[token]} ${token}\n`;
+      } else {
+        totalAmountsString += `* ${totalAmounts[token]} ${walletToken.displayname}\n`;
+      }
+    }
+    /*Object.entries(totalAmounts).forEach(([key, value]) => {
       totalAmountsString += `* ${value} ${key}\n`;
-    });
+    });*/
+    //console.log("totalAmountsString", totalAmountsString)
     return totalAmountsString;
   }
 
