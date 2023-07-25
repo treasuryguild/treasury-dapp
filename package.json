@@ -13,7 +13,7 @@
     "@meshsdk/core": "^1.5.1",
     "@meshsdk/react": "^1.1.6",
     "@netlify/functions": "^1.6.0",
-    "@supabase/supabase-js": "^2.11.0",
+    "@supabase/supabase-js": "^2.29.0",
     "@types/node": "18.15.3",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",

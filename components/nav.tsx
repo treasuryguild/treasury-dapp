@@ -5,16 +5,25 @@ import { Session } from "@supabase/supabase-js";
 
 const Nav = () => {
   const [session, setSession] = useState<Session | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
     useEffect(() => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session)
+        if (session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN) {
+          setIsAdmin(true)
+        }
       })
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
         setSession(session)
+        if (session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN) {
+          setIsAdmin(true)
+        } else {
+          setIsAdmin(false)
+        }
       })
       
       return () => subscription.unsubscribe()
@@ -29,7 +38,7 @@ const Nav = () => {
     async function signout() {
       const { error } = await supabase.auth.signOut()
     }
-   //console.log(session)
+   console.log(session, isAdmin)
   return (
     <nav className="routes">
           <Link href="/" className="navitems">
@@ -44,6 +53,7 @@ const Nav = () => {
           <Link href='/mintfungibletokens' className="navitems">
             Mint tokens
           </Link>
+          {isAdmin && <Link href='/admin' className="navitems">Admin</Link>}
           {!session && (<button onClick={signInWithDiscord} className="navitems">
           Sign In with Discord
         </button>)}
