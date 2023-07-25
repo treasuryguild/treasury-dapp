@@ -38,7 +38,7 @@ const Nav = () => {
     async function signout() {
       const { error } = await supabase.auth.signOut()
     }
-   console.log(session, isAdmin)
+   //console.log(session, isAdmin)
   return (
     <nav className="routes">
           <Link href="/" className="navitems">
