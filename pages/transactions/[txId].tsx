@@ -405,7 +405,7 @@ function processMetadata(metadata: Metadata): string {
       let monthly_budget_balance: any = {...txdata.monthly_budget}
       if (txdata.project == "Singularity Net Ambassador Wallet") {
         if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
-          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) + Number(totalAmounts.AGIX);
+          monthly_budget_balance["AGIX"] = Number(totalAmounts.AGIX);
         } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
           monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) - Number(totalAmounts.AGIX);
         }
@@ -429,7 +429,7 @@ function processMetadata(metadata: Metadata): string {
       const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
-    console.log("txdata", txdata)
+    //console.log("txdata", txdata)
     setLoading(false);
   }  
   
