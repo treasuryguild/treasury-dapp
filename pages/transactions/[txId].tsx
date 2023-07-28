@@ -159,7 +159,7 @@ function Txid() {
     //await commitFile(customFilePath, customFileContent)
     //await sendDiscordMessage(txdata);
     //console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
-    router.push(`/transactions/`)
+    router.push(`/txbuilder/`)
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
