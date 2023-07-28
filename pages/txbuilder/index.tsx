@@ -14,6 +14,7 @@ import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
 import { get, set } from '../../utils/cache'
 import { getProject } from '../../utils/getProject'
+import { checkTxStatus } from '../../utils/checkTxStatus'
 import { getAssetList } from '../../utils/getassetlist'
 import { getAssetList2 } from '../../utils/getassetlist2'
 import { getExchangeRate } from '../../utils/getexchangerate'
@@ -42,6 +43,7 @@ function TxBuilder() {
   const { connected, wallet } = useWallet();
   const [assets, setAssets] = useState<null | any>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [txStatus, setTxStatus] = useState<boolean>(false);
   const [selectedOption, setSelectedOption] = useState<'' | any>('')
   const [projectName, setProjectName] = useState<'' | any>('')
   const [doneTxHash, setDoneTxHash] = useState<'' | any>('')
@@ -123,7 +125,6 @@ function TxBuilder() {
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
-    //console.log("projectInfo", projectInfo);
     if (Object.keys(projectInfo).length === 0) {
       router.push('/newwallet')
     }
@@ -136,12 +137,27 @@ function TxBuilder() {
     txdata = {...txdata,
       ...projectInfo,
       wallet: usedAddresses[0],}
+
+      let transactionStatus: any = false;
+    
+      //Loop to keep checking the transaction status every 30 seconds
+      while (transactionStatus == false) {
+          transactionStatus = await checkTxStatus(usedAddresses[0]);
+          if (!transactionStatus) {
+              //Wait for 20 seconds
+              await new Promise(resolve => setTimeout(resolve, 20000));
+          } else {
+              break;
+          }
+      }
+      setTxStatus(transactionStatus);
+        
       let assets = await getAssetList(usedAddresses[0]);
       setWalletTokens(assets);
       //console.log("getAssetList", assets)
-    if (projectInfo.project != undefined) {
-      await getTokenRates(assets);
-    }
+      if (projectInfo.project != undefined && transactionStatus) {
+        await getTokenRates(assets);
+      }
   }
 
   interface IToken {
@@ -391,7 +407,7 @@ function TxBuilder() {
 
         resolve(txid);
         await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
-        router.push(`/done`);
+        router.push(`/done/${txid}`);
         setLoading(false);
       } catch (error) {
         console.error("Error updating TxInfo message:", error);
@@ -443,13 +459,27 @@ function TxBuilder() {
               <div className={styles.loading}>Please connect wallet</div>
             </div>
           </div>)}
+        {connected && !loading && !txStatus && projectName && (
+          <div className={styles.body}>
+              <div className={styles.form}>
+                <div className={styles.loading}>Tx still pending</div>
+              </div>
+          </div>
+        )}
+        {connected && !loading && !txStatus && !projectName && (
+          <div className={styles.body}>
+              <div className={styles.form}>
+                <div className={styles.loading}>Loading wallet...</div>
+              </div>
+          </div>
+        )}
         {loading && (
           <div className={styles.body}>
             <div className={styles.form}>
               <div className={styles.loading}>Executing...</div>
             </div>
           </div>)}
-        {!loading && connected && (
+        {!loading && connected && txStatus &&(
            <div className={styles.body}>
            <div className={styles.form}>
              <div className={styles.formitem}>

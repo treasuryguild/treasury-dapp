@@ -1,4 +1,4 @@
-import styles from '../styles/Singletx.module.css'
+import styles from '../../styles/Singletx.module.css'
 
 function Done() {
     return <>

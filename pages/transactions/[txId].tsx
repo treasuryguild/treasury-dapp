@@ -8,6 +8,7 @@ import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
 import { getLabels } from '../../utils/getLabels'
 import { updateTxInfo } from '../../utils/updateTxInfo'
+import { checkTxStatus } from '../../utils/checkTxStatus'
 import { getAssetList } from '../../utils/getassetlist'
 import { get, set } from '../../utils/cache'
 import { getExchangeRate } from '../../utils/getexchangerate'
@@ -55,6 +56,7 @@ function Txid() {
   const router = useRouter();
   const { txId } = router.query;
   const { connected, wallet } = useWallet();
+  const [txStatus, setTxStatus] = useState<boolean>(false);
   const [addressAssets, setAddressAssets] = useState<Record<string, AddressAsset>>({});
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [description, setDescription] = useState<[] | any>([])
@@ -73,7 +75,7 @@ function Txid() {
     const executeAsync = async () => {
       if (connected) {
         await assignTokens();
-        await checkTransactionType();
+        //await checkTransactionType();
       }
     };
   
@@ -161,26 +163,39 @@ function Txid() {
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
-    const formattedBalances = walletBalanceAfterTx.map((item: Token) => {
-        if (item.tokenType == "fungible") {
-          return `* ${parseFloat(item.amount).toFixed(2)} ${item.name}\n`;
+    const formattedBalances = walletBalanceAfterTx
+      .map((item: Token) => {
+        if (item.tokenType) {
+          if (item.tokenType == "fungible") {
+            return `* ${parseFloat(item.amount).toFixed(2)} ${item.name}\n`;
+          }
         }
-    });
-  
+      })
+      .filter(Boolean);
     return formattedBalances.join('');
-  }
+}
+
+
   
 
   function formatTotalAmounts(totalAmounts: any): string {
     let totalAmountsString = '';
     for (let token in totalAmounts) {
       const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-      if (walletToken.tokenType === 'fungible') {
-        totalAmountsString += `* ${totalAmounts[token]} ${token}\n`;
-      } else {
-        totalAmountsString += `* ${totalAmounts[token]} ${walletToken.displayname}\n`;
+      
+      // Check if walletToken and walletToken.tokenType are defined
+      if (walletToken && walletToken.tokenType) {
+        if (walletToken.tokenType === 'fungible') {
+          totalAmountsString += `* ${totalAmounts[token]} ${token}\n`;
+        } else {
+          totalAmountsString += `* ${totalAmounts[token]} ${walletToken.displayname}\n`;
+        }
+      }
+      else {
+        continue;
       }
     }
+    
     /*Object.entries(totalAmounts).forEach(([key, value]) => {
       totalAmountsString += `* ${value} ${key}\n`;
     });*/
@@ -414,7 +429,7 @@ function processMetadata(metadata: Metadata): string {
       const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
-    //console.log("txdata", txdata)
+    console.log("txdata", txdata)
     setLoading(false);
   }  
   
@@ -423,27 +438,43 @@ function processMetadata(metadata: Metadata): string {
     setTokenRates({})
     setDescription('')
     const usedAddresses = await wallet.getUsedAddresses();
+    
+    let transactionStatus: any = false;
+    
+    //Loop to keep checking the transaction status every 30 seconds
+    while (transactionStatus == false) {
+        transactionStatus = await checkTxStatus(usedAddresses[0], txId);
+        if (!transactionStatus) {
+            //Wait for 20 seconds
+            await new Promise(resolve => setTimeout(resolve, 20000));
+        } else {
+            break;
+        }
+    }
+    setTxStatus(transactionStatus);
+    
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);
     if (Object.keys(projectInfo).length === 0) {
-      router.push('/newwallet')
+        router.push('/newwallet')
     }
     txdata = {...txdata,
       ...projectInfo,
       wallet: usedAddresses[0],}
       
     let assetList = await getAssetList(usedAddresses[0]);
-      setWalletTokens(assetList);
-      //console.log("getAssetList", assetList)
+    setWalletTokens(assetList);
+    //console.log("getAssetList", assetList)
     if (projectInfo.project != undefined) {
-      await getTokenRates(assetList);
+        await getTokenRates(assetList);
     }
     const balanceString = formatWalletBalance(assetList)
     txdata = {...txdata,
       walletTokens: assetList,
       balanceString,
       walletBalanceAfterTx: assetList}
-  }
+      await checkTransactionType();
+}
 
   async function getTokenRates(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
     // Extract token names from wallettokens
@@ -489,14 +520,21 @@ function processMetadata(metadata: Metadata): string {
   
   return (
     <div className={styles.body}>
-      {loading && (
+      {loading && txStatus && (
         <div className={styles.body}>
             <div className={styles.form}>
               <div className={styles.loading}>Loading...</div>
             </div>
         </div>
       )}
-      {!loading && (
+      {connected && !txStatus && (
+        <div className={styles.body}>
+            <div className={styles.form}>
+              <div className={styles.loading}>Tx still pending</div>
+            </div>
+        </div>
+      )}
+      {!loading && txStatus && (
         <form className={styles.form} onSubmit={handleSubmit}>
         {Object.entries(addressAssets).map(([address, data], index) => (
           <div  className={styles.address} key={address}>
