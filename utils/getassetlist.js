@@ -13,10 +13,11 @@ function mapAssetData(assetDetails, assetList) {
     const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
     let name;
     let displayname;
-
+    //console.log("asset", asset)
     if (tokenType === 'nft') {
       const nameAscii = asset.asset_name_ascii;
-      name = asset.fingerprint;
+      name = nameAscii;
+      //name = asset.fingerprint;
       if (isValidKey(nameAscii)) {
         displayname = nameAscii;
       } else {

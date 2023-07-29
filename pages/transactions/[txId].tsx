@@ -153,13 +153,13 @@ function Txid() {
       let prepType = txdata.project_type.replace(/\s/g, '')
       pType = prepType.replace("Proposal", '')
     }
-    
+    setLoading(true);
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
     await updateTxInfo(txdata, newMetaData, txId, customFilePath)
     //await commitFile(customFilePath, customFileContent)
     //await sendDiscordMessage(txdata);
     //console.log("Final values",txdata, newMetaData, customFilePath, addressAssets);
-    router.push(`/txbuilder/`)
+    setTimeout(() => router.push(`/txbuilder/`), 3000);
   };
 
   function formatWalletBalance(walletBalanceAfterTx: Token[]): string {
