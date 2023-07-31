@@ -326,23 +326,45 @@ function TxBuilder() {
           tokenRates: tokenRates,
           txtype: 'Outgoing'
         }
-        let monthly_budget_balance: any = {...txdata.monthly_budget}
+        let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
+
         if (txdata.project == "Singularity Net Ambassador Wallet" && Number(totalAmounts.AGIX) > 0) {
-          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) - Number(totalAmounts.AGIX);
-          monthly_budget_balance["AGIX"] = typeof monthly_budget_balance["AGIX"] === 'number' ? monthly_budget_balance["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance["AGIX"] as string).toFixed(2);
-        }
-      
-        if (txdata.project == "Test Wallet") {
-          for (let token in totalAmounts) {
-            const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-            if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
-              monthly_budget_balance[token] = ((Number(txdata.monthly_budget[token]) || 0) - Number(totalAmounts[token]));
-              monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? monthly_budget_balance[token].toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
+            if (!monthly_budget_balance) {
+                monthly_budget_balance = {}
             }
-          }
-        }        
+            if (!monthly_budget_balance[myVariable.budget_month]) {
+              monthly_budget_balance[myVariable.budget_month] = {}
+            }
+            monthly_budget_balance[myVariable.budget_month]["AGIX"] = (Number(txdata.monthly_budget[myVariable.budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+            monthly_budget_balance[myVariable.budget_month]["AGIX"] = typeof monthly_budget_balance[myVariable.budget_month]["AGIX"] === 'number' ? monthly_budget_balance[myVariable.budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[myVariable.budget_month]["AGIX"] as string).toFixed(2);
+        }
+        
+        if (txdata.project == "Test Wallet") {
+            for (let token in totalAmounts) {
+                const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+                if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+                  if (!monthly_budget_balance) {
+                    monthly_budget_balance = {}
+                  }
+                  if (!monthly_budget_balance[myVariable.budget_month]) {
+                    monthly_budget_balance[myVariable.budget_month] = {}
+                  }
+                    monthly_budget_balance[myVariable.budget_month][token] = ((Number(txdata.monthly_budget[myVariable.budget_month][token]) || 0) - Number(totalAmounts[token]));
+                    monthly_budget_balance[myVariable.budget_month][token] = typeof monthly_budget_balance[myVariable.budget_month][token] === 'number' ? monthly_budget_balance[myVariable.budget_month][token].toFixed(2) : parseFloat(monthly_budget_balance[myVariable.budget_month][token] as string).toFixed(2);
+                }
+            }
+        }
+        let monthly_budget_balance_strings:any = {}
+        // Create a formatted string for each month's budget balance
+        for (let month in monthly_budget_balance) {
+            monthly_budget_balance_strings[month] = formatTotalAmounts(monthly_budget_balance[month]);
+        }
+      let d = new Date();
+      d.setMonth(d.getMonth() + 1, 1); // Set the day to 1 to avoid end of month discrepancies
+      d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
       const totalAmountsString = formatTotalAmounts(totalAmounts)             
-      const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+      const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)]
+      console.log("This month", d.toISOString().slice(0, 7))
       txdata = {
         ...txdata,
         monthly_budget_balance,

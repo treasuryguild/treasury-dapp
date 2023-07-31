@@ -61,7 +61,7 @@ export const MyVariableProvider: React.FC<MyVariableProviderProps> = ({ children
   formattedDate:'',
   tokenRates:{},
   txtype:'',
-  budget_month: new Date().toISOString().substr(0, 7),
+  budget_month: new Date().toISOString().slice(0, 7),
   send_message:true,
    /* initialize other properties as needed */ 
   });

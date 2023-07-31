@@ -227,7 +227,7 @@ useEffect(() => {
   async function getTotalTokens(aggregatedTokens: {} | any) {
     let totalTokensPrep = ""
     for (let i in aggregatedTokens) {
-      if (!i.startsWith('asset')) {
+      if (i.length<6) {
         let gmblNumber: any
         let gmblNumber2: any
         gmblNumber = parseFloat(aggregatedTokens[i])

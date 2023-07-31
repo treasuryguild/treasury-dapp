@@ -402,31 +402,58 @@ function processMetadata(metadata: Metadata): string {
       totalAmounts.ADA = parseFloat(totalAmounts.ADA.toFixed(6));
       const totalAmountsString = formatTotalAmounts(totalAmounts);
 
-      let monthly_budget_balance: any = {...txdata.monthly_budget}
+      let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
+      let d = new Date();
+      d.setMonth(d.getMonth() + 1, 1); // Set the day to 1 to avoid end of month discrepancies
+      d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
+      txdata.budget_month = d.toISOString().slice(0, 7)
+
       if (txdata.project == "Singularity Net Ambassador Wallet") {
-        if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
-          monthly_budget_balance["AGIX"] = Number(totalAmounts.AGIX);
-        } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
-          monthly_budget_balance["AGIX"] = (Number(txdata.monthly_budget["AGIX"]) || 0) - Number(totalAmounts.AGIX);
-        }
-        monthly_budget_balance["AGIX"] = typeof monthly_budget_balance["AGIX"] === 'number' ? monthly_budget_balance["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance["AGIX"] as string).toFixed(2);
+          if (!monthly_budget_balance) {
+              monthly_budget_balance = {}
+          }
+          if (!monthly_budget_balance[txdata.budget_month]) {
+              monthly_budget_balance[txdata.budget_month] = {}
+          }
+          
+          if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
+              monthly_budget_balance[txdata.budget_month]["AGIX"] = Number(totalAmounts.AGIX);
+          } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
+              monthly_budget_balance[txdata.budget_month]["AGIX"] = (Number(txdata.monthly_budget[txdata.budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+          }
+          monthly_budget_balance[txdata.budget_month]["AGIX"] = typeof monthly_budget_balance[txdata.budget_month]["AGIX"] === 'number' ? monthly_budget_balance[txdata.budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[txdata.budget_month]["AGIX"] as string).toFixed(2);
       }     
       
       if (txdata.project == "Test Wallet") {
-        for (let token in totalAmounts) {
-          const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-          if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
-            if (txdata.txtype == "Incoming") {
-              monthly_budget_balance[token] = (Number(txdata.monthly_budget[token]) || 0) + Number(totalAmounts[token]);
-            } else if (txdata.txtype != "Incoming") {
-              monthly_budget_balance[token] = (Number(txdata.monthly_budget[token]) || 0) - Number(totalAmounts[token]);
-            }
-            monthly_budget_balance[token] = typeof monthly_budget_balance[token] === 'number' ? monthly_budget_balance[token].toFixed(2) : parseFloat(monthly_budget_balance[token] as string).toFixed(2);
+          for (let token in totalAmounts) {
+              const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+              if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+                  if (!monthly_budget_balance) {
+                      monthly_budget_balance = {}
+                  }
+                  if (!monthly_budget_balance[txdata.budget_month]) {
+                      monthly_budget_balance[txdata.budget_month] = {}
+                  }
+                  
+                  if (txdata.txtype == "Incoming") {
+                      monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
+                  } else if (txdata.txtype != "Incoming") {
+                      monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) - Number(totalAmounts[token]);
+                  }
+                  monthly_budget_balance[txdata.budget_month][token] = typeof monthly_budget_balance[txdata.budget_month][token] === 'number' ? monthly_budget_balance[txdata.budget_month][token].toFixed(2) : parseFloat(monthly_budget_balance[txdata.budget_month][token] as string).toFixed(2);
+              }
           }
-        }
-      }      
-     
-      const monthly_wallet_budget_string = formatTotalAmounts(monthly_budget_balance)
+      }
+      
+      let monthly_budget_balance_strings: any = {};
+      
+      // Create a formatted string for each month's budget balance
+      for (let month in monthly_budget_balance) {
+          monthly_budget_balance_strings[month] = formatTotalAmounts(monthly_budget_balance[month]);
+      }
+      
+      const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)];
+
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
     //console.log("txdata", txdata)
