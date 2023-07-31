@@ -23,6 +23,7 @@ import { setLabels } from '../../utils/setLabels'
 //import { updateTxDatabase } from '../../utils/updateTxDatabase'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { checkAndUpdate } from '../../utils/checkAndUpdate'
+import { useMyVariable } from '../../context/MyVariableContext';
 
 
 type OptionsType = Array<{value: string, label: string}>;
@@ -50,7 +51,7 @@ function TxBuilder() {
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
-  const [myVariable, setMyVariable] = useState<{} | any>({})
+  const { myVariable, setMyVariable } = useMyVariable();
   const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
   const [labelOptions, setLabelOptions] = useState<OptionsType>([
     { value: 'Operations', label: 'Operations' },
@@ -76,7 +77,6 @@ function TxBuilder() {
     executeTransaction: executeTransaction,
     onContributionsUpdate: handleContributionsUpdate,
     onContributorWalletsUpdate: handleContributorWalletsUpdate,
-    myVariable: myVariable,
     walletTokens: walletTokens,
     labels: labelOptions,
     tokenRates: tokenRates
@@ -84,7 +84,6 @@ function TxBuilder() {
 
   const transactionBuilderProps: TransactionBuilderProps = { 
     executeTransaction: executeTransaction,
-    myVariable: myVariable,
     walletTokens: walletTokens,
     tokenRates: tokenRates
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
+import { useMyVariable } from '../context/MyVariableContext';
 //import { updateTxDatabase } from '../utils/updateTxDatabase'
 
 export type TransactionBuilderProps = {
@@ -11,16 +12,39 @@ export type TransactionBuilderProps = {
   ) => Promise<string>;
   walletTokens: any;
   tokenRates: any;
-  myVariable: any;
 }
 
 const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
   executeTransaction,
   walletTokens,
   tokenRates,
-  myVariable,
 }) => {
   const router = useRouter();
+  const { myVariable, setMyVariable } = useMyVariable();
+  const [months, setMonths] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMonths(getLastSixMonths());
+  }, []);
+
+  const getLastSixMonths = () => {
+    let months = [];
+    for (let i = 0; i < 6; i++) {
+      let d = new Date();
+      d.setMonth(d.getMonth() - i + 1, 1); // Set the day to 1 to avoid end of month discrepancies
+      d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
+      months.push(d.toISOString().slice(0, 7));
+    }
+    return months;
+  };   
+
+  const handleBudgetMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setMyVariable(prevState => ({...prevState, budget_month: event.target.value}));
+  };
+
+  const handleSendMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMyVariable(prevState => ({...prevState, send_message: event.target.checked}));
+  };
 
   async function getValues(deworkJson: any) {
     let addresses: any[] = [];
@@ -66,6 +90,22 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
           />
           <span className={styles.tag}>Paste Json in here</span>
         </label>
+      </div>
+      <div>
+        <label>Budget Month:</label>
+        <select value={myVariable.budget_month} onChange={handleBudgetMonthChange}>
+          {months.map((month) => (
+            <option key={month} value={month}>{month}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label>Send Discord Message:</label>
+        <input
+          type="checkbox"
+          checked={myVariable.send_message}
+          onChange={handleSendMessageChange}
+        />
       </div>
       <div className={styles.submit}>
       {Object.keys(tokenRates).length !== 0 && (

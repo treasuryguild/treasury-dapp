@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TransactionBuilder from './TransactionBuilder';
 import ContributionBuilder from './ContributionBuilder';
+import { useMyVariable } from '../context/MyVariableContext';
 
 interface SwitchingComponentProps {
     contributionBuilderProps: any; 
@@ -13,17 +14,18 @@ const SwitchingComponent = (props: SwitchingComponentProps) => {
 
   // Create state to track whether the button is on or off
   const [isOn, setIsOn] = useState(true);
+  const { myVariable, setMyVariable } = useMyVariable();
 
   // Function to toggle the button state
   const toggleButton = () => {
     setIsOn(!isOn);
     props.onClick();
-    console.log(contributionBuilderProps.myVariable.group, transactionBuilderProps.myVariable.group);
+    console.log(myVariable.group);
   };
 
   return (
     <>
-      {transactionBuilderProps.myVariable.group !== undefined && (
+      {myVariable.group !== undefined && (
         <button onClick={toggleButton}>{isOn ? 'Switch to Manual' : 'Switch to Dework'}</button>
       )}
       {isOn ? (

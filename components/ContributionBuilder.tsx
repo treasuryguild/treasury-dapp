@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useMyVariable } from '../context/MyVariableContext';
 import styles from '../styles/TxBuilder.module.css';
 import ReactSelect from 'react-select';
 import { useRouter } from 'next/router';
@@ -28,7 +29,6 @@ export type ContributionBuilderProps = {
     ) => Promise<string>;
   onContributionsUpdate: (contributions: Contribution[]) => void;
   onContributorWalletsUpdate: (contributorWallets: any[]) => void;
-  myVariable: any;
   walletTokens: any;
   labels: any;
   tokenRates: any;
@@ -40,11 +40,11 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   executeTransaction,
   onContributionsUpdate,
   onContributorWalletsUpdate,
-  myVariable,
   walletTokens,
   tokenRates,
   labels,
   }) => {
+  const { myVariable, setMyVariable } = useMyVariable();
   const tokensList: Tokens[] = walletTokens.map((token: any) => token.name);
   const [contributorWallets, setContributorWallets] = useState<any[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([{
@@ -56,6 +56,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const [labelOptions, setLabelOptions] = useState<OptionsType>(labels);
   const [selectedLabels, setSelectedLabels] = useState<Array<ValueType>>([[]]);
   const [userDefinedLabels, setUserDefinedLabels] = useState<OptionsType>([]);
+  
 
   const router = useRouter();
 
