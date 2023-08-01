@@ -404,36 +404,50 @@ function processMetadata(metadata: Metadata): string {
 
       let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
       let d = new Date();
-      d.setMonth(d.getMonth() + 1, 1); // Set the day to 1 to avoid end of month discrepancies
-      d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
-      txdata.budget_month = d.toISOString().slice(0, 7)
-
+      
       if (txdata.project == "Singularity Net Ambassador Wallet") {
+          let currentDate = d.getDate();
+          let totalDaysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+          // If current date is 10 days before the end of the month
+          if (currentDate >= totalDaysInMonth - 10) {
+            d.setMonth(d.getMonth() + 2, 1); // Set to next month if within 10 days of end of month
+          } else {
+            d.setMonth(d.getMonth() + 1, 1); // Otherwise, set to current month
+          }
+          d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
+      
           if (!monthly_budget_balance) {
               monthly_budget_balance = {}
           }
-          if (!monthly_budget_balance[txdata.budget_month]) {
-              monthly_budget_balance[txdata.budget_month] = {}
+      
+          let budget_month = d.toISOString().slice(0, 7);
+          txdata.budget_month = budget_month;
+      
+          if (!monthly_budget_balance[budget_month]) {
+              monthly_budget_balance[budget_month] = {}
           }
           
           if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
-              monthly_budget_balance[txdata.budget_month]["AGIX"] = Number(totalAmounts.AGIX);
+              monthly_budget_balance[budget_month]["AGIX"] = Number(totalAmounts.AGIX);
           } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
-              monthly_budget_balance[txdata.budget_month]["AGIX"] = (Number(txdata.monthly_budget[txdata.budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+              monthly_budget_balance[budget_month]["AGIX"] = (Number(txdata.monthly_budget[budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
           }
-          monthly_budget_balance[txdata.budget_month]["AGIX"] = typeof monthly_budget_balance[txdata.budget_month]["AGIX"] === 'number' ? monthly_budget_balance[txdata.budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[txdata.budget_month]["AGIX"] as string).toFixed(2);
-      }     
+          monthly_budget_balance[budget_month]["AGIX"] = typeof monthly_budget_balance[budget_month]["AGIX"] === 'number' ? monthly_budget_balance[budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[budget_month]["AGIX"] as string).toFixed(2);
+      }
       
       if (txdata.project == "Test Wallet") {
-          for (let token in totalAmounts) {
-              const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-              if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
-                  if (!monthly_budget_balance) {
-                      monthly_budget_balance = {}
-                  }
-                  if (!monthly_budget_balance[txdata.budget_month]) {
-                    let lastMonth = new Date(d);
-                    lastMonth.setMonth(lastMonth.getMonth() - 1);
+        d.setMonth(d.getMonth() + 1, 1); // Set the day to 1 to avoid end of month discrepancies
+        d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
+        txdata.budget_month = d.toISOString().slice(0, 7)
+        for (let token in totalAmounts) {
+            const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
+            if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+                if (!monthly_budget_balance) {
+                    monthly_budget_balance = {}
+                }
+                if (!monthly_budget_balance[txdata.budget_month]) {
+                    let lastMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+                    lastMonth.setUTCMonth(lastMonth.getUTCMonth() - 1);
                     let lastMonthKey = lastMonth.toISOString().slice(0, 7);
                     //console.log("lastMonthKey", lastMonthKey)
                     if (monthly_budget_balance[lastMonthKey]) {
@@ -442,16 +456,16 @@ function processMetadata(metadata: Metadata): string {
                     } else {
                         monthly_budget_balance[txdata.budget_month] = {};
                     }
-                  }
-                  //console.log("monthly_budget_balance", monthly_budget_balance)
-                  if (txdata.txtype == "Incoming") {
-                      monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
-                  } else if (txdata.txtype != "Incoming") {
-                      monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) - Number(totalAmounts[token]);
-                  }
-                  monthly_budget_balance[txdata.budget_month][token] = typeof monthly_budget_balance[txdata.budget_month][token] === 'number' ? monthly_budget_balance[txdata.budget_month][token].toFixed(2) : parseFloat(monthly_budget_balance[txdata.budget_month][token] as string).toFixed(2);
-              }
-          }
+                }
+                //console.log("monthly_budget_balance", monthly_budget_balance)
+                if (txdata.txtype == "Incoming") {
+                    monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
+                } else if (txdata.txtype != "Incoming") {
+                    monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) - Number(totalAmounts[token]);
+                }
+                monthly_budget_balance[txdata.budget_month][token] = typeof monthly_budget_balance[txdata.budget_month][token] === 'number' ? monthly_budget_balance[txdata.budget_month][token].toFixed(2) : parseFloat(monthly_budget_balance[txdata.budget_month][token] as string).toFixed(2);
+            }
+        }
       }
       
       let monthly_budget_balance_strings: any = {};
@@ -462,6 +476,7 @@ function processMetadata(metadata: Metadata): string {
       }
       
       const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)];
+    
 
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
