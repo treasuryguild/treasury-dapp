@@ -364,7 +364,7 @@ function TxBuilder() {
       d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
       const totalAmountsString = formatTotalAmounts(totalAmounts)             
       const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)]
-      console.log("This month", d.toISOString().slice(0, 7))
+      //console.log("This month", d.toISOString().slice(0, 7))
       txdata = {
         ...txdata,
         monthly_budget_balance,

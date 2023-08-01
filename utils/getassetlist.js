@@ -100,6 +100,23 @@ export async function getAssetList(wallet) {
 
     let balance = await getBalance();
     let list = await getList();
+    if (list.length === 0) {
+      // The list is empty.
+      // Create ADA item
+      const adaItem = {
+        id: "1",  // make ADA always the first item
+        name: "ADA",
+        displayname: "ADA",
+        amount: (Number(balance[0].balance) / Math.pow(10, 6)).toFixed(6), 
+        unit: "lovelace",
+        fingerprint: "", 
+        decimals: 6,
+        tokenType: "fungible"  
+      };
+      // Return an array that contains only the ADA item
+      return [adaItem];
+    }
+    //console.log(list);
     let transformedArray = transformArray(list[0].asset_list);
     let assetDetails = await getAssetDetails(transformedArray);
     let mappedAssetData = mapAssetData(assetDetails, list[0].asset_list);

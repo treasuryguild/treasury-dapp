@@ -432,9 +432,18 @@ function processMetadata(metadata: Metadata): string {
                       monthly_budget_balance = {}
                   }
                   if (!monthly_budget_balance[txdata.budget_month]) {
-                      monthly_budget_balance[txdata.budget_month] = {}
+                    let lastMonth = new Date(d);
+                    lastMonth.setMonth(lastMonth.getMonth() - 1);
+                    let lastMonthKey = lastMonth.toISOString().slice(0, 7);
+                    //console.log("lastMonthKey", lastMonthKey)
+                    if (monthly_budget_balance[lastMonthKey]) {
+                        monthly_budget_balance[txdata.budget_month] = JSON.parse(JSON.stringify(monthly_budget_balance[lastMonthKey]));
+                        txdata.monthly_budget[txdata.budget_month] = JSON.parse(JSON.stringify(monthly_budget_balance[lastMonthKey]));
+                    } else {
+                        monthly_budget_balance[txdata.budget_month] = {};
+                    }
                   }
-                  
+                  //console.log("monthly_budget_balance", monthly_budget_balance)
                   if (txdata.txtype == "Incoming") {
                       monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
                   } else if (txdata.txtype != "Incoming") {
