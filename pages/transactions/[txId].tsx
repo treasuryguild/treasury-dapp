@@ -57,6 +57,7 @@ function Txid() {
   const { txId } = router.query;
   const { connected, wallet } = useWallet();
   const [txStatus, setTxStatus] = useState<boolean>(false);
+  const [message, setMessage] = useState<boolean>(true);
   const [addressAssets, setAddressAssets] = useState<Record<string, AddressAsset>>({});
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [description, setDescription] = useState<[] | any>([])
@@ -154,6 +155,7 @@ function Txid() {
       pType = prepType.replace("Proposal", '')
     }
     setLoading(true);
+    txdata.send_message = message;
     customFilePath = `Transactions/${(txdata.group).replace(/\s/g, '-')}/${pType}/${(txdata.project).replace(/\s/g, '-')}/${folder}/${new Date().getTime().toString()}-${filename}.json`;
     await updateTxInfo(txdata, newMetaData, txId, customFilePath)
     //await commitFile(customFilePath, customFileContent)
@@ -568,6 +570,10 @@ function processMetadata(metadata: Metadata): string {
     //console.log(response.data)
     return response.data;
   }
+
+  const handleSendMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(event.target.checked);
+  };
   
   return (
     <div className={styles.body}>
@@ -647,6 +653,14 @@ function processMetadata(metadata: Metadata): string {
                 name="description"
                 defaultValue={description}
                 onChange={(e) => handleInputChange(address, 'description', e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Send Discord Message:</label>
+              <input
+                type="checkbox"
+                checked={message}
+                onChange={handleSendMessageChange}
               />
             </div>
           </div>
