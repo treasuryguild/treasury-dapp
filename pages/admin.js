@@ -37,7 +37,7 @@ export default function AdminPage() {
             .from("transactioninfo")
             .select('txinfo, txhash, txfilepath, metadata')
             .order('created_at', { ascending: false })
-            .limit(4);
+            .limit(10);
             
             if (error && status !== 406) throw error
             if (data) {
