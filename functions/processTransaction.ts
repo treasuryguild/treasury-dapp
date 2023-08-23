@@ -32,6 +32,12 @@ const handler: Handler = async (event: any, context: any) => {
             "Governance":["Governance","voting"],
             "Tool Development":["Tool Development","MVP","Discord Server","Integrate","Add csv features","metadata"],
             "Ideation":["Ideation","Suggest"],
+            "Reporting":["Reporting","Close out report"],
+            "Coordination":["Coordination", "Coordinate"],
+            "Video Editing":["Video Editing", "make a clip"],
+            "Facilitating":["Facilitating", "chair", "host"],
+            "Planning":["Planning"],
+            "Auditing":["Audit"],
             "Voting":["voting registration","voting"],
             "Staking":["Staking to pool","Stake to pool", "Staked to pool","stake to stake pool", "Payment for staking funds","Transaction fee for staking", "Staking fees", "Staking to", "Staking fee", "pool fees", "staking pool fees"],
             "Donation":["sent donation", "send donation", "donation sent"],
@@ -82,7 +88,7 @@ const handler: Handler = async (event: any, context: any) => {
         
           return finalResult;
         }
-        
+
         const total_tokens = Object.keys(myVariable.totalAmounts);
         const total_amounts = Object.values(myVariable.totalAmounts);
         
