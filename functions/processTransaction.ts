@@ -44,19 +44,32 @@ const handler: Handler = async (event: any, context: any) => {
           }
       
           let finalResult = "";
-          for (let i in tasktypes) {
-            tasktypes[i].forEach((partialWord: string) => {
-              let regex = new RegExp(partialWord.toLowerCase());
-              if (description && regex.test(description.toLowerCase())) {
-                finalResult = i;
-              }
-              if (name && regex.test(name.toLowerCase())) {
-                finalResult = i;
-              }
-              if (label && regex.test(label.toLowerCase())) {
-                finalResult = i;
-              }    
-            });
+
+          // Function to check against task types
+          const checkTaskType = (value: string) => {
+            for (let i in tasktypes) {
+              tasktypes[i].forEach((partialWord: string) => {
+                let regex = new RegExp(partialWord.toLowerCase());
+                if (value && regex.test(value.toLowerCase())) {
+                  finalResult = i;
+                }
+              });
+            }
+          };
+        
+          // Check description first
+          if (description) {
+            checkTaskType(description);
+          }
+        
+          // Check name second
+          if (name) {
+            checkTaskType(name);
+          }
+        
+          // Check label last
+          if (label) {
+            checkTaskType(label);
           }
         
           return finalResult;
