@@ -45,35 +45,35 @@ const handler: Handler = async (event: any, context: any) => {
       
           let finalResult = "";
 
-          // Function to check against task types
-          const checkTaskType = (value: string) => {
-            // Get the keys of the tasktypes object and reverse them to iterate from bottom to top
-            const reversedKeys = Object.keys(tasktypes).reverse();
-            for (let key of reversedKeys) {
-              for (let partialWord of tasktypes[key]) {
-                let regex = new RegExp(partialWord.toLowerCase());
-                if (value && regex.test(value.toLowerCase())) {
-                  finalResult = key;
-                  return; // Exit the function once a match is found
-                }
+          // Reverse the order of the keys to give priority to the bottom ones
+          const reversedKeys = Object.keys(tasktypes).reverse();
+        
+          reversedKeys.forEach(key => {
+            tasktypes[key].forEach((partialWord: string) => {
+              let regex = new RegExp(partialWord.toLowerCase(), 'i');
+              if (description && regex.test(description.toLowerCase())) {
+                finalResult = key;
               }
-            }
-          };
+            });
+          });
         
-          // Check description first
-          if (description) {
-            checkTaskType(description);
-          }
+          reversedKeys.forEach(key => {
+            tasktypes[key].forEach((partialWord: string) => {
+              let regex = new RegExp(partialWord.toLowerCase(), 'i');
+              if (name && regex.test(name.toLowerCase())) {
+                finalResult = key;
+              }
+            });
+          });
         
-          // Check name second if no match found
-          if (!finalResult && name) {
-            checkTaskType(name);
-          }
-        
-          // Check label last (and give it priority) if no match found
-          if (!finalResult && label) {
-            checkTaskType(label);
-          }
+          reversedKeys.forEach(key => {
+            tasktypes[key].forEach((partialWord: string) => {
+              let regex = new RegExp(partialWord.toLowerCase(), 'i');
+              if (label && regex.test(label.toLowerCase())) {
+                finalResult = key;
+              }
+            });
+          });
         
           return finalResult;
         }
