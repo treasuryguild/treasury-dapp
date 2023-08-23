@@ -35,7 +35,7 @@ const handler: Handler = async (event: any, context: any) => {
             "Voting":["voting registration","voting"],
             "Staking":["Staking to pool","Stake to pool", "Staked to pool","stake to stake pool", "Payment for staking funds","Transaction fee for staking", "Staking fees", "Staking to", "Staking fee", "pool fees", "staking pool fees"],
             "Donation":["sent donation", "send donation", "donation sent"],
-            "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties","incentives"],
+            "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties"],
             "Fixed costs":["Fixed costs","Comm Org Tools","Zoom","GitBook", "comm-org-tools", "expenses", "costs"],
             "Internal Transfer":["Internal wallet transfer","Internal Transfer"],
             "Minting":["Minted new tokens","Minted tokens", "Minting tokens", "Minting new tokens"],
@@ -47,13 +47,16 @@ const handler: Handler = async (event: any, context: any) => {
 
           // Function to check against task types
           const checkTaskType = (value: string) => {
-            for (let i in tasktypes) {
-              tasktypes[i].forEach((partialWord: string) => {
+            // Get the keys of the tasktypes object and reverse them to iterate from bottom to top
+            const reversedKeys = Object.keys(tasktypes).reverse();
+            for (let key of reversedKeys) {
+              for (let partialWord of tasktypes[key]) {
                 let regex = new RegExp(partialWord.toLowerCase());
                 if (value && regex.test(value.toLowerCase())) {
-                  finalResult = i;
+                  finalResult = key;
+                  return; // Exit the function once a match is found
                 }
-              });
+              }
             }
           };
         
@@ -62,18 +65,19 @@ const handler: Handler = async (event: any, context: any) => {
             checkTaskType(description);
           }
         
-          // Check name second
-          if (name) {
+          // Check name second if no match found
+          if (!finalResult && name) {
             checkTaskType(name);
           }
         
-          // Check label last
-          if (label) {
+          // Check label last (and give it priority) if no match found
+          if (!finalResult && label) {
             checkTaskType(label);
           }
         
           return finalResult;
         }
+
         const total_tokens = Object.keys(myVariable.totalAmounts);
         const total_amounts = Object.values(myVariable.totalAmounts);
         
