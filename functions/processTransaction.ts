@@ -45,7 +45,6 @@ const handler: Handler = async (event: any, context: any) => {
       
           let finalResult = "";
 
-          // Reverse the order of the keys to give priority to the bottom ones
           const reversedKeys = Object.keys(tasktypes).reverse();
         
           reversedKeys.forEach(key => {
@@ -66,14 +65,20 @@ const handler: Handler = async (event: any, context: any) => {
             });
           });
         
-          reversedKeys.forEach(key => {
-            tasktypes[key].forEach((partialWord: string) => {
-              let regex = new RegExp(partialWord.toLowerCase(), 'i');
-              if (label && regex.test(label.toLowerCase())) {
-                finalResult = key;
-              }
+          if (label) {
+            const labels = label.split(',').reverse(); // Reverse the labels
+        
+            labels.forEach((lbl: any) => {
+              reversedKeys.forEach(key => {
+                tasktypes[key].forEach((partialWord: string) => {
+                  let regex = new RegExp(partialWord.toLowerCase(), 'i');
+                  if (regex.test(lbl.toLowerCase().trim())) {
+                    finalResult = key;
+                  }
+                });
+              });
             });
-          });
+          }
         
           return finalResult;
         }
