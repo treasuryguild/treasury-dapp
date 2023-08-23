@@ -125,10 +125,12 @@ const handler: Handler = async (event: any, context: any) => {
         async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
             for (const contribution of metaData.contributions) {
               const task_name = contribution.name ? contribution.name.join(' ') : null;
+              const task_date = contribution.arrayMap.date ? contribution.arrayMap.date.join(',') : null;
+              const task_sub_group = contribution.arrayMap.subGroup ? contribution.arrayMap.subGroup.join(',') : null;
               const task_description = contribution.description ? contribution.description.join(' ') : null;
           
               let taskType: any = '';
-              const task_label = Array.isArray(contribution.label) ? contribution.label.join(',') : contribution.label;
+              const task_label = contribution.arrayMap.label ? contribution.arrayMap.label.join(',') : (Array.isArray(contribution.label) ? contribution.label.join(',') : (contribution.label ? contribution.label : null));
               if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
                 taskType = "Incoming";
               } else {
@@ -145,6 +147,8 @@ const handler: Handler = async (event: any, context: any) => {
                     task_name: task_name,
                     task_label: task_label,
                     task_description: task_description,
+                    task_date: task_date,
+                    task_sub_group: task_sub_group,
                     task_type: taskType,
                   },
                 ])
