@@ -51,9 +51,9 @@ const handler: Handler = async (event: any, context: any) => {
       
           let finalResult = "";
 
-          const reversedKeys = Object.keys(tasktypes).reverse();
+          const keys = Object.keys(tasktypes);
         
-          reversedKeys.forEach(key => {
+          keys.forEach(key => {
             tasktypes[key].forEach((partialWord: string) => {
               let regex = new RegExp(partialWord.toLowerCase(), 'i');
               if (description && regex.test(description.toLowerCase())) {
@@ -62,7 +62,7 @@ const handler: Handler = async (event: any, context: any) => {
             });
           });
         
-          reversedKeys.forEach(key => {
+          keys.forEach(key => {
             tasktypes[key].forEach((partialWord: string) => {
               let regex = new RegExp(partialWord.toLowerCase(), 'i');
               if (name && regex.test(name.toLowerCase())) {
@@ -73,17 +73,24 @@ const handler: Handler = async (event: any, context: any) => {
         
           if (label) {
             const labels = label.split(',');
+            let latestIndex = -1; // Keep track of the latest index found
         
-            labels.forEach((lbl: any) => {
-              reversedKeys.forEach(key => {
+            // Iterate through the labels
+            for (const lbl of labels) {
+              // Check each label against the tasktypes
+              Object.keys(tasktypes).forEach((key, index) => {
                 tasktypes[key].forEach((partialWord: string) => {
                   let regex = new RegExp(partialWord.toLowerCase(), 'i');
                   if (regex.test(lbl.toLowerCase().trim())) {
-                    finalResult = key; 
+                    // If this index is later in the list, update the result
+                    if (index > latestIndex) {
+                      finalResult = key;
+                      latestIndex = index;
+                    }
                   }
                 });
               });
-            });
+            }
           }
         
           return finalResult;
