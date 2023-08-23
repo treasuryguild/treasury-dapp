@@ -66,14 +66,14 @@ const handler: Handler = async (event: any, context: any) => {
           });
         
           if (label) {
-            const labels = label.split(',').reverse(); // Reverse the labels
+            const labels = label.split(',');
         
             labels.forEach((lbl: any) => {
               reversedKeys.forEach(key => {
                 tasktypes[key].forEach((partialWord: string) => {
                   let regex = new RegExp(partialWord.toLowerCase(), 'i');
                   if (regex.test(lbl.toLowerCase().trim())) {
-                    finalResult = key;
+                    finalResult = key; 
                   }
                 });
               });
@@ -82,7 +82,7 @@ const handler: Handler = async (event: any, context: any) => {
         
           return finalResult;
         }
-
+        
         const total_tokens = Object.keys(myVariable.totalAmounts);
         const total_amounts = Object.values(myVariable.totalAmounts);
         
