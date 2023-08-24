@@ -411,8 +411,8 @@ function processMetadata(metadata: Metadata): string {
           let currentDate = d.getDate();
           let totalDaysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
           // If current date is 10 days before the end of the month
-          if (currentDate >= totalDaysInMonth - 10) {
-            d.setMonth(d.getMonth() + 2, 1); // Set to next month if within 10 days of end of month
+          if ((currentDate >= totalDaysInMonth - 10) && (Number(totalAmounts.AGIX) > 10000)) {
+            d.setMonth(d.getMonth() + 2, 1); // Set to next month if within 10 days of end of month and AGIX > 10K
           } else {
             d.setMonth(d.getMonth() + 1, 1); // Otherwise, set to current month
           }
