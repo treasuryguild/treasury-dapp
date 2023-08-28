@@ -169,7 +169,7 @@ const handler: Handler = async (event: any, context: any) => {
               if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
                 taskType = "Incoming";
               } else {
-                taskType = getTaskType(task_name, task_label, task_description);
+                taskType = myVariable.txtype; //getTaskType(task_name, task_label, task_description);
               }
           
               const { data: insertResult, error } = await supabase

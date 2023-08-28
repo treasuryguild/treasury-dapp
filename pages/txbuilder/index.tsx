@@ -20,7 +20,7 @@ import { getAssetList2 } from '../../utils/getassetlist2'
 import { getExchangeRate } from '../../utils/getexchangerate'
 import { getLabels } from '../../utils/getLabels'
 import { setLabels } from '../../utils/setLabels'
-//import { updateTxDatabase } from '../../utils/updateTxDatabase'
+import { updateTxDatabase } from '../../utils/updateTxDatabase'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { checkAndUpdate } from '../../utils/checkAndUpdate'
 import { useMyVariable } from '../../context/MyVariableContext';
@@ -428,6 +428,7 @@ function TxBuilder() {
 
         resolve(txid);
         await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
+        //await updateTxDatabase(updatedVariable, newMetaData, txid, customFilePath); // for testing
         router.push(`/done/${txid}`);
         setLoading(false);
       } catch (error) {

@@ -1,4 +1,6 @@
 import { supabase } from "../lib/supabaseClient";
+import { sendDiscordMessage } from '../utils/sendDiscordMessage'
+import { commitFile } from '../utils/commitFile'
 
 interface Transaction {
   tx_id: string;
@@ -11,6 +13,7 @@ interface ContributionInsertResult {
 }
 
 export async function updateTxDatabase(myVariable:any, metaData:any, thash: any, customFilePath: any) {
+
   function getTaskType(name: any, label: any, description: any) {
     var tasktypes: any = {
       "Operations":["Operations","PM Meeting","Video Meeting","Marketing Call","Weekly call - Treasury Guild Team","Weekly Call - Swarm & Treasury Guild","Setting up","set up","Schedule","setup","Organiz","gdrive","miro","Community Suggestion","Management","Transactions","Install","treasury","administration-of-budget","administration of budget","general admin", "remuneration", "salary", "payments", "leftover","test wallet","Other","budget administration","operational","research","preparation","move to exchange"],
@@ -25,35 +28,70 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
       "Governance":["Governance","voting"],
       "Tool Development":["Tool Development","MVP","Discord Server","Integrate","Add csv features","metadata"],
       "Ideation":["Ideation","Suggest"],
+      "Reporting":["Reporting","Close out report"],
+      "Coordination":["Coordination", "Coordinate"],
+      "Video Editing":["Video Editing", "make a clip"],
+      "Facilitating":["Facilitating", "chair", "host"],
+      "Planning":["Planning"],
+      "Auditing":["Audit"],
       "Voting":["voting registration","voting"],
       "Staking":["Staking to pool","Stake to pool", "Staked to pool","stake to stake pool", "Payment for staking funds","Transaction fee for staking", "Staking fees", "Staking to", "Staking fee", "pool fees", "staking pool fees"],
       "Donation":["sent donation", "send donation", "donation sent"],
-      "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties","incentives"],
+      "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties"],
       "Fixed costs":["Fixed costs","Comm Org Tools","Zoom","GitBook", "comm-org-tools", "expenses", "costs"],
-      "Internal transfer":["Internal wallet transfer","Internal transfer"],
+      "Internal Transfer":["Internal wallet transfer","Internal Transfer"],
+      "Minting":["Minted new tokens","Minted tokens", "Minting tokens", "Minting new tokens"],
       "Rewards Withdrawal":["Rewards-Withdrawal","Internal wallet transfer and staking rewards","staking rewards", "Stake rewards", "Stake Pool Rewards","Withdrawal staking reward funds"],
       "Incoming":["Incoming","IOG", "received donation", "donation received"]
     }
 
     let finalResult = "";
-    for (let i in tasktypes) {
-      tasktypes[i].forEach((partialWord: string) => {
-        let regex = new RegExp(partialWord.toLowerCase());
+
+    const keys = Object.keys(tasktypes);
+  
+    keys.forEach(key => {
+      tasktypes[key].forEach((partialWord: string) => {
+        let regex = new RegExp(partialWord.toLowerCase(), 'i');
         if (description && regex.test(description.toLowerCase())) {
-          finalResult = i;
+          finalResult = key;
         }
-        if (name && regex.test(name.toLowerCase())) {
-          finalResult = i;
-        }
-        if (label && regex.test(label.toLowerCase())) {
-          finalResult = i;
-        }    
       });
+    });
+  
+    keys.forEach(key => {
+      tasktypes[key].forEach((partialWord: string) => {
+        let regex = new RegExp(partialWord.toLowerCase(), 'i');
+        if (name && regex.test(name.toLowerCase())) {
+          finalResult = key;
+        }
+      });
+    });
+  
+    if (label) {
+      const labels = label.split(',');
+      let latestIndex = -1; // Keep track of the latest index found
+  
+      // Iterate through the labels
+      for (const lbl of labels) {
+        // Check each label against the tasktypes
+        Object.keys(tasktypes).forEach((key, index) => {
+          tasktypes[key].forEach((partialWord: string) => {
+            let regex = new RegExp(partialWord.toLowerCase(), 'i');
+            if (regex.test(lbl.toLowerCase().trim())) {
+              // If this index is later in the list, update the result
+              if (index > latestIndex) {
+                finalResult = key;
+                latestIndex = index;
+              }
+            }
+          });
+        });
+      }
     }
   
     return finalResult;
   }
-  console.log("myVariable inside update Database", myVariable)
+
   const total_tokens = Object.keys(myVariable.totalAmounts);
   const total_amounts = Object.values(myVariable.totalAmounts);
   
@@ -84,11 +122,12 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
             total_ada: myVariable.totalAmounts.ADA,
             project_id: myVariable.project_id,
             total_tokens: total_tokens,
-            total_amounts: total_amounts
+            total_amounts: total_amounts,
+            monthly_budget_balance: myVariable.monthly_budget_balance
         }
     ])
     .select(`tx_id`)
-    .single();;
+    .single();
 
     if (error) throw error;
     const data = insertResult as unknown as Transaction;
@@ -115,66 +154,83 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
   
 
   async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
-    for (const contribution of metaData.contributions) {
-
-      const task_name = contribution.name ? contribution.name.join(' ') : null;
-      const task_description = contribution.description ? contribution.description.join(' ') : null;
-      let taskType = getTaskType(task_name, contribution.label.join(','), task_description)
-      
-      const { data: insertResult, error } = await supabase
-        .from('contributions')
-        .insert([
-          {
-            project_id: myVariable.project_id,
-            tx_id: tx_id,
-            task_creator: myVariable.group,
-            task_name: task_name,
-            task_label: contribution.label.join(','),
-            task_description: task_description, 
-            task_type: taskType,
-          },
-        ])
-        .select(`contribution_id`)
-        .single();
-
-      if (error) throw error;
-
-      const data = insertResult as unknown as ContributionInsertResult;
-      const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
-
-      for (const contributorKey in contribution.contributors) {
-        const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
-        console.log("Uploading dist")
-        if (walletAddress) {
-          const contributor_id = await updateContributors(walletAddress, contributorKey);
-
-          const tokens: string[] = [];
-          const amounts: number[] = [];
-
-          for (const token in contribution.contributors[contributorKey]) {
-            tokens.push(token);
-            amounts.push(Number(contribution.contributors[contributorKey][token]));
+      for (const contribution of metaData.contributions) {
+        const task_name = contribution.name ? contribution.name.join(' ') : null;
+        const task_date = contribution?.arrayMap?.date?.join(',') || null;
+        const task_sub_group = contribution?.arrayMap?.subGroup?.join(',') || null;
+        const task_description = contribution.description ? contribution.description.join(' ') : null;
+    
+        let taskType: any = '';
+        const task_label = (contribution?.arrayMap?.label && contribution.arrayMap.label.length > 0) ? contribution.arrayMap.label.join(',') : (Array.isArray(contribution.label) ? contribution.label.join(',') : (contribution.label ? contribution.label : null));
+        if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
+          taskType = "Incoming";
+        } else {
+          taskType = myVariable.txtype //getTaskType(task_name, task_label, task_description);
+        }
+    
+        const { data: insertResult, error } = await supabase
+          .from('contributions')
+          .insert([
+            {
+              project_id: myVariable.project_id,
+              tx_id: tx_id,
+              task_creator: myVariable.group,
+              task_name: task_name,
+              task_label: task_label,
+              task_description: task_description,
+              task_date: task_date,
+              task_sub_group: task_sub_group,
+              task_type: taskType,
+            },
+          ])
+          .select(`contribution_id`)
+          .single();
+    
+        if (error) throw error;
+    
+        const data = insertResult as unknown as ContributionInsertResult;
+        const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
+    
+        for (const contributorKey in contribution.contributors) {
+          const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
+          if (walletAddress) {
+            const contributor_id = await updateContributors(walletAddress, contributorKey);
+    
+            const tokens: string[] = [];
+            const amounts: number[] = [];
+    
+            for (const token in contribution.contributors[contributorKey]) {
+              tokens.push(token);
+              amounts.push(Number(contribution.contributors[contributorKey][token]));
+            }
+    
+            const { error: distributionError } = await supabase
+              .from('distributions')
+              .insert([
+                {
+                  tx_id,
+                  contribution_id,
+                  project_id: myVariable.project_id,
+                  contributor_id,
+                  tokens,
+                  amounts,
+                },
+              ]);
+    
+            if (distributionError) throw distributionError;
           }
-
-          const { error: distributionError } = await supabase
-            .from('distributions')
-            .insert([
-              {
-                tx_id,
-                contribution_id,
-                project_id: myVariable.project_id,
-                contributor_id,
-                tokens,
-                amounts,
-              },
-            ]);
-
-          if (distributionError) throw distributionError;
         }
       }
-    }
-  }
+    }          
 
   let { tx_id } = await updateTransactions(myVariable, thash);
-  await updateContributionsAndDistributions(myVariable, tx_id, metaData);
+  let customFileContent = ''
+  let newMetaData = metaData
+  newMetaData['txid'] = thash
+  customFileContent = `${JSON.stringify(newMetaData, null, 2)}`; 
+  //await commitFile(customFilePath, customFileContent)  
+  await updateContributionsAndDistributions(myVariable, tx_id, metaData); 
+  if (myVariable.send_message == true) {
+    //await sendDiscordMessage(myVariable);
+  }
 }
