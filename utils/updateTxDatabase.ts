@@ -233,4 +233,5 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
   if (myVariable.send_message == true) {
     //await sendDiscordMessage(myVariable);
   }
+  console.log('done')
 }

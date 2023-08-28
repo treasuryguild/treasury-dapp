@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from '../lib/supabaseClient';
 import { sendDiscordMessage } from '../utils/sendDiscordMessage'
 import { commitFile } from '../utils/commitFile'
+//import { updateTxDatabase } from '../utils/updateTxDatabase'
 
 export default function AdminPage() {
     const [session, setSession] = useState(null)
@@ -63,6 +64,11 @@ export default function AdminPage() {
         await sendDiscordMessage(myVariable[index]);
     }
 
+    async function updateDatabase(index) {
+      console.log("myVariable", index, myVariable[index], metaData[index], thash[index], customFilePath[index])
+      //await updateTxDatabase(myVariable[index], metaData[index], thash[index], customFilePath[index]);
+    }
+
     async function gitCommit(index) {
         let customFileContent = ''
         let newMetaData = metaData[index]
@@ -93,6 +99,7 @@ export default function AdminPage() {
           <p>{transaction.project} - {transaction.txdescription}</p>
           <button onClick={() => sendMessage(index)}>Send Discord Message</button>
           <button onClick={() => gitCommit(index)}>Commit File to GitHub</button>
+          <button onClick={() => updateDatabase(index)}>Update Database</button>
         </div>
       ))}
     </div>
