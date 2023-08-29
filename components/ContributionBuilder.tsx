@@ -8,7 +8,8 @@ type Contributor = Record<string, Partial<Record<Tokens, string>>>;
 export type Contribution = {
   taskCreator: string[];
   name: string[];
-  label: string[];
+  arrayMap: {label: string[], subGroup: string[], date: string[]},
+  //label: string[];
   contributors: Contributor;
 };
 
@@ -35,6 +36,11 @@ export type ContributionBuilderProps = {
 };
 
 const contributorWallets: any[] = []
+const today = new Date();
+const day = String(today.getDate()).padStart(2, '0');
+const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+const year = String(today.getFullYear()).slice(-2);
+const formattedDate = `${day}.${month}.${year}`;
 
 const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   executeTransaction,
@@ -50,7 +56,8 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const [contributions, setContributions] = useState<Contribution[]>([{
     taskCreator: [myVariable.group],
     name: [],
-    label: [],
+    arrayMap: {label:[], subGroup:[], date:[formattedDate]},
+    //label: [],
     contributors: {},
   }]);
   const [labelOptions, setLabelOptions] = useState<OptionsType>(labels);
@@ -80,12 +87,14 @@ useEffect(() => {
 }, [walletTokens]);
 
   const addContribution = () => {
+
     setContributions([
       ...contributions,
       {
         taskCreator: [myVariable.group],
         name: [],
-        label: [],
+        arrayMap: {label:[], subGroup:[], date:[formattedDate]},
+        //label: [],
         contributors: {},
       },
     ]);
@@ -125,12 +134,45 @@ useEffect(() => {
     setContributions(newContributions);
   };
 
+  const convertToISOFormat = (date: string | null) => {
+    if (!date) {
+      return '';  // or return null, depending on how you want to handle this case
+    }
+    const [day, month, year] = date.split('.');
+    return `20${year}-${month}-${day}`;
+  };  
+
+  const updateDate = (index: number, date: string) => {
+    const newContributions = [...contributions];
+    
+    let formattedDate = "";
+    
+    if (!date) {
+      // Get today's date in yyyy-mm-dd format
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+      const year = String(today.getFullYear()).slice(-2);
+      formattedDate = `${day}.${month}.${year}`;
+    } else {
+      // Convert to JavaScript Date object
+      const dateObj = new Date(date);
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+      const year = String(dateObj.getFullYear()).slice(-2); // Get the last 2 digits
+      formattedDate = `${day}.${month}.${year}`;
+    }
+  
+    newContributions[index].arrayMap.date = [formattedDate];
+    setContributions(newContributions);
+  };
+
   const updateLabel = (index: number, label: string) => {
     const newSelectedLabels = [...selectedLabels];
     newSelectedLabels[index] = label.split(',').map((value) => ({ value, label: value }));
     setSelectedLabels(newSelectedLabels);
     const newContributions = [...contributions];
-    newContributions[index].label = label.split(',');
+    newContributions[index].arrayMap.label = label.split(',');
     setContributions(newContributions);
   };
 
@@ -341,7 +383,7 @@ useEffect(() => {
     totalTokens = await getTotalTokens(aggregatedTokens);
 
     metaData = `{
-      "mdVersion": ["1.4"],
+      "mdVersion": ["1.8"],
       "msg": [
       "${myVariable.project} Transaction",
       "Website: ${myVariable.project_website}",
@@ -431,6 +473,13 @@ useEffect(() => {
                 value={contribution.name.join(' ')} // modify join method to use spaces instead of commas
                 onChange={(e) => updateName(index, e.target.value)}
               />
+              Date:
+              <input
+              type="date"
+              name="date"
+              value={convertToISOFormat(contribution.arrayMap.date[0])}
+              onChange={(e) => updateDate(index, e.target.value)}
+            />
           </div>
           <br />
           {Object.keys(contribution.contributors).map((contributorId) => (
