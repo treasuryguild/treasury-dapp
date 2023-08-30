@@ -27,6 +27,8 @@ import { useMyVariable } from '../../context/MyVariableContext';
 
 
 type OptionsType = Array<{value: string, label: string}>;
+type OptionsType2 = Array<{value: string, label: string}>;
+
 type Token = {
     id: string | number;
     name: React.ReactNode;
@@ -58,6 +60,11 @@ function TxBuilder() {
     { value: 'Fixed Costs', label: 'Fixed Costs' },
     { value: 'Content Creation', label: 'Content Creation' },
   ]);
+  const [subGroupOptions, setSubGroupOptions] = useState<OptionsType2>([
+    { value: 'Writers Workgroup', label: 'Writers Workgroup' },
+    { value: 'Video Workgroup', label: 'Video Workgroup' },
+    { value: 'Archive Workgroup', label: 'Archive Workgroup' },
+  ]);
 
   const [contributionsJSON, setContributionsJSON] = useState('');
   const [contributorWalletsJSON, setContributorWalletsJSON] = useState('');
@@ -79,6 +86,7 @@ function TxBuilder() {
     onContributorWalletsUpdate: handleContributorWalletsUpdate,
     walletTokens: walletTokens,
     labels: labelOptions,
+    subGroups: subGroupOptions,
     tokenRates: tokenRates
   }
 
@@ -221,7 +229,8 @@ function TxBuilder() {
 
   interface Contribution1 {
     taskCreator: string;
-    label: string;
+    arrayMap: {label: string[], subGroup: string[], date: string[]},
+    //label: string;
     name?: string[];
     description?: string[]; 
     contributors: { [key: string]: { [key: string]: string } }; 

@@ -14,11 +14,18 @@ export type Contribution = {
 };
 
 type OptionsType = Array<{value: string, label: string}>;
+type OptionsType2 = Array<{value: string, label: string}>;
+
 type OptionType = {
   value: string;
   label: string;
 };
+type OptionType2 = {
+  value: string;
+  label: string;
+};
 type ValueType = ReadonlyArray<OptionType> | null;
+type ValueType2 = ReadonlyArray<OptionType2> | null;
 
 type Tokens = string;
 
@@ -32,6 +39,7 @@ export type ContributionBuilderProps = {
   onContributorWalletsUpdate: (contributorWallets: any[]) => void;
   walletTokens: any;
   labels: any;
+  subGroups: any;
   tokenRates: any;
 };
 
@@ -49,6 +57,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   walletTokens,
   tokenRates,
   labels,
+  subGroups,
   }) => {
   const { myVariable, setMyVariable } = useMyVariable();
   const tokensList: Tokens[] = walletTokens.map((token: any) => token.name);
@@ -63,6 +72,10 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const [labelOptions, setLabelOptions] = useState<OptionsType>(labels);
   const [selectedLabels, setSelectedLabels] = useState<Array<ValueType>>([[]]);
   const [userDefinedLabels, setUserDefinedLabels] = useState<OptionsType>([]);
+
+  const [subGroupOptions, setSubGroupOptions] = useState<OptionsType2>(subGroups);
+  const [selectedSubGroup, setSelectedSubGroup] = useState<Array<ValueType2>>([[]]);
+  const [userDefinedSubGroup, setUserDefinedSubGroup] = useState<OptionsType2>([]);
   
 
   const router = useRouter();
@@ -99,6 +112,7 @@ useEffect(() => {
       },
     ]);
     setSelectedLabels([...selectedLabels, []]); // add an empty array for the new contribution
+    setSelectedSubGroup([...selectedSubGroup, []]);
   };
 
   const removeContribution = (index: number) => {
@@ -107,7 +121,10 @@ useEffect(() => {
     setContributions(newContributions);
     const newSelectedLabels = [...selectedLabels];
     newSelectedLabels.splice(index, 1);
+    const newSelectedSubGroup = [...selectedSubGroup];
+    newSelectedSubGroup.splice(index, 1);
     setSelectedLabels(newSelectedLabels);
+    setSelectedSubGroup(newSelectedSubGroup);
   };
 
   const updateName = (index: number, name: string) => {
@@ -173,6 +190,15 @@ useEffect(() => {
     setSelectedLabels(newSelectedLabels);
     const newContributions = [...contributions];
     newContributions[index].arrayMap.label = label.split(',');
+    setContributions(newContributions);
+  };
+
+  const updateSubGroup = (index: number, label: string) => {
+    const newSelectedSubGroup = [...selectedSubGroup];
+    newSelectedSubGroup[index] = label.split(',').map((value) => ({ value, label: value }));
+    setSelectedSubGroup(newSelectedSubGroup);
+    const newContributions = [...contributions];
+    newContributions[index].arrayMap.subGroup = label.split(',');
     setContributions(newContributions);
   };
 
@@ -400,7 +426,8 @@ useEffect(() => {
   }
 
   const handleClick = async () => {
-    const contributionsJSON = JSON.stringify(contributions);
+    const updatedContributions = contributions.map(({ arrayMap, ...rest }) => ({ ...rest, arrayMap: arrayMap.subGroup?.length ? arrayMap : { ...arrayMap, subGroup: undefined } }));
+    const contributionsJSON = JSON.stringify(updatedContributions);
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
@@ -479,7 +506,59 @@ useEffect(() => {
               name="date"
               value={convertToISOFormat(contribution.arrayMap.date[0])}
               onChange={(e) => updateDate(index, e.target.value)}
-            />
+              />
+              SubGroup:
+              <ReactSelect
+                isMulti
+                options={[...subGroupOptions, ...userDefinedSubGroup]}
+                value={selectedSubGroup[index]}
+                onChange={(selected) => {
+                  const newSelectedSubGroup = [...selectedSubGroup];
+                  newSelectedSubGroup[index] = selected;
+                  setSelectedSubGroup(newSelectedSubGroup);
+                  updateSubGroup(index, selected.map((option) => option.value).join(','));
+                }}
+                onInputChange={(input) => {
+                  setUserDefinedSubGroup(
+                    input
+                      ? input
+                          .split(',')
+                          .map((label) => label.trim())
+                          .filter((label) => label)
+                          .map((label) => ({ value: label, label }))
+                      : []
+                  );
+                }}
+                styles={{
+                  control: (baseStyles, state) => ({
+                    ...baseStyles,
+                    borderColor: state.isFocused ? 'grey' : 'white',
+                    backgroundColor: 'black',
+                    color: 'white',
+                  }),
+                  option: (baseStyles, { isFocused, isSelected }) => ({
+                    ...baseStyles,
+                    backgroundColor: isSelected ? 'darkblue' : isFocused ? 'darkgray' : 'black',
+                    color: 'white',
+                  }),
+                  multiValue: (baseStyles) => ({
+                    ...baseStyles,
+                    backgroundColor: 'darkblue', // modify background color of selected label in the input field
+                  }),
+                  multiValueLabel: (baseStyles) => ({
+                    ...baseStyles,
+                    color: 'white', // modify text color of selected label in the input field
+                  }),
+                  input: (baseStyles) => ({
+                    ...baseStyles,
+                    color: 'white',
+                  }),
+                  menu: (baseStyles) => ({
+                    ...baseStyles,
+                    backgroundColor: 'black', // Changed dropdown background color to dark
+                  }),
+                }}
+              />
           </div>
           <br />
           {Object.keys(contribution.contributors).map((contributorId) => (

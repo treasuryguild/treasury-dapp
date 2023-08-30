@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Singletx.module.css'
 import { useMyVariable } from '../context/MyVariableContext';
-//import { updateTxDatabase } from '../utils/updateTxDatabase'
 
 export type TransactionBuilderProps = {
   executeTransaction: (
