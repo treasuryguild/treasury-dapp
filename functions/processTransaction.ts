@@ -84,6 +84,7 @@ const handler: Handler = async (event: any, context: any) => {
               const task_name = contribution.name ? contribution.name.join(' ') : null;
               const task_date = contribution?.arrayMap?.date?.join(',') || null;
               const task_sub_group = contribution?.arrayMap?.subGroup?.join(',') || null;
+              const task_array_map = contribution.arrayMap ? contribution.arrayMap : null;
               const task_description = contribution.description ? contribution.description.join(' ') : null;
           
               let taskType: any = '';
@@ -106,6 +107,7 @@ const handler: Handler = async (event: any, context: any) => {
                     task_description: task_description,
                     task_date: task_date,
                     task_sub_group: task_sub_group,
+                    task_array_map: task_array_map,
                     task_type: taskType,
                   },
                 ])

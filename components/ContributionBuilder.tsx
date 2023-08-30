@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useMyVariable } from '../context/MyVariableContext';
 import styles from '../styles/TxBuilder.module.css';
+import { setLabels } from '../utils/setLabels'
+import { setSubGroups } from '../utils/setSubGroups'
 import ReactSelect from 'react-select';
 import { useRouter } from 'next/router';
 
@@ -8,7 +10,7 @@ type Contributor = Record<string, Partial<Record<Tokens, string>>>;
 export type Contribution = {
   taskCreator: string[];
   name: string[];
-  arrayMap: {label: string[], subGroup: string[], date: string[]},
+  arrayMap: {label: string[], subGroup: string[], date: string[], proof: string[]},
   //label: string[];
   contributors: Contributor;
 };
@@ -65,7 +67,7 @@ const ContributionBuilder: React.FC<ContributionBuilderProps> = ({
   const [contributions, setContributions] = useState<Contribution[]>([{
     taskCreator: [myVariable.group],
     name: [],
-    arrayMap: {label:[], subGroup:[], date:[formattedDate]},
+    arrayMap: {label:[], subGroup:[], date:[formattedDate], proof:[]},
     //label: [],
     contributors: {},
   }]);
@@ -106,7 +108,7 @@ useEffect(() => {
       {
         taskCreator: [myVariable.group],
         name: [],
-        arrayMap: {label:[], subGroup:[], date:[formattedDate]},
+        arrayMap: {label:[], subGroup:[], date:[formattedDate], proof:[]},
         //label: [],
         contributors: {},
       },
@@ -151,6 +153,47 @@ useEffect(() => {
     setContributions(newContributions);
   };
 
+  const updateProof = (index: number, proof: string) => {
+    const newContributions = [...contributions];
+    let parts = [];
+    let currentPart = '';
+    
+    // Check if the string has spaces
+    if (proof.includes(' ')) {
+      // Split by spaces
+      proof.split(' ').forEach(word => {
+        const potentialPart = currentPart ? currentPart + ' ' + word : word;
+        if (potentialPart.length > 50) {
+          parts.push(currentPart);
+          currentPart = word;
+        } else {
+          currentPart = potentialPart;
+        }
+      });
+    } else {
+      // Split into 50-character chunks
+      let charCount = 0;
+      for (let i = 0; i < proof.length; i++) {
+        currentPart += proof[i];
+        charCount++;
+  
+        if (charCount >= 50) {
+          parts.push(currentPart);
+          currentPart = '';
+          charCount = 0;
+        }
+      }
+    }
+  
+    // Append any remaining part
+    if (currentPart) {
+      parts.push(currentPart);
+    }
+  
+    newContributions[index].arrayMap.proof = parts;
+    setContributions(newContributions);
+  };  
+
   const convertToISOFormat = (date: string | null) => {
     if (!date) {
       return '';  // or return null, depending on how you want to handle this case
@@ -191,6 +234,8 @@ useEffect(() => {
     const newContributions = [...contributions];
     newContributions[index].arrayMap.label = label.split(',');
     setContributions(newContributions);
+    const status = setLabels(label.split(','));
+    //console.log("Updating Label", label.split(','), status)
   };
 
   const updateSubGroup = (index: number, label: string) => {
@@ -200,6 +245,7 @@ useEffect(() => {
     const newContributions = [...contributions];
     newContributions[index].arrayMap.subGroup = label.split(',');
     setContributions(newContributions);
+    const status = setSubGroups(label.split(','));
   };
 
   const addContributor = (index: number, contributorId: string) => {
@@ -427,7 +473,8 @@ useEffect(() => {
 
   const handleClick = async () => {
     const updatedContributions = contributions.map(({ arrayMap, ...rest }) => ({ ...rest, arrayMap: arrayMap.subGroup?.length ? arrayMap : { ...arrayMap, subGroup: undefined } }));
-    const contributionsJSON = JSON.stringify(updatedContributions);
+    const updatedContributions2 = updatedContributions.map(({ arrayMap, ...rest }) => ({ ...rest, arrayMap: arrayMap.proof?.length ? arrayMap : { ...arrayMap, proof: undefined } }));
+    const contributionsJSON = JSON.stringify(updatedContributions2);
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
@@ -506,6 +553,13 @@ useEffect(() => {
               name="date"
               value={convertToISOFormat(contribution.arrayMap.date[0])}
               onChange={(e) => updateDate(index, e.target.value)}
+              />
+              Proof:
+              <input
+              type="text"
+              name="proof"
+              value={contribution.arrayMap.proof.join(' ')}
+              onChange={(e) => updateProof(index, e.target.value)}
               />
               SubGroup:
               <ReactSelect

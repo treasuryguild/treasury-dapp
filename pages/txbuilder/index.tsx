@@ -19,7 +19,7 @@ import { getAssetList } from '../../utils/getassetlist'
 import { getAssetList2 } from '../../utils/getassetlist2'
 import { getExchangeRate } from '../../utils/getexchangerate'
 import { getLabels } from '../../utils/getLabels'
-import { setLabels } from '../../utils/setLabels'
+import { getSubGroups } from '../../utils/getSubGroups'
 import { updateTxDatabase } from '../../utils/updateTxDatabase'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { checkAndUpdate } from '../../utils/checkAndUpdate'
@@ -109,6 +109,10 @@ function TxBuilder() {
   interface InputLabels {
     label: string;
   }
+
+  interface InputLabels2 {
+    sub_group: string;
+  }
   
   interface OutputLabels {
     value: string;
@@ -121,14 +125,24 @@ function TxBuilder() {
       label: obj.label
     }));
   }
+
+  function transformArrayToObject2(arr: InputLabels2[]): OutputLabels[] {
+    return arr.map(obj => ({
+      value: obj.sub_group,
+      label: obj.sub_group
+    }));
+  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
     setTokenRates({})
-    const databaseLabels = await getLabels();
+
+    const databaseLabels: any = await getLabels();
+    const databaseSubGroups: any = await getSubGroups();
     const output: OutputLabels[] = transformArrayToObject(databaseLabels);
-    //console.log(databaseLabels, output)
+    const output2: OutputLabels[] = transformArrayToObject2(databaseSubGroups);
     setLabelOptions(output);
-    //const status = await setLabels(["Test"]);
+    setSubGroupOptions(output2);
+    
     const usedAddresses = await wallet.getUsedAddresses();
     let projectInfo: any;
     projectInfo = await getProject(usedAddresses[0]);

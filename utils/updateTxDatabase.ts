@@ -14,84 +14,6 @@ interface ContributionInsertResult {
 
 export async function updateTxDatabase(myVariable:any, metaData:any, thash: any, customFilePath: any) {
 
-  function getTaskType(name: any, label: any, description: any) {
-    var tasktypes: any = {
-      "Operations":["Operations","PM Meeting","Video Meeting","Marketing Call","Weekly call - Treasury Guild Team","Weekly Call - Swarm & Treasury Guild","Setting up","set up","Schedule","setup","Organiz","gdrive","miro","Community Suggestion","Management","Transactions","Install","treasury","administration-of-budget","administration of budget","general admin", "remuneration", "salary", "payments", "leftover","test wallet","Other","budget administration","operational","research","preparation","move to exchange"],
-      "Swarm Session":["Swarm Session","Join Saturday Swarm Session"],
-      "Insight fest":["Insight fest"],
-      "Content Creation":["Content Creation","article","Poetry","create","creating","Promotion","videocreation","Translat","Clip & Edit","translat","videos","content shared","Town Hall Slides"],
-      "ATH Participation":["ATH Participation","join us at After Town Hall"],
-      "Onboarding":["Onboarding","Onboard","Mentorship","workshop"],
-      "Timestamping":["Timestamping","timestamp"],
-      "Documentation":["Documentation","How to","Report","mapping","Walkthrough"],
-      "Community Communication":["Community Communication","weekly call","Hosts","coordinat","Ambassador Town Hall","weekly meeting","community council","meeting","session","Facilitate","Announce","attendees"],
-      "Governance":["Governance","voting"],
-      "Tool Development":["Tool Development","MVP","Discord Server","Integrate","Add csv features","metadata"],
-      "Ideation":["Ideation","Suggest"],
-      "Reporting":["Reporting","Close out report"],
-      "Coordination":["Coordination", "Coordinate"],
-      "Video Editing":["Video Editing", "make a clip"],
-      "Facilitating":["Facilitating", "chair", "host"],
-      "Planning":["Planning"],
-      "Auditing":["Audit"],
-      "Voting":["voting registration","voting"],
-      "Staking":["Staking to pool","Stake to pool", "Staked to pool","stake to stake pool", "Payment for staking funds","Transaction fee for staking", "Staking fees", "Staking to", "Staking fee", "pool fees", "staking pool fees"],
-      "Donation":["sent donation", "send donation", "donation sent"],
-      "Incentive Budget":["new lead","verified cross-chain lead","verified lead", "generated lead", "confirmed collaboration", "lead collaboration", "support participation","Funded-proposer","Toolmakers-and-maintainers","Stake-Pool-Operators","General-ADA-Holder","Community-Advisors","Funded proposer","Toolmakers and maintainers","Stake Pool Operators","General ADA Holder","Community Advisors","Swarm bounties - CC Logo","funds to pay for CC Bounties"],
-      "Fixed costs":["Fixed costs","Comm Org Tools","Zoom","GitBook", "comm-org-tools", "expenses", "costs"],
-      "Internal Transfer":["Internal wallet transfer","Internal Transfer"],
-      "Minting":["Minted new tokens","Minted tokens", "Minting tokens", "Minting new tokens"],
-      "Rewards Withdrawal":["Rewards-Withdrawal","Internal wallet transfer and staking rewards","staking rewards", "Stake rewards", "Stake Pool Rewards","Withdrawal staking reward funds"],
-      "Incoming":["Incoming","IOG", "received donation", "donation received"]
-    }
-
-    let finalResult = "";
-
-    const keys = Object.keys(tasktypes);
-  
-    keys.forEach(key => {
-      tasktypes[key].forEach((partialWord: string) => {
-        let regex = new RegExp(partialWord.toLowerCase(), 'i');
-        if (description && regex.test(description.toLowerCase())) {
-          finalResult = key;
-        }
-      });
-    });
-  
-    keys.forEach(key => {
-      tasktypes[key].forEach((partialWord: string) => {
-        let regex = new RegExp(partialWord.toLowerCase(), 'i');
-        if (name && regex.test(name.toLowerCase())) {
-          finalResult = key;
-        }
-      });
-    });
-  
-    if (label) {
-      const labels = label.split(',');
-      let latestIndex = -1; // Keep track of the latest index found
-  
-      // Iterate through the labels
-      for (const lbl of labels) {
-        // Check each label against the tasktypes
-        Object.keys(tasktypes).forEach((key, index) => {
-          tasktypes[key].forEach((partialWord: string) => {
-            let regex = new RegExp(partialWord.toLowerCase(), 'i');
-            if (regex.test(lbl.toLowerCase().trim())) {
-              // If this index is later in the list, update the result
-              if (index > latestIndex) {
-                finalResult = key;
-                latestIndex = index;
-              }
-            }
-          });
-        });
-      }
-    }
-  
-    return finalResult;
-  }
-
   const total_tokens = Object.keys(myVariable.totalAmounts);
   const total_amounts = Object.values(myVariable.totalAmounts);
   
@@ -152,12 +74,12 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
     return contributorKey;
   }
   
-
   async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
       for (const contribution of metaData.contributions) {
         const task_name = contribution.name ? contribution.name.join(' ') : null;
         const task_date = contribution?.arrayMap?.date?.join(',') || null;
         const task_sub_group = contribution?.arrayMap?.subGroup?.join(',') || null;
+        const task_array_map = contribution.arrayMap ? contribution.arrayMap : null;
         const task_description = contribution.description ? contribution.description.join(' ') : null;
     
         let taskType: any = '';
@@ -180,6 +102,7 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
               task_description: task_description,
               task_date: task_date,
               task_sub_group: task_sub_group,
+              task_array_map: task_array_map,
               task_type: taskType,
             },
           ])

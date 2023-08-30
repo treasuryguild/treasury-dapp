@@ -1,30 +1,44 @@
 import { supabase } from "../lib/supabaseClient";
 
-export async function setLabels(labels) {
-
-    async function updateLabels(labels) {
-        let status = 'started'
-        for (let i in labels) {
-            const updates = {
-                label: labels[i],
-            }
+export async function setLabels(inputLabels) {
+  async function updateLabels(inputLabels) {
+    let status = 'started';
     
-            let { data, error } = await supabase
-                .from("labels")
-                .upsert( updates )
-                .select('*')
-          
-            if (error) throw error;
-            console.log("updateLabel", error, data)
-          
-            if (!data) {
-                throw new Error("Failed to update the label");
-            }
-            console.log("updateLabel data", data)
-        }
-        status = 'done'
-        return status
+    // Fetch all existing labels from the database
+    const { data: existingLabels, error: fetchError } = await supabase
+      .from("labels")
+      .select("label");
+      
+    if (fetchError) throw fetchError;
+
+    // Convert the existing labels to a Set for faster lookup
+    const existingLabelSet = new Set(existingLabels.map(item => item.label));
+
+    // Filter out the labels that already exist
+    const newLabels = inputLabels.filter(label => !existingLabelSet.has(label));
+
+    // Insert new labels
+    for (const label of newLabels) {
+      const updates = {
+        label,
+      };
+
+      const { data, error } = await supabase
+        .from("labels")
+        .upsert(updates)
+        .select('*');
+
+      if (error) throw error;
+
+      if (!data) {
+        throw new Error("Failed to update the label");
+      }
     }
-  let { status } = await updateLabels(labels);
-  return status
+
+    status = 'done';
+    return status;
+  }
+
+  const { status } = await updateLabels(inputLabels);
+  return status;
 }
