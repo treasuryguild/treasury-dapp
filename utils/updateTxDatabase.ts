@@ -72,79 +72,99 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
   
     if (error) throw error;
     return contributorKey;
-  }
+  } 
+
+    async function updateContributions(tx_id: any) {
+      try {
+        const promises = metaData.contributions.map(async (contribution: any) => {
+          const task_name = contribution.name ? contribution.name.join(' ') : null;
+          const task_date = contribution?.arrayMap?.date?.join(',') || null;
+          const task_sub_group = contribution?.arrayMap?.subGroup?.join(',') || null;
+          const task_array_map = contribution.arrayMap ? contribution.arrayMap : null;
+          const task_description = contribution.description ? contribution.description.join(' ') : null;
+          const task_label = (contribution?.arrayMap?.label && contribution.arrayMap.label.length > 0) ? contribution.arrayMap.label.join(',') : (Array.isArray(contribution.label) ? contribution.label.join(',') : (contribution.label ? contribution.label : null));
+            
+          let taskType: any = '';
+          if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
+            taskType = "Incoming";
+          } else {
+            taskType = myVariable.txtype 
+          }
+
+          const updates = {
+            project_id: myVariable.project_id,
+            tx_id,
+            task_creator: myVariable.group,
+            task_name: task_name,
+            task_label: task_label,
+            task_description: task_description,
+            task_date: task_date,
+            task_sub_group: task_sub_group,
+            task_array_map: task_array_map,
+            task_type: taskType,
+          }
+          const { data, error } = await supabase
+            .from('contributions')
+            .upsert([ 
+              updates
+            ])
+            .select('contribution_id');
   
-  async function updateContributionsAndDistributions(myVariable: any, tx_id: any, metaData: any) {
-      for (const contribution of metaData.contributions) {
-        const task_name = contribution.name ? contribution.name.join(' ') : null;
-        const task_date = contribution?.arrayMap?.date?.join(',') || null;
-        const task_sub_group = contribution?.arrayMap?.subGroup?.join(',') || null;
-        const task_array_map = contribution.arrayMap ? contribution.arrayMap : null;
-        const task_description = contribution.description ? contribution.description.join(' ') : null;
+          if (error) throw error;
+  
+          return data[0].contribution_id; 
+        });
+  
+        return await Promise.all(promises);
+  
+      } catch (error:any) {
+        console.log(error.message);
+      }
+    }
+
+    async function updateDistributions(contribution_ids: any, tx_id: any) {
+      try {
+        const promises = metaData.contributions.map(async (contribution: any, index: any) => {
+          const contribution_id = contribution_ids[index];
     
-        let taskType: any = '';
-        const task_label = (contribution?.arrayMap?.label && contribution.arrayMap.label.length > 0) ? contribution.arrayMap.label.join(',') : (Array.isArray(contribution.label) ? contribution.label.join(',') : (contribution.label ? contribution.label : null));
-        if (myVariable.txtype == "Incoming" || task_label == 'Incoming') {
-          taskType = "Incoming";
-        } else {
-          taskType = myVariable.txtype //getTaskType(task_name, task_label, task_description);
-        }
+          for (const contributor in contribution.contributors) {
+            const walletAddress: any = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributor));
+            const contributor_id = await updateContributors(walletAddress, contributor);
+            const tokensObj = contribution.contributors[contributor];
+            let tokensArray = [];
+            let amountsArray = [];
     
-        const { data: insertResult, error } = await supabase
-          .from('contributions')
-          .insert([
-            {
+            for (const token in tokensObj) {
+              const amount = tokensObj[token];
+              if (token == 'gimbal') {
+                tokensArray.push('GMBL');
+              } else {
+                tokensArray.push(token);
+              }
+              
+              amountsArray.push(amount);
+            }
+            const updates = { 
+              contributor_id, 
+              tokens: tokensArray, 
+              amounts: amountsArray, 
+              contribution_id,
               project_id: myVariable.project_id,
-              tx_id: tx_id,
-              task_creator: myVariable.group,
-              task_name: task_name,
-              task_label: task_label,
-              task_description: task_description,
-              task_date: task_date,
-              task_sub_group: task_sub_group,
-              task_array_map: task_array_map,
-              task_type: taskType,
-            },
-          ])
-          .select(`contribution_id`)
-          .single();
-    
-        if (error) throw error;
-    
-        const data = insertResult as unknown as ContributionInsertResult;
-        const contribution_id: string | null = data && data.contribution_id ? data.contribution_id : null;
-    
-        for (const contributorKey in contribution.contributors) {
-          const walletAddress = Object.keys(myVariable.txamounts).find(key => key.endsWith(contributorKey));
-          if (walletAddress) {
-            const contributor_id = await updateContributors(walletAddress, contributorKey);
-    
-            const tokens: string[] = [];
-            const amounts: number[] = [];
-    
-            for (const token in contribution.contributors[contributorKey]) {
-              tokens.push(token);
-              amounts.push(Number(contribution.contributors[contributorKey][token]));
+              tx_id
             }
     
-            const { error: distributionError } = await supabase
+            await supabase
               .from('distributions')
-              .insert([
-                {
-                  tx_id,
-                  contribution_id,
-                  project_id: myVariable.project_id,
-                  contributor_id,
-                  tokens,
-                  amounts,
-                },
-              ]);
-    
-            if (distributionError) throw distributionError;
+              .upsert([updates]);
           }
-        }
+        });
+    
+        await Promise.all(promises);
+    
+      } catch (error: any) {
+        console.log(error.message);
       }
-    }          
+    } 
 
   let { tx_id } = await updateTransactions(myVariable, thash);
   let customFileContent = ''
@@ -152,7 +172,8 @@ export async function updateTxDatabase(myVariable:any, metaData:any, thash: any,
   newMetaData['txid'] = thash
   customFileContent = `${JSON.stringify(newMetaData, null, 2)}`; 
   //await commitFile(customFilePath, customFileContent)  
-  await updateContributionsAndDistributions(myVariable, tx_id, metaData); 
+  const contribution_ids = await updateContributions(tx_id);
+  await updateDistributions(contribution_ids, tx_id);
   if (myVariable.send_message == true) {
     //await sendDiscordMessage(myVariable);
   }
