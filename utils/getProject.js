@@ -46,7 +46,7 @@ export async function getProject(address) {
         
         if (error && status !== 406) throw error
         if (data) {
-            monthly_budget = data[0].monthly_budget_balance
+            monthly_budget = data[0].monthly_budget_balance || {};
         }
       } catch (error) {
         if (error) {
