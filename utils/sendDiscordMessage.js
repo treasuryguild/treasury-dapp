@@ -41,7 +41,7 @@ export async function sendDiscordMessage(myVariable) {
         url: `${website}`,
         icon_url: `${myVariable.logo_url ? myVariable.logo_url : ''}`,
       },
-      description: `[Dashboard](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)})`+'   '+`[TxView](https://treasuryguild.com/transactions/${thash})`,
+      description: `[Dashboard](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)})`+'   '+`[TxView](https://treasuryguild.com/${encodeURIComponent(myVariable.group)}/${encodeURIComponent(myVariable.project)}/${thash})`,
       fields: [
         {
           name: `${myVariable.txdescription}`,
