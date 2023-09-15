@@ -4,7 +4,7 @@ export default async (req, res) => {
   try {
     let { data, error } = await supabase
       .from('wallets')
-      .select('wallet, username, full_username, project');
+      .select('wallet, username, full_username, project, user_id');
     
     if (error) throw error;
 
