@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const walletSuffix = wallet.substr(-6);
   webhookUrl = webhookUrls[walletSuffix] //remember to change to webhookUrls[walletSuffix];
 
-  const avatarUrl = 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png';
+  const avatarUrl = 'https://github.com/treasuryguild/treasury-dapp/raw/main/public/logo132.png';
 
   if (typeof webhookUrl === 'undefined') {
     webhookUrl = process.env.TEST_DISCORD_WEBHOOK_URL;
