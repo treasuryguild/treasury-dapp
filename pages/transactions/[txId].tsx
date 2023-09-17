@@ -145,7 +145,9 @@ function Txid() {
     }
     
     let newMetaData = metadata
-    newMetaData['txid'] = txId
+    const xrate = document.getElementById('xrate') as HTMLInputElement | null;
+    newMetaData = updateTransactionMessage(newMetaData, xrate?.value);
+    newMetaData['txid'] = txId;
     customFileContent = `${JSON.stringify(newMetaData, null, 2)}`;
     let pType = ''
     if (txdata.project_type == 'Treasury Wallet') {
@@ -225,6 +227,15 @@ function Txid() {
 
     return output;
 }
+
+  function updateTransactionMessage(obj: any, amount: any) {
+    const newObj = { ...obj };
+    const messageIndex = newObj.msg.findIndex((message: any) => message.includes("Transaction made by Treasury Guild"));
+    if (messageIndex !== -1) {
+      newObj.msg[messageIndex] = `Transaction made by Treasury Guild @${amount}`;
+    }
+    return newObj;
+  }
 
   async function getMetaData() {
     let keys = Object.keys(txdata.txamounts); 

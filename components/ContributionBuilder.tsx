@@ -353,6 +353,15 @@ useEffect(() => {
     return totalTokensPrep;
   }
 
+  function updateTransactionMessage(obj: any, amount: any) {
+    const newObj = { ...obj };
+    const messageIndex = newObj.msg.findIndex((message: any) => message.includes("Transaction made by Treasury Guild"));
+    if (messageIndex !== -1) {
+      newObj.msg[messageIndex] = `Transaction made by Treasury Guild @${amount}`;
+    }
+    return newObj;
+  }
+
   async function getValues(contributionsJSON: string, contributorWalletsJSON: string) {
     let totalTokens: any;
     let assetsPerAddress: any;
@@ -468,6 +477,8 @@ useEffect(() => {
       `
       let finalMetaData = {}
       finalMetaData = JSON.parse(metaData)
+      const xrate = document.getElementById('xrate') as HTMLInputElement | null;
+      finalMetaData = updateTransactionMessage(finalMetaData, xrate?.value);
     let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
   }
 
