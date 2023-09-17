@@ -45,6 +45,15 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
     setMyVariable(prevState => ({...prevState, send_message: event.target.checked}));
   };
 
+  function updateTransactionMessage(obj: any, amount: any) {
+    const newObj = { ...obj };
+    const messageIndex = newObj.msg.findIndex((message: any) => message.includes("Transaction made by Treasury Guild"));
+    if (messageIndex !== -1) {
+      newObj.msg[messageIndex] = `Transaction made by Treasury Guild @${amount}`;
+    }
+    return newObj;
+  }
+
   async function getValues(deworkJson: any) {
     let addresses: any[] = [];
     let sendAssets: any[] = [];
@@ -55,9 +64,11 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
     assetsPerAddress = {}
     adaPerAddress = {}
     metaData = {}
+    const xrate = document.getElementById('xrate') as HTMLInputElement | null;
       const element = document.getElementById('deworkJson') as HTMLInputElement | null;
       deworkJson = JSON.parse(element?.value ?? "{}");
       metaData = deworkJson.metadata['674']
+      metaData = updateTransactionMessage(metaData, xrate?.value);
       for (let i in deworkJson.outputs) {
         sendAssets = []
         sendAda = []
