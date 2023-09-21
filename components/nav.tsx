@@ -54,6 +54,9 @@ const Nav = () => {
     async function signInWithDiscord() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
+        options: {
+          redirectTo: 'https://lambent-kelpie-e8b15c.netlify.app/txbuilder',
+        },
       })
     }
   
