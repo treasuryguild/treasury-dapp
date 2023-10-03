@@ -274,6 +274,41 @@ function TxBuilder() {
     }
     return '';
 }
+
+function getAggregatedAmounts(metaData: any) {
+  let aggregatedAGIXPerMonth: any = {};
+
+  metaData.contributions.forEach((contribution: any) => {
+    let date = null;
+    
+    if (contribution.arrayMap && contribution.arrayMap.date) {
+      date = contribution.arrayMap.date[0];
+    }
+
+    if (!date) {
+      const currentDate = new Date();
+      const currentDay = String(currentDate.getDate()).padStart(2, '0');
+      const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const currentYear = String(currentDate.getFullYear()).slice(-2); 
+      date = `${currentDay}.${currentMonth}.${currentYear}`;
+      console.log("date", date);
+    }
+
+    const yearMonth = `20${date.split(".")[2]}-${date.split(".")[1].padStart(2, '0')}`;
+    const contributors = contribution.contributors;
+    console.log("yearMonth", yearMonth);
+
+    for (let contributor in contributors) {
+      const AGIXAmount = contributors[contributor].AGIX || 0;
+      if (aggregatedAGIXPerMonth[yearMonth] === undefined) {
+        aggregatedAGIXPerMonth[yearMonth] = 0;
+      }
+      aggregatedAGIXPerMonth[yearMonth] += AGIXAmount;
+    }
+  });
+
+  return aggregatedAGIXPerMonth;
+}
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
     let txHash = ""
@@ -335,6 +370,8 @@ function TxBuilder() {
         const walletBalanceAfterTx: IToken[] = calculateWalletBalanceAfterTx(totalAmounts, walletTokens, fee);
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
         
+        let aggregatedAGIXPerMonth = getAggregatedAmounts(metaData);
+        console.log("aggregatedAGIXPerMonth", aggregatedAGIXPerMonth, myVariable)
         //console.log("monthly_wallet_budget_string", monthly_wallet_budget_string)
         txdata = {
           ...txdata,
@@ -350,16 +387,15 @@ function TxBuilder() {
           txtype: 'Outgoing'
         }
         let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
-
+        
         if (txdata.project == "Singularity Net Ambassador Wallet" && Number(totalAmounts.AGIX) > 0) {
-            if (!monthly_budget_balance) {
-                monthly_budget_balance = {}
+          for (let yearMonth in aggregatedAGIXPerMonth) {
+            if (!monthly_budget_balance[yearMonth]) {
+              monthly_budget_balance[yearMonth] = {};
             }
-            if (!monthly_budget_balance[myVariable.budget_month]) {
-              monthly_budget_balance[myVariable.budget_month] = {}
-            }
-            monthly_budget_balance[myVariable.budget_month]["AGIX"] = (Number(txdata.monthly_budget[myVariable.budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
-            monthly_budget_balance[myVariable.budget_month]["AGIX"] = typeof monthly_budget_balance[myVariable.budget_month]["AGIX"] === 'number' ? monthly_budget_balance[myVariable.budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[myVariable.budget_month]["AGIX"] as string).toFixed(2);
+            monthly_budget_balance[yearMonth]["AGIX"] = (Number(monthly_budget_balance[yearMonth]["AGIX"]) || 0) - aggregatedAGIXPerMonth[yearMonth];
+            monthly_budget_balance[yearMonth]["AGIX"] = monthly_budget_balance[yearMonth]["AGIX"].toFixed(2);
+          }
         }
         
         if (txdata.project == "Test Wallet") {
@@ -400,7 +436,7 @@ function TxBuilder() {
         //window.location.reload();
       }
       let signedTx = ""
-      //console.log("txdata", txdata)
+      console.log("txdata", txdata)
       try {
         signedTx = await wallet.signTx(unsignedTx);
         // continue with the signed transaction
