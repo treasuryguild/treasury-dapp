@@ -291,15 +291,13 @@ function getAggregatedAmounts(metaData: any) {
       const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
       const currentYear = String(currentDate.getFullYear()).slice(-2); 
       date = `${currentDay}.${currentMonth}.${currentYear}`;
-      console.log("date", date);
     }
 
     const yearMonth = `20${date.split(".")[2]}-${date.split(".")[1].padStart(2, '0')}`;
     const contributors = contribution.contributors;
-    console.log("yearMonth", yearMonth);
 
     for (let contributor in contributors) {
-      const AGIXAmount = contributors[contributor].AGIX || 0;
+      const AGIXAmount = Number(contributors[contributor].AGIX) || 0;
       if (aggregatedAGIXPerMonth[yearMonth] === undefined) {
         aggregatedAGIXPerMonth[yearMonth] = 0;
       }
@@ -308,6 +306,49 @@ function getAggregatedAmounts(metaData: any) {
   });
 
   return aggregatedAGIXPerMonth;
+}
+
+function getAggregatedAmountsPerMonth(metaData: any) {
+  // Initialize an empty object to store aggregated amounts per month for each token
+  let aggregatedAmountsPerMonth: any = {};
+
+  metaData.contributions.forEach((contribution: any) => {
+    let date = null;
+
+    if (contribution.arrayMap && contribution.arrayMap.date) {
+      date = contribution.arrayMap.date[0];
+    }
+
+    if (!date) {
+      const currentDate = new Date();
+      const currentDay = String(currentDate.getDate()).padStart(2, '0');
+      const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const currentYear = String(currentDate.getFullYear()).slice(-2);
+      date = `${currentDay}.${currentMonth}.${currentYear}`;
+    }
+
+    const yearMonth = `20${date.split(".")[2]}-${date.split(".")[1].padStart(2, '0')}`;
+    const contributors = contribution.contributors;
+
+    // Initialize the yearMonth key if it doesn't already exist
+    if (!aggregatedAmountsPerMonth[yearMonth]) {
+      aggregatedAmountsPerMonth[yearMonth] = {};
+    }
+
+    for (let contributor in contributors) {
+      for (let token in contributors[contributor]) {
+        // Initialize the token key under the current month-year if it doesn't already exist
+        if (!aggregatedAmountsPerMonth[yearMonth][token]) {
+          aggregatedAmountsPerMonth[yearMonth][token] = 0;
+        }
+
+        // Aggregate the amount
+        const tokenAmount = Number(contributors[contributor][token]) || 0;
+        aggregatedAmountsPerMonth[yearMonth][token] += tokenAmount;
+      }
+    }
+  });
+  return aggregatedAmountsPerMonth;
 }
   
   async function buildTx(assetsPerAddress: any, adaPerAddress: any, metaData: any) {
@@ -371,8 +412,8 @@ function getAggregatedAmounts(metaData: any) {
         const balanceString = formatWalletBalance(walletBalanceAfterTx)
         
         let aggregatedAGIXPerMonth = getAggregatedAmounts(metaData);
-        console.log("aggregatedAGIXPerMonth", aggregatedAGIXPerMonth, myVariable)
-        //console.log("monthly_wallet_budget_string", monthly_wallet_budget_string)
+        let aggregatedAmountsPerMonth = getAggregatedAmountsPerMonth(metaData);
+        
         txdata = {
           ...txdata,
           txamounts: txamounts,
@@ -398,20 +439,18 @@ function getAggregatedAmounts(metaData: any) {
           }
         }
         
-        if (txdata.project == "Test Wallet") {
-            for (let token in totalAmounts) {
-                const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-                if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
-                  if (!monthly_budget_balance) {
-                    monthly_budget_balance = {}
-                  }
-                  if (!monthly_budget_balance[myVariable.budget_month]) {
-                    monthly_budget_balance[myVariable.budget_month] = {}
-                  }
-                    monthly_budget_balance[myVariable.budget_month][token] = ((Number(txdata.monthly_budget[myVariable.budget_month][token]) || 0) - Number(totalAmounts[token]));
-                    monthly_budget_balance[myVariable.budget_month][token] = typeof monthly_budget_balance[myVariable.budget_month][token] === 'number' ? monthly_budget_balance[myVariable.budget_month][token].toFixed(2) : parseFloat(monthly_budget_balance[myVariable.budget_month][token] as string).toFixed(2);
-                }
+        if (txdata.project === "Test Wallet") {
+          for (let yearMonth in aggregatedAmountsPerMonth) {
+            if (!monthly_budget_balance[yearMonth]) {
+              monthly_budget_balance[yearMonth] = {};
             }
+            for (let token in aggregatedAmountsPerMonth[yearMonth]) {
+              if (!monthly_budget_balance[yearMonth][token]) {
+                monthly_budget_balance[yearMonth][token] = 0;
+              }
+              monthly_budget_balance[yearMonth][token] = (Number(monthly_budget_balance[yearMonth][token]) - aggregatedAmountsPerMonth[yearMonth][token]).toFixed(2);
+            }
+          }
         }
         let monthly_budget_balance_strings:any = {}
         // Create a formatted string for each month's budget balance
@@ -423,7 +462,7 @@ function getAggregatedAmounts(metaData: any) {
       d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
       const totalAmountsString = formatTotalAmounts(totalAmounts)             
       const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)]
-      //console.log("This month", d.toISOString().slice(0, 7))
+    
       txdata = {
         ...txdata,
         monthly_budget_balance,
@@ -436,7 +475,7 @@ function getAggregatedAmounts(metaData: any) {
         //window.location.reload();
       }
       let signedTx = ""
-      console.log("txdata", txdata)
+      //console.log("txdata", txdata)
       try {
         signedTx = await wallet.signTx(unsignedTx);
         // continue with the signed transaction
