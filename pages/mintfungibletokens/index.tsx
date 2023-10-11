@@ -5,6 +5,7 @@ import type { Mint, AssetMetadata } from '@meshsdk/core';
 import type { NativeScript } from '@meshsdk/core';
 import styles from '../../styles/Minttokens.module.css';
 import { useState } from 'react';
+import { getTxAmounts } from "../../utils/gettxamounts";
 
 function MintFungibleTokens() {
   const router = useRouter();
@@ -56,11 +57,12 @@ function MintFungibleTokens() {
     };
     //Treasury Guild ipfs://bafkreiccmrypkhje4iakdqdmqxol5x7lwc365akayyba74n2tx5pahfxxm
     //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
+    //voting ipfs://bafkreigpzaox2zp4esvt5ng23aldzeqjrbmo6jtvljkaz7i4uglo4a7qee
     const asset1: Mint = {
       assetName: tokenName,
       assetQuantity: assetQuantity,
       metadata: assetMetadata1,
-      label: '721',
+      label: '721', 
       recipient: usedAddress[0],
     };
     tx.mintAsset(
@@ -71,6 +73,8 @@ function MintFungibleTokens() {
     tx.setTimeToExpire(slot);
     
     const unsignedTx = await tx.build();
+    const { txamounts, fee } = getTxAmounts(unsignedTx);
+    console.log("txamounts, fee", txamounts, fee)
     const signedTx = await wallet.signTx(unsignedTx);
     const txHash = await wallet.submitTx(signedTx);
     return txHash;

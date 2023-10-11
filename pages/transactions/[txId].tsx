@@ -346,6 +346,7 @@ function processMetadata(metadata: Metadata): string {
       const assets = await wallet.getAssets();
       const txData = await txInfo();
       const result = await getTxInfo(usedAddresses, txData[0], assets) as GetTxInfoResult;
+      //console.log("txData[0]", txData[0])
       fee = parseInt(txData[0].fee)
       let txamounts: Record<string, Amounts> = {};
       wallet2 = txData[0].inputs[0].payment_addr.bech32
@@ -454,7 +455,7 @@ function processMetadata(metadata: Metadata): string {
         txdata.budget_month = d.toISOString().slice(0, 7)
         for (let token in totalAmounts) {
             const walletToken = txdata.walletTokens.find((t: any) => t.name === token);
-            if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] > 0) {
+            if (walletToken && walletToken.tokenType === 'fungible' && totalAmounts[token] != 0) {
                 if (!monthly_budget_balance) {
                     monthly_budget_balance = {}
                 }
@@ -471,7 +472,7 @@ function processMetadata(metadata: Metadata): string {
                     }
                 }
                 //console.log("monthly_budget_balance", monthly_budget_balance)
-                if (txdata.txtype == "Incoming") {
+                if (txdata.txtype == "Incoming" || txdata.txtype == "Minting") {
                     monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
                 } else if (txdata.txtype != "Incoming") {
                     monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) - Number(totalAmounts[token]);
@@ -493,7 +494,7 @@ function processMetadata(metadata: Metadata): string {
 
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
-    //console.log("txdata", txdata)
+    console.log("txdata", txdata)
     setLoading(false);
   }  
   

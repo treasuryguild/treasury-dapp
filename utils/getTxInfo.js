@@ -117,7 +117,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
   
     // The difference will be the outgoing ADA amount
     let outgoingAdaAmount = totalInputValue - totalOutputValue;
-    console.log(totalInputValue, totalOutputValue, outgoingAdaAmount)
+    //console.log(totalInputValue, totalOutputValue, outgoingAdaAmount)
     
     // Handle outgoing ADA
     for (const output of outputs) {
@@ -125,7 +125,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         let ada = {
           id: idCounter.toString(),
           name: 'ADA',
-          amount: outgoingAdaAmount,  // Use the calculated amount here
+          amount: Number(0 - outgoingAdaAmount),  // Use the calculated amount here
           unit: 'lovelace',
           fingerprint: '',
           decimals: 6
@@ -142,7 +142,39 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     }
     
     // Handle incoming tokens
-    for (const output of outputs) {
+    if (txData.assets_minted.length > 0) {
+      let mintedAddress = (Object.keys(addressAssets))[0];
+      //console.log("addressAssets", (Object.keys(addressAssets))[0])
+      const assetList = txData.assets_minted.map(incomingAsset => {
+        for (let asset of assets) {
+          if (asset.fingerprint === incomingAsset.fingerprint) {
+            let assetName = asset.assetName;
+            let decimals = incomingAsset.decimals;
+
+            // Adjust name and decimals for gimbal
+            if (assetName.toLowerCase() === 'gimbal') {
+              assetName = 'GMBL';
+              decimals = 6;
+            }
+
+            incomingAsset = {
+              id: idCounter.toString(),
+              name: assetName,
+              amount: parseFloat(incomingAsset.quantity),
+              unit: asset.unit,
+              fingerprint: asset.fingerprint,
+              decimals: decimals
+            };
+            idCounter++;
+            break;
+          }
+        }
+        return incomingAsset;
+      });
+      addressAssets[mintedAddress].push(...assetList);
+      //console.log("assetsMinted", txData.assets_minted)
+    } else {
+      for (const output of outputs) {
       if (usedAddresses.includes(output.payment_addr.bech32)) {
         const assetList = output.asset_list.map(incomingAsset => {
           for (let asset of assets) {
@@ -194,7 +226,8 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         }
       }
     }
-  
+  }
+  //console.log("addressAssets", addressAssets)
   } else if (isOutgoing) {
     transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
