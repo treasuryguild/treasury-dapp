@@ -125,7 +125,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         let ada = {
           id: idCounter.toString(),
           name: 'ADA',
-          amount: Number(0 - outgoingAdaAmount),  // Use the calculated amount here
+          amount: 0, //Number(0 - outgoingAdaAmount),  // 0 if we mint with dapp
           unit: 'lovelace',
           fingerprint: '',
           decimals: 6

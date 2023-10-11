@@ -471,6 +471,13 @@ function processMetadata(metadata: Metadata): string {
                         monthly_budget_balance[txdata.budget_month] = {};
                     }
                 }
+                if (!txdata.monthly_budget) {
+                  txdata.monthly_budget = {};
+                }
+                if (!txdata.monthly_budget[txdata.budget_month]) {
+                    txdata.monthly_budget[txdata.budget_month] = {};
+                }
+              
                 //console.log("monthly_budget_balance", monthly_budget_balance)
                 if (txdata.txtype == "Incoming" || txdata.txtype == "Minting") {
                     monthly_budget_balance[txdata.budget_month][token] = (Number(txdata.monthly_budget[txdata.budget_month][token]) || 0) + Number(totalAmounts[token]);
