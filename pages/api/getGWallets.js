@@ -15,19 +15,35 @@ export default async function handler(req, res) {
   try {
     const response = await axios.get(API_URL);
     const data = response.data.values;
-
+  
     if (data && data.length > 0) {
       const timestampIndex = data[0].indexOf("Timestamp");
       const discordHandleIndex = data[0].indexOf("Discord handle");
       const walletAddressIndex = data[0].indexOf("Wallet Address");
-
-      const formattedData = data.slice(1).map(row => ({
-        Timestamp: row[timestampIndex],
-        DiscordHandle: row[discordHandleIndex],
-        WalletAddress: row[walletAddressIndex]
-      }));
-
-      res.status(200).json(formattedData);
+  
+      const formattedData = data.slice(1)
+        .map(row => ({
+          Timestamp: row[timestampIndex],
+          DiscordHandle: row[discordHandleIndex] ? row[discordHandleIndex].trim() : null,
+          WalletAddress: row[walletAddressIndex] ? row[walletAddressIndex].trim() : null
+        }))
+        .filter(entry => 
+          entry.DiscordHandle && 
+          entry.WalletAddress &&
+          entry.WalletAddress.startsWith("addr") && 
+          entry.WalletAddress.length >= 55
+        )
+        .map(entry => {
+          const parts = entry.WalletAddress.split(" ");
+          entry.WalletAddress = parts[0]; 
+          return entry;
+        });
+  
+      if (formattedData.length > 0) {
+        res.status(200).json(formattedData);
+      } else {
+        res.status(404).json({ error: 'No valid data found' });
+      }
     } else {
       res.status(404).json({ error: 'No data found' });
     }
