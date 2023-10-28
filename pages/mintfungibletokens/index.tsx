@@ -16,6 +16,7 @@ function MintFungibleTokens() {
   const [website, setWebsite] = useState('');
   const [assetQuantity, setAssetQuantity] = useState('');
   const [image, setImage] = useState([]); 
+  const [policy, setPolicy] = useState('closed');
 
   async function mintNative(event: any) {
     event.preventDefault();
@@ -41,7 +42,12 @@ function MintFungibleTokens() {
       ],
     };
     
-    const forgingScript = ForgeScript.fromNativeScript(nativeScript);
+    const forgingScript = policy === 'closed' ? 
+    ForgeScript.fromNativeScript(nativeScript) : 
+    ForgeScript.withOneSignature(address);
+
+    //const forgingScript = ForgeScript.fromNativeScript(nativeScript);
+    //const forgingScript2 = ForgeScript.withOneSignature(address);
     
     const tx = new Transaction({ initiator: wallet });
     
@@ -90,6 +96,11 @@ function MintFungibleTokens() {
       <div className={styles.body}>
         <form className={styles.form} onSubmit={mintNative}>
           <h1>Mint Fungible Tokens</h1>
+          <label className={styles.input}>Policy:</label>
+          <select value={policy} onChange={(e) => setPolicy(e.target.value)}>
+            <option value="closed">Closed</option>
+            <option value="open">Open</option>
+          </select>
           <label className={styles.input}>Token Name:</label>
           <input type="text" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
           <label className={styles.input}>Ticker:</label>
