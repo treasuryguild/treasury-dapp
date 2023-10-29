@@ -125,7 +125,7 @@ export async function getTxInfo(usedAddresses, txData, assets) {
         let ada = {
           id: idCounter.toString(),
           name: 'ADA',
-          amount: 0, //Number(0 - outgoingAdaAmount),  // 0 if we mint with dapp
+          amount: Number(0 - outgoingAdaAmount),  // minus fee, because it gets handled same as Incoming
           unit: 'lovelace',
           fingerprint: '',
           decimals: 6
@@ -364,6 +364,6 @@ export async function getTxInfo(usedAddresses, txData, assets) {
       token.amount = (token.amount / Math.pow(10, token.decimals)).toFixed(token.decimals);
     });
   }
-
+  //console.log("addressAssets, transactionType", addressAssets, transactionType)
   return { addressAssets, transactionType };
 }

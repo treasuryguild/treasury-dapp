@@ -64,6 +64,7 @@ function MintFungibleTokens() {
     //Treasury Guild ipfs://bafkreiccmrypkhje4iakdqdmqxol5x7lwc365akayyba74n2tx5pahfxxm
     //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
     //voting ipfs://bafkreigpzaox2zp4esvt5ng23aldzeqjrbmo6jtvljkaz7i4uglo4a7qee
+    //Deepfund academy ipfs://bafkreig2pze4gdl3gmnvn6s6g5hjdx64nzcfnq2alkujtt7rnts2khjvd4
     const asset1: Mint = {
       assetName: tokenName,
       assetQuantity: assetQuantity,
