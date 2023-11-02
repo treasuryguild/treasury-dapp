@@ -16,6 +16,7 @@ import { get, set } from '../../utils/cache'
 import { getProject } from '../../utils/getProject'
 import { checkTxStatus } from '../../utils/checkTxStatus'
 import { getAssetList } from '../../utils/getassetlist'
+import { setTokenTypes } from '../../utils/setTokenTypes'
 import { getAssetList2 } from '../../utils/getassetlist2'
 import { getExchangeRate } from '../../utils/getexchangerate'
 import { getLabels } from '../../utils/getLabels'
@@ -175,10 +176,11 @@ function TxBuilder() {
         
       let assets = await getAssetList(usedAddresses[0]);
       setWalletTokens(assets);
-      //console.log("getAssetList", assets)
       if (projectInfo.project != undefined && transactionStatus) {
         await getTokenRates(assets);
       }
+      let status = setTokenTypes(assets);
+      //console.log("getAssetList", assets, status)
   }
 
   interface IToken {

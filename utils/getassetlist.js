@@ -41,7 +41,8 @@ function mapAssetData(assetDetails, assetList) {
         unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
         fingerprint: asset.fingerprint,
         decimals: decimals,
-        tokenType: tokenType
+        tokenType: tokenType,
+        policy_id: matchingAsset.policy_id
     };
   });
 }
@@ -111,7 +112,8 @@ export async function getAssetList(wallet) {
         unit: "lovelace",
         fingerprint: "", 
         decimals: 6,
-        tokenType: "fungible"  
+        tokenType: "fungible",
+        policy_id: "" 
       };
       // Return an array that contains only the ADA item
       return [adaItem];
@@ -133,7 +135,8 @@ export async function getAssetList(wallet) {
       unit: "lovelace",
       fingerprint: "", 
       decimals: 6,
-      tokenType: "fungible"  
+      tokenType: "fungible",
+      policy_id: ""  
     };
     
     // Add ADA item to the start of the array
@@ -143,6 +146,6 @@ export async function getAssetList(wallet) {
     for (let i = 1; i < mappedAssetData.length; i++) {
       mappedAssetData[i].id = String(i + 1);
     }
-
+    //console.log("mappedAssetData", mappedAssetData)
     return mappedAssetData;
 }
