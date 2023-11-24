@@ -65,6 +65,8 @@ function MintFungibleTokens() {
     //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
     //voting ipfs://bafkreigpzaox2zp4esvt5ng23aldzeqjrbmo6jtvljkaz7i4uglo4a7qee
     //Deepfund academy ipfs://bafkreig2pze4gdl3gmnvn6s6g5hjdx64nzcfnq2alkujtt7rnts2khjvd4
+    // add web3 url to this url https://bafybeialrcsrzwy2uhrjndwbz2deztcdmtaidthp7wevm6brmrjo37hbvq.ipfs.dweb.link/
+    
     const asset1: Mint = {
       assetName: tokenName,
       assetQuantity: assetQuantity,
