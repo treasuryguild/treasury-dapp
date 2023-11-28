@@ -49,61 +49,32 @@ function mapAssetData(assetDetails, assetList) {
 
 export async function getAssetList(wallet) {
     
-    async function getBalance() {
-        const url = "https://api.koios.rest/api/v1/address_info?select=balance";
-        const data = {
-          _addresses: [wallet],
-        };
-    
-        const response = await axios.post(url, data, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
-          },
-        });
-        return response.data;
-    }
+  async function getBalance() {
+    const response = await axios.post('/api/getBalance', { wallet });
+    return response.data;
+}
 
-    async function getList() {
-      const url = "https://api.koios.rest/api/v1/address_assets";
-      const data = {
-        _addresses: [wallet],
-      };
-  
-      const response = await axios.post(url, data, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
-        },
-      });
-      return response.data;
-    }
+async function getList() {
+  const response = await axios.post('/api/getList', { wallet });
+  console.log("getList response:", response.data);
+  return response.data;
+}
+
 
     function transformArray(assetList) {
-        return assetList.map(asset => [asset.policy_id, asset.asset_name]);
-    }
+  // Directly mapping over the provided array
+  return assetList.map(asset => [asset.policy_id, asset.asset_name]);
+}
+
 
     async function getAssetDetails(transformedArray) {
-        const url = "https://api.koios.rest/api/v1/asset_info?select=fingerprint,asset_name_ascii,total_supply,token_registry_metadata";
-        const data = {     
-          _asset_list: transformedArray,
-        };
-    
-        const response = await axios.post(url, data, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
-          },
-        });
-        //console.log(response.data)
-        return response.data;
-    }
+      const response = await axios.post('/api/getAssetDetails', { transformedArray });
+      return response.data;
+  }
 
     let balance = await getBalance();
     let list = await getList();
+    console.log("List:", list);
     if (list.length === 0) {
       // The list is empty.
       // Create ADA item
@@ -122,9 +93,15 @@ export async function getAssetList(wallet) {
       return [adaItem];
     }
     //console.log(list);
-    let transformedArray = transformArray(list[0].asset_list);
+    let transformedArray = [];
+    if (list && Array.isArray(list)) {
+      transformedArray = transformArray(list);
+    } else {
+      // Handle case where list[0].asset_list is not an array
+      console.error('Asset list is not an array or is undefined');
+    }
     let assetDetails = await getAssetDetails(transformedArray);
-    let mappedAssetData = mapAssetData(assetDetails, list[0].asset_list);
+    let mappedAssetData = mapAssetData(assetDetails, list);
 
     // Sort the array so that 'nft' items are at the end
     mappedAssetData.sort((a, b) => (a.tokenType === 'nft') - (b.tokenType === 'nft'));
@@ -149,6 +126,6 @@ export async function getAssetList(wallet) {
     for (let i = 1; i < mappedAssetData.length; i++) {
       mappedAssetData[i].id = String(i + 1);
     }
-    //console.log("mappedAssetData", mappedAssetData)
+    console.log("mappedAssetData", mappedAssetData)
     return mappedAssetData;
 }
