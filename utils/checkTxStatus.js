@@ -5,13 +5,14 @@ export async function checkTxStatus(wallet, txId) {
     async function getTxs() {
         const url = "https://api.koios.rest/api/v1/address_txs?limit=1";
         const data = {
-          _addresses: [wallet],
+          _addresses: [wallet], 
         };
     
         const response = await axios.post(url, data, {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
           },
         });
         return response.data[0].tx_hash;
@@ -27,6 +28,7 @@ export async function checkTxStatus(wallet, txId) {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
         },
       });
       return response.data[0].num_confirmations;

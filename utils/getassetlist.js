@@ -59,6 +59,7 @@ export async function getAssetList(wallet) {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
           },
         });
         return response.data;
@@ -74,6 +75,7 @@ export async function getAssetList(wallet) {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
         },
       });
       return response.data;
@@ -93,6 +95,7 @@ export async function getAssetList(wallet) {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_KOIOS_API_KEY}`
           },
         });
         //console.log(response.data)
