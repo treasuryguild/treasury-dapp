@@ -17,6 +17,8 @@ function MintFungibleTokens() {
   const [assetQuantity, setAssetQuantity] = useState('');
   const [image, setImage] = useState([]); 
   const [policy, setPolicy] = useState('closed');
+  const [tokenType, setTokenType] = useState('fungible');
+  const [nftType, setNftType] = useState('single');
 
   async function mintNative(event: any) {
     event.preventDefault();
@@ -52,7 +54,7 @@ function MintFungibleTokens() {
     const tx = new Transaction({ initiator: wallet });
     
     // define asset#1 metadata
-    const assetMetadata1: AssetMetadata = {
+    const assetMetadata1: AssetMetadata = tokenType === 'fungible' ? {
       "name": tokenName,
       "decimals": decimals,
       "ticker": ticker,
@@ -60,24 +62,62 @@ function MintFungibleTokens() {
       "image": image, 
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+    } : {
+      "name": tokenName,
+      "website": website,
+      "image": image, 
+      "mediaType": "image/jpg",
+      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
+
+    const assetMetadata2: AssetMetadata = {
+      "name": tokenName,
+      "website": website,
+      "image": image, 
+      "mediaType": "image/jpg",
+      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+    };
+
     //Treasury Guild ipfs://bafkreiccmrypkhje4iakdqdmqxol5x7lwc365akayyba74n2tx5pahfxxm
     //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
     //voting ipfs://bafkreigpzaox2zp4esvt5ng23aldzeqjrbmo6jtvljkaz7i4uglo4a7qee
     //Deepfund academy ipfs://bafkreig2pze4gdl3gmnvn6s6g5hjdx64nzcfnq2alkujtt7rnts2khjvd4
     // add web3 url to this url https://bafybeialrcsrzwy2uhrjndwbz2deztcdmtaidthp7wevm6brmrjo37hbvq.ipfs.dweb.link/
     
-    const asset1: Mint = {
+    const asset1: Mint = tokenType === 'fungible' ? {
       assetName: tokenName,
       assetQuantity: assetQuantity,
       metadata: assetMetadata1,
       label: '721', 
       recipient: usedAddress[0],
+    } : {
+      assetName: tokenName,
+      assetQuantity: '1',
+      metadata: assetMetadata1,
+      label: '721', 
+      recipient: usedAddress[0],
     };
-    tx.mintAsset(
-      forgingScript,
-      asset1,
-    );
+
+    const asset2: Mint = {
+      assetName: tokenName,
+      assetQuantity: '1',
+      metadata: assetMetadata2,
+      label: '721', 
+      recipient: usedAddress[0],
+    }
+
+    if (nftType == 'single' || tokenType == 'fungible') {
+      tx.mintAsset(
+        forgingScript,
+        asset1,
+      );
+    } else if (nftType == 'double' && tokenType == 'nft') {
+      tx.mintAsset(
+        forgingScript,
+        asset1,
+        asset2
+      );
+    } 
     
     tx.setTimeToExpire(slot);
     
@@ -104,16 +144,34 @@ function MintFungibleTokens() {
             <option value="closed">Closed</option>
             <option value="open">Open</option>
           </select>
+          <label className={styles.input}>Token Type:</label>
+          <select value={tokenType} onChange={(e) => setTokenType(e.target.value)}>
+            <option value="fungible">Fungible Token</option>
+            <option value="nft">NFT</option>
+          </select>
+          {tokenType == 'nft' && (<>
+            <label className={styles.input}>NFT Type:</label>
+            <select value={nftType} onChange={(e) => setNftType(e.target.value)}>
+              <option value="single">Single user NFT</option>
+              <option value="double">1 user NFT and 1 reference NFT</option>
+            </select>
+          </>)}
           <label className={styles.input}>Token Name:</label>
           <input type="text" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
-          <label className={styles.input}>Ticker:</label>
-          <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value)} />
-          <label className={styles.input}>Decimals:</label>
-          <input type="number" value={decimals} onChange={(e) => setDecimals(parseInt(e.target.value))} />
+          {tokenType == 'fungible' && (<>
+            <label className={styles.input}>Ticker:</label>
+            <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value)} />
+          </>)}
+          {tokenType == 'fungible' && (<>
+            <label className={styles.input}>Decimals:</label>
+            <input type="number" value={decimals} onChange={(e) => setDecimals(parseInt(e.target.value))} />
+          </>)}
           <label className={styles.input}>Website:</label>
           <input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} />
-          <label className={styles.input}>Asset Quantity:</label>
-          <input type="text" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} />
+          {tokenType == 'fungible' && (<>
+            <label className={styles.input}>Asset Quantity:</label>
+            <input type="text" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} />
+          </>)}
           <label className={styles.input}>Image URL:</label>
           <input type="text" value={image.join('')} onChange={handleImageChange} />
           <button className={styles.submit} type="submit">Mint</button>

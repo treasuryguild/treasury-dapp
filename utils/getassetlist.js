@@ -50,7 +50,7 @@ function mapAssetData(assetDetails, assetList) {
 export async function getAssetList(wallet) {
     
     async function getBalance() {
-        const url = "https://api.koios.rest/api/v0/address_info?select=balance";
+        const url = "https://api.koios.rest/api/v1/address_info?select=balance";
         const data = {
           _addresses: [wallet],
         };
@@ -65,7 +65,7 @@ export async function getAssetList(wallet) {
     }
 
     async function getList() {
-      const url = "https://api.koios.rest/api/v0/address_assets";
+      const url = "https://api.koios.rest/api/v1/address_assets";
       const data = {
         _addresses: [wallet],
       };
@@ -84,7 +84,7 @@ export async function getAssetList(wallet) {
     }
 
     async function getAssetDetails(transformedArray) {
-        const url = "https://api.koios.rest/api/v0/asset_info?select=fingerprint,asset_name_ascii,total_supply,token_registry_metadata";
+        const url = "https://api.koios.rest/api/v1/asset_info?select=fingerprint,asset_name_ascii,total_supply,token_registry_metadata";
         const data = {     
           _asset_list: transformedArray,
         };

@@ -3,7 +3,7 @@ import axios from "axios";
 export async function checkTxStatus(wallet, txId) {
     
     async function getTxs() {
-        const url = "https://api.koios.rest/api/v0/address_txs?limit=1";
+        const url = "https://api.koios.rest/api/v1/address_txs?limit=1";
         const data = {
           _addresses: [wallet],
         };
@@ -18,7 +18,7 @@ export async function checkTxStatus(wallet, txId) {
     }
 
     async function getTxStatus(txid) {
-      const url = "https://api.koios.rest/api/v0/tx_status";
+      const url = "https://api.koios.rest/api/v1/tx_status";
       const data = {
         _tx_hashes: [txid],
       };
