@@ -56,7 +56,7 @@ export async function getAssetList(wallet) {
 
 async function getList() {
   const response = await axios.post('/api/getList', { wallet });
-  console.log("getList response:", response.data);
+  //console.log("getList response:", response.data);
   return response.data;
 }
 
@@ -74,7 +74,7 @@ async function getList() {
 
     let balance = await getBalance();
     let list = await getList();
-    console.log("List:", list);
+    //console.log("List:", list);
     if (list.length === 0) {
       // The list is empty.
       // Create ADA item
@@ -126,6 +126,6 @@ async function getList() {
     for (let i = 1; i < mappedAssetData.length; i++) {
       mappedAssetData[i].id = String(i + 1);
     }
-    console.log("mappedAssetData", mappedAssetData)
+    //console.log("mappedAssetData", mappedAssetData)
     return mappedAssetData;
 }

@@ -344,7 +344,7 @@ function processMetadata(metadata: Metadata): string {
       setLabelOptions(output);
       const usedAddresses = await wallet.getUsedAddresses();
       const assets = await wallet.getAssets();
-      const txData = await txInfo();
+      const txData = await txInfo(txId);
       const result = await getTxInfo(usedAddresses, txData[0], assets) as GetTxInfoResult;
       //console.log("txData[0]", txData[0])
       fee = parseInt(txData[0].fee)
@@ -501,7 +501,7 @@ function processMetadata(metadata: Metadata): string {
 
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
     }
-    console.log("txdata", txdata)
+    //console.log("txdata", txdata)
     setLoading(false);
   }  
   
@@ -574,19 +574,8 @@ function processMetadata(metadata: Metadata): string {
     //console.log("tokenrates", tokenExchangeRates, wallettokens);
   }  
 
-  async function txInfo() {
-    const url = "https://api.koios.rest/api/v0/tx_info";
-    const data = {
-      _tx_hashes: [txId],
-    };
-
-    const response = await axios.post(url, data, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
-    //console.log(response.data)
+  async function txInfo(txid: any) {
+    const response = await axios.post('/api/getTxInfo', { txid });
     return response.data;
   }
 

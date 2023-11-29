@@ -8,6 +8,7 @@ export async function sendDiscordMessage(myVariable) {
   let txtype = myVariable.txtype
   let txtype2 = ''
   let color = 0xeb3477
+  let tokenRate = ''
   if (txtype === 'Incoming') {
     txtype2 = 'Amount received'
     wallet = myVariable.incomingwallet
@@ -27,8 +28,10 @@ export async function sendDiscordMessage(myVariable) {
   let details = ''
   if (myVariable.project === "Singularity Net Ambassador Wallet" || myVariable.project === "Test Wallet") {
     details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`**Monthly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
+    tokenRate = `Exchange Rate - ${myVariable.tokenRates.AGIX} USD per AGIX - ${myVariable.formattedDate}`
   } else {
     details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```';
+    tokenRate = `Exchange Rate - ${myVariable.tokenRates.ADA} USD per ADA - ${myVariable.formattedDate}`
   }
   const content = `${header}`;
   const embeds = [
@@ -50,7 +53,7 @@ export async function sendDiscordMessage(myVariable) {
         },
       ],
       footer: {
-        text: `Exchange Rate - ${myVariable.tokenRates.ADA} USD per ADA - ${myVariable.formattedDate}`
+        text: tokenRate
         //icon_url: 'https://github.com/treasuryguild/Treasury-Guild/raw/main/logo132.png',
       },
     },

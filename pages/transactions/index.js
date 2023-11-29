@@ -20,30 +20,18 @@ function TransactionsList() {
 
   async function getWalletInfo() {}
 
+  async function getAddressTxs(wallet) {
+    const response = await axios.post('/api/getAddressTxs', { wallet });
+    return response.data;
+  }
+
   async function koiosFetch() {
     const usedAddresses = await wallet.getUsedAddresses();
     const projectInfo = await getProject(usedAddresses[0]);
-    const url = "https://api.koios.rest/api/v0/address_txs";
-    const data = {
-      _addresses: [
-        usedAddresses[0]
-      ]
-    };
-    
-    await axios.post(url, data, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(async function (response) {
-      setTxs(response.data.slice(0, 30))
-      const notRecorded = await checkDatabase(projectInfo.project_id, response.data.slice(0, 30));
-      setTxsNotRecorded(notRecorded);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
+    const addressTxs = await getAddressTxs(usedAddresses[0]);
+    setTxs(addressTxs.slice(0, 30))
+    const notRecorded = await checkDatabase(projectInfo.project_id, addressTxs.slice(0, 30));
+    setTxsNotRecorded(notRecorded);
   }
 
   async function checkDatabase(project_id, newTxs) {
