@@ -6,9 +6,13 @@ import type { NativeScript } from '@meshsdk/core';
 import styles from '../../styles/Minttokens.module.css';
 import { useState } from 'react';
 import { getTxAmounts } from "../../utils/gettxamounts";
+import crypto from 'crypto';
 
 function MintFungibleTokens() {
   const router = useRouter();
+  const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/png'];
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+  const [file, setFile] = useState<Blob | undefined>(undefined);
   const { connected, wallet } = useWallet();
   const [tokenName, setTokenName] = useState('');
   const [ticker, setTicker] = useState('');
@@ -19,9 +23,67 @@ function MintFungibleTokens() {
   const [policy, setPolicy] = useState('closed');
   const [tokenType, setTokenType] = useState('fungible');
   const [nftType, setNftType] = useState('single');
+  const [contributionDetails, setContributionDetails] = useState('');
+  const [projectTitle, setProjectTitle] = useState('');
+
+  const generateHash = (input: any) => {
+    return crypto.createHash('sha256').update(input).digest('hex');
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      // Check if file type is acceptable
+      if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+        alert('File type not allowed. Please select a JPEG or PNG image.');
+        return;
+      }
+      // Check if file size is within limit
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File is too large. Please select a file smaller than ${MAX_FILE_SIZE / 1024 / 1024}MB.`);
+        return;
+      }
+      setFile(file);
+      console.log(file)
+    }
+  };  
+
+const uploadToIpfs = async () => {
+  if (!file) {
+    console.error('No file selected');
+    return;
+  }
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log('Response data:', data); // Add this line for debugging
+    if (response.ok) {
+      alert(data.url);
+      handleImageChange(data.url);
+      console.log(data)
+    } else {
+      throw new Error('Upload failed');
+    }
+  } catch (error) {
+    console.error('Error uploading file:', error);
+  }
+};
 
   async function mintNative(event: any) {
     event.preventDefault();
+
+    if (image.length === 0) {
+      alert("Please upload an image before minting.");
+      return; // Exit the function if no image is uploaded
+    }
+    
     const usedAddress = await wallet.getUsedAddresses();
     const address = usedAddress[0];
     
@@ -59,21 +121,33 @@ function MintFungibleTokens() {
       "decimals": decimals,
       "ticker": ticker,
       "website": website,
-      "image": image, 
+      "image": image,
+      "mediaType": "image/jpg",
+      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+    } : nftType === 'single' ? {
+      "name": `ContributorNFT.${tokenName}`,
+      "website": website,
+      "image": image,
+      "projectTitle": projectTitle,
+      "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     } : {
-      "name": tokenName,
+      "name": `ContributorNFT.${tokenName}`,
       "website": website,
-      "image": image, 
+      "image": image,
+      "projectTitle": projectTitle,
+      "referenceHash": generateHash(contributionDetails),
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
 
     const assetMetadata2: AssetMetadata = {
-      "name": tokenName,
+      "name": `ReferenceNFT.${tokenName}`,
       "website": website,
       "image": image, 
+      "projectTitle": projectTitle,
+      "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
@@ -126,13 +200,25 @@ function MintFungibleTokens() {
     console.log("txamounts, fee", txamounts, fee)
     const signedTx = await wallet.signTx(unsignedTx);
     const txHash = await wallet.submitTx(signedTx);
+    alert("Tokens Minted")
     return txHash;
   }
 
-  const handleImageChange = (event: any) => {
+  const handleImageChange = (url: any) => {
+    if (typeof url !== 'string') {
+      console.error('Invalid URL format');
+      return;
+    }
+    const chunkedUrl: any = url.match(/.{1,55}/g) || [];
+    setImage(chunkedUrl);
+    console.log(chunkedUrl);
+  };
+  
+
+  /*const handleImageChange = (event: any) => {
     const value = event.target.value;
     setImage(value.match(/.{1,55}/g) || []); // break the string into chunks 
-  }
+  }*/
 
   return (
     <>
@@ -155,6 +241,10 @@ function MintFungibleTokens() {
               <option value="single">Single user NFT</option>
               <option value="double">1 user NFT and 1 reference NFT</option>
             </select>
+            <label className={styles.input}>Project Title:</label>
+            <input type="text" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} />
+            <label className={styles.input}>Contribution Details:</label>
+            <input type="text" value={contributionDetails} onChange={(e) => setContributionDetails(e.target.value)} />
           </>)}
           <label className={styles.input}>Token Name:</label>
           <input type="text" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
@@ -172,8 +262,12 @@ function MintFungibleTokens() {
             <label className={styles.input}>Asset Quantity:</label>
             <input type="text" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} />
           </>)}
-          <label className={styles.input}>Image URL:</label>
-          <input type="text" value={image.join('')} onChange={handleImageChange} />
+          {/*<label className={styles.input}>Image URL:</label>
+          <input type="text" value={image.join('')} onChange={handleImageChange} /> */}
+          <div>
+            <input type="file" onChange={handleFileChange} />
+            <button type="button" onClick={uploadToIpfs}>Upload</button>
+          </div>
           <button className={styles.submit} type="submit">Mint</button>
         </form>
       </div>
