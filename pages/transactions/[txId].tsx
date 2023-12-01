@@ -418,6 +418,9 @@ function processMetadata(metadata: Metadata): string {
 
       let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
       let d = new Date();
+      const currentQuarter = getQuarterFromDate(d);
+      let transactionQuarter = getQuarterFromDate(new Date());
+      let subtractFromSpecificQuarter = true; 
       
       if (txdata.project == "Singularity Net Ambassador Wallet") {
           let currentDate = d.getDate();
@@ -435,18 +438,22 @@ function processMetadata(metadata: Metadata): string {
           }
       
           let budget_month = d.toISOString().slice(0, 7);
+          let quarterYear = getQuarterFromDate(new Date(budget_month))
           txdata.budget_month = budget_month;
       
-          if (!monthly_budget_balance[budget_month]) {
-              monthly_budget_balance[budget_month] = {}
+          if (!monthly_budget_balance[quarterYear]) {
+              monthly_budget_balance[quarterYear] = {}
           }
           
           if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
-              monthly_budget_balance[budget_month]["AGIX"] = Number(totalAmounts.AGIX);
+            if (!monthly_budget_balance[currentQuarter]) {
+              monthly_budget_balance[currentQuarter] = { "AGIX": 172944 };
+            }
+            //monthly_budget_balance[budget_month]["AGIX"] = Number(totalAmounts.AGIX);
           } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
-              monthly_budget_balance[budget_month]["AGIX"] = (Number(txdata.monthly_budget[budget_month]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
+              monthly_budget_balance[quarterYear]["AGIX"] = (Number(txdata.monthly_budget[quarterYear]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
           }
-          monthly_budget_balance[budget_month]["AGIX"] = typeof monthly_budget_balance[budget_month]["AGIX"] === 'number' ? monthly_budget_balance[budget_month]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[budget_month]["AGIX"] as string).toFixed(2);
+          monthly_budget_balance[quarterYear]["AGIX"] = typeof monthly_budget_balance[quarterYear]["AGIX"] === 'number' ? monthly_budget_balance[quarterYear]["AGIX"].toFixed(2) : parseFloat(monthly_budget_balance[quarterYear]["AGIX"] as string).toFixed(2);
       }
       
       if (txdata.project == "Test Wallet") {
@@ -504,6 +511,17 @@ function processMetadata(metadata: Metadata): string {
     //console.log("txdata", txdata)
     setLoading(false);
   }  
+
+  function getQuarterFromDate(date: any) {
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1; 
+    let quarter = "";
+    if (month <= 3) quarter = "Q1";
+    else if (month <= 6) quarter = "Q2";
+    else if (month <= 9) quarter = "Q3";
+    else quarter = "Q4";
+    return `${year}-${quarter}`;
+  } 
   
   async function assignTokens() {
     setLoading(true);
