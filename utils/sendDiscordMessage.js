@@ -27,7 +27,7 @@ export async function sendDiscordMessage(myVariable) {
   let txdetail = `${myVariable.totalAmountsString}`
   let details = ''
   if (myVariable.project === "Singularity Net Ambassador Wallet" || myVariable.project === "Test Wallet") {
-    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`**Monthly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
+    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`**Quarterly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
     tokenRate = `Exchange Rate - ${myVariable.tokenRates.AGIX} USD per AGIX - ${myVariable.formattedDate}`
   } else {
     details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```';

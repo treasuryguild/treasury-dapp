@@ -430,14 +430,17 @@ function getAggregatedAmountsPerMonth(metaData: any) {
           txtype: 'Outgoing'
         }
         let monthly_budget_balance: any = JSON.parse(JSON.stringify(txdata.monthly_budget));
-        
+        let transactionQuarter = getQuarterFromDate(new Date());
+        let subtractFromSpecificQuarter = true; //set to false to subtrack any current outgoing to current quarter
+        // Your existing budget subtraction logic, modified to use quarters
         if (txdata.project == "Singularity Net Ambassador Wallet" && Number(totalAmounts.AGIX) > 0) {
-          for (let yearMonth in aggregatedAGIXPerMonth) {
-            if (!monthly_budget_balance[yearMonth]) {
-              monthly_budget_balance[yearMonth] = {};
+          for (let yearQuarter in aggregatedAGIXPerMonth) {
+            let budgetQuarter = subtractFromSpecificQuarter ? getQuarterFromDate(new Date(yearQuarter)) : transactionQuarter;
+            if (!monthly_budget_balance[budgetQuarter]) {
+              monthly_budget_balance[budgetQuarter] = {};
             }
-            monthly_budget_balance[yearMonth]["AGIX"] = (Number(monthly_budget_balance[yearMonth]["AGIX"]) || 0) - aggregatedAGIXPerMonth[yearMonth];
-            monthly_budget_balance[yearMonth]["AGIX"] = monthly_budget_balance[yearMonth]["AGIX"].toFixed(2);
+            monthly_budget_balance[budgetQuarter]["AGIX"] = (Number(monthly_budget_balance[budgetQuarter]["AGIX"]) || 0) - aggregatedAGIXPerMonth[yearQuarter];
+            monthly_budget_balance[budgetQuarter]["AGIX"] = monthly_budget_balance[budgetQuarter]["AGIX"].toFixed(2);
           }
         }
         
@@ -462,13 +465,17 @@ function getAggregatedAmountsPerMonth(metaData: any) {
       let d = new Date();
       d.setMonth(d.getMonth() + 1, 1); // Set the day to 1 to avoid end of month discrepancies
       d.setHours(0, 0, 0, 0); // Reset time portion to avoid timezone and daylight saving time issues
-      const totalAmountsString = formatTotalAmounts(totalAmounts)             
-      const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)]
+      const totalAmountsString = formatTotalAmounts(totalAmounts)  
+      const currentQuarter = getQuarterFromDate(d);   
+      const currentQuarterBudgetBalance = monthly_budget_balance[currentQuarter];        
+      const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)] ? monthly_budget_balance_strings[d.toISOString().slice(0, 7)] : formatTotalAmounts(currentQuarterBudgetBalance);
+      const currentQuarterBudgetBalanceString = formatTotalAmounts(currentQuarterBudgetBalance); 
     
       txdata = {
         ...txdata,
         monthly_budget_balance,
         monthly_wallet_budget_string,
+        currentQuarterBudgetBalanceString,
         totalAmountsString,
       }
       } catch (error) {
@@ -494,6 +501,17 @@ function getAggregatedAmountsPerMonth(metaData: any) {
     }
     return txHash;
   }
+
+  function getQuarterFromDate(date: any) {
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1; 
+    let quarter = "";
+    if (month <= 3) quarter = "Q1";
+    else if (month <= 6) quarter = "Q2";
+    else if (month <= 9) quarter = "Q3";
+    else quarter = "Q4";
+    return `${year}-${quarter}`;
+  }  
 
   async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
