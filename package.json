@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@blockfrost/blockfrost-js": "^5.4.0",
     "@emurgo/cardano-serialization-lib-asmjs": "^11.4.0",
     "@meshsdk/core": "^1.5.1",
     "@meshsdk/react": "^1.1.6",
