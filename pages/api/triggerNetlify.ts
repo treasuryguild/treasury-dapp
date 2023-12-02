@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
   const metaData = req.body.record.metadata;
   
   try {
-    const response = await axios.post('https://lambent-kelpie-e8b15c.netlify.app/.netlify/functions/processTransaction', {
+    const response = await axios.post(`${process.env.APP_URL}/.netlify/functions/processTransaction`, {
       thash,
       myVariable,
       customFilePath,
