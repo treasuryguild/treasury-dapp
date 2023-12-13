@@ -704,7 +704,7 @@ useEffect(() => {
               type="text"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  addContributor(index, e.currentTarget.value);
+                  addContributor(index, e.currentTarget.value.trim());
                   e.currentTarget.value = '';
                 }
               }}
