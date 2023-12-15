@@ -13,6 +13,7 @@ function MintFungibleTokens() {
   const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/png'];
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
   const [file, setFile] = useState<Blob | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState([]);
   const { connected, wallet } = useWallet();
   const [tokenName, setTokenName] = useState('');
   const [ticker, setTicker] = useState('');
@@ -30,6 +31,12 @@ function MintFungibleTokens() {
     return crypto.createHash('sha256').update(input).digest('hex');
   };
 
+  const handleImageUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value: any = event.target.value;
+    setImageUrl(value.match(/.{1,55}/g) || []);
+    setImage([]); // Clear the image when a URL is entered
+  };
+  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
@@ -44,6 +51,7 @@ function MintFungibleTokens() {
         return;
       }
       setFile(file);
+      setImageUrl([]);
       console.log(file)
     }
   };  
@@ -79,11 +87,13 @@ const uploadToIpfs = async () => {
   async function mintNative(event: any) {
     event.preventDefault();
 
-    if (image.length === 0) {
+    if (imageUrl.length === 0 && image.length === 0) {
       alert("Please upload an image before minting.");
       return; // Exit the function if no image is uploaded
     }
-    
+
+    let imageToUse = imageUrl.length != 0 ? imageUrl : image;
+
     const usedAddress = await wallet.getUsedAddresses();
     const address = usedAddress[0];
     
@@ -121,13 +131,13 @@ const uploadToIpfs = async () => {
       "decimals": decimals,
       "ticker": ticker,
       "website": website,
-      "image": image,
+      "image": imageToUse,
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     } : nftType === 'single' ? {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
-      "image": image,
+      "image": imageToUse,
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
@@ -135,7 +145,7 @@ const uploadToIpfs = async () => {
     } : {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
-      "image": image,
+      "image": imageToUse,
       "projectTitle": projectTitle,
       "referenceHash": generateHash(contributionDetails),
       "mediaType": "image/jpg",
@@ -145,7 +155,7 @@ const uploadToIpfs = async () => {
     const assetMetadata2: AssetMetadata = {
       "name": `ReferenceNFT.${tokenName}`,
       "website": website,
-      "image": image, 
+      "image": imageToUse, 
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
@@ -264,9 +274,11 @@ const uploadToIpfs = async () => {
           </>)}
           {/*<label className={styles.input}>Image URL:</label>
           <input type="text" value={image.join('')} onChange={handleImageChange} /> */}
-          <div>
-            <input type="file" onChange={handleFileChange} />
-            <button type="button" onClick={uploadToIpfs}>Upload</button>
+            <label className={styles.input}>Image URL: (Enter url or upload picture below)</label>
+            <input type="text" value={imageUrl} onChange={handleImageUrlChange} disabled={image.length > 0} />
+          <div className={styles.imageInput}>
+            <input type="file" onChange={handleFileChange} disabled={imageUrl.length > 0}/>
+            <button type="button" onClick={uploadToIpfs} disabled={imageUrl.length > 0}>Upload</button>
           </div>
           <button className={styles.submit} type="submit">Mint</button>
         </form>
