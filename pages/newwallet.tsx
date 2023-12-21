@@ -29,6 +29,7 @@ function Newwallet() {
   //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
   
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const { connected, wallet } = useWallet();
   const [walletTokens, setWalletTokens] = useState<[] | any>([])
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
@@ -209,6 +210,7 @@ function Newwallet() {
   }
 
   async function getValues() {
+    setIsLoading(true);
     let customFilePath = '';
     let customFileContent = '';
     const group = selectedGroupName;
@@ -246,6 +248,7 @@ function Newwallet() {
     await newWallet(groupData, projectData);
     setTimeout(function() {
       router.push(`/txbuilder/`)
+      setIsLoading(false);
     }, 1000); // 3000 milliseconds = 3 seconds
   }
 
@@ -266,6 +269,9 @@ function Newwallet() {
   
     return (
       <>
+      {isLoading ? (
+      <div className={styles.loadingScreen}>Loading...</div> 
+      ) : (
       <div className={styles.main}>
         <div className={styles.heading}>
           <h1>New Project</h1>
@@ -363,6 +369,7 @@ function Newwallet() {
           </div>
         </div>
       </div>
+      )}
       </>
     )
   }
