@@ -3,8 +3,8 @@ import styles from '../styles/Singletx.module.css'
 import { useWallet } from '@meshsdk/react';
 import { useRouter } from 'next/router'
 import axios from 'axios';
-
-import { newWallet } from "../utils/newWallet";
+import { getGroups } from '../utils/getGroups';
+import { newWallet } from '../utils/newWallet';
 
 type Group = {
   group_id: string;
@@ -34,6 +34,9 @@ function Newwallet() {
   const [walletTokenUnits, setWalletTokenUnits] = useState<[] | any>([])
   const [tokenRates, setTokenRates] = useState<{} | any>({})
   const [tokens, setTokens] = useState<[] | any>([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}])
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupName, setSelectedGroupName] = useState('');
+  const [showNewGroupInput, setShowNewGroupInput] = useState(false);
 
   useEffect(() => {
     if (connected) {
@@ -41,6 +44,14 @@ function Newwallet() {
     } else {setTokens([{"id":"1","name":"ADA","amount":0.00,"unit":"lovelace","decimals": 6}]);}
   }, [connected]);
 
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  async function fetchGroups() {
+    let fetchedGroups = await getGroups();
+    setGroups(fetchedGroups);
+  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   async function assignTokens() {
     let tokenNames: string[] = []
@@ -200,7 +211,7 @@ function Newwallet() {
   async function getValues() {
     let customFilePath = '';
     let customFileContent = '';
-    const group = getValue('group');
+    const group = selectedGroupName;
     const project = getValue('project');
     const website = getValue('website');
     const projectType = getValue('projectType');
@@ -231,11 +242,27 @@ function Newwallet() {
     await commitFile(customFilePath, customFileContent)
     let groupData = { group_name: group }
     let projectData = { project_name: project, project_type: projectType, website: website, wallet: usedAddresses[0], budget_items: budgetItems }
+    //console.log("Test", groupData, projectData)
     await newWallet(groupData, projectData);
     setTimeout(function() {
       router.push(`/txbuilder/`)
     }, 1000); // 3000 milliseconds = 3 seconds
   }
+
+  const handleGroupChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = event.target.value;
+    if (selectedValue === "add-new") {
+      setShowNewGroupInput(true);
+      setSelectedGroupName(''); // Reset selected group name when 'Add new' is chosen
+    } else {
+      setShowNewGroupInput(false);
+      setSelectedGroupName(selectedValue); // Set the selected group name
+    }
+  };
+
+  const handleNewGroupChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedGroupName(event.target.value);
+  };
   
     return (
       <>
@@ -246,17 +273,27 @@ function Newwallet() {
         <div className={styles.body}>
           <div className={styles.form}>
             <div className={styles.formitem}>
-              <label className={styles.custom}> 
-                <input
-                    type='text'
-                    id='group'
-                    name='group'
-                    autoComplete="off"
-                    required
-                />
-                <span className={styles.placeholder}>Your Organization&apos;s name</span>
-                <span className={styles.tag}>Task Creator</span>
+            <label className={styles.custom}>
+              <select id="group" onChange={handleGroupChange} value={selectedGroupName}>
+                <option value="" disabled>Please select</option>
+                {groups.map((group) => (
+                  <option key={group.group_id} value={group.group_name}>
+                    {group.group_name}
+                  </option>
+                ))}
+                <option value="add-new">Add new</option>
+              </select>
+                <span className={styles.tag}>Your Organization&apos;s name</span>
               </label>
+              {showNewGroupInput && (
+                <input
+                  type="text"
+                  id="newGroup"
+                  name="newGroup"
+                  placeholder="Enter new organization name"
+                  onChange={handleNewGroupChange}
+                />
+              )}
             </div>
             <div className={styles.formitem}>
               <label className={styles.custom}> 
