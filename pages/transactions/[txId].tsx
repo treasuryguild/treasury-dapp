@@ -14,6 +14,7 @@ import { get, set } from '../../utils/cache'
 import { getExchangeRate } from '../../utils/getexchangerate'
 import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 import { commitFile } from '../../utils/commitFile'
+import { getTokenTypes } from '../../utils/getTokenTypes';
 
 interface Token {
   id: string;
@@ -342,11 +343,12 @@ function processMetadata(metadata: Metadata): string {
       const output: OutputLabels[] = transformArrayToObject(databaseLabels);
       //console.log(databaseLabels, output)
       setLabelOptions(output);
+      const tTypes = await getTokenTypes();
       const usedAddresses = await wallet.getUsedAddresses();
       const assets = await wallet.getAssets();
       const txData = await txInfo(txId);
-      const result = await getTxInfo(usedAddresses, txData[0], assets) as GetTxInfoResult;
-      //console.log("txData[0]", txData[0])
+      const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes) as GetTxInfoResult;
+      //console.log("txData[0]", txData[0], result, assets, tTypes)
       fee = parseInt(txData[0].fee)
       let txamounts: Record<string, Amounts> = {};
       wallet2 = txData[0].inputs[0].payment_addr.bech32

@@ -1,4 +1,4 @@
-export async function getTxInfo(usedAddresses, txData, assets) {
+export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
   const inputs = txData.inputs;
   const outputs = txData.outputs;
 
@@ -15,6 +15,11 @@ export async function getTxInfo(usedAddresses, txData, assets) {
   let totalOutputValue = 0;
 
   let firstInputAddress = null;
+
+  function getAssetNameFromTTypes(fingerprint, tTypes) {
+    const typeEntry = tTypes.find(tType => tType.fingerprint === fingerprint);
+    return typeEntry ? typeEntry.asset_name : 'Unknown';
+  }  
 
   for (const input of inputs) {
     if (usedAddresses.includes(input.payment_addr.bech32)) {
@@ -145,11 +150,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     if (txData.assets_minted.length > 0) {
       let mintedAddress = (Object.keys(addressAssets))[0];
       //console.log("addressAssets", (Object.keys(addressAssets))[0])
-      const assetList = txData.assets_minted.map(incomingAsset => {
-        for (let asset of assets) {
-          if (asset.fingerprint === incomingAsset.fingerprint) {
-            let assetName = asset.assetName;
-            let decimals = incomingAsset.decimals;
+      const assetList = txData.assets_minted.map(assetItem => {
+          let assetName;
+          let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
+        
+          if (assetFoundInAssets && assetFoundInAssets.assetName) {
+            assetName = assetFoundInAssets.assetName;
+          } else {
+            assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
+          }
+              let decimals = assetItem.decimals;
 
             // Adjust name and decimals for gimbal
             if (assetName.toLowerCase() === 'gimbal') {
@@ -157,30 +167,32 @@ export async function getTxInfo(usedAddresses, txData, assets) {
               decimals = 6;
             }
 
-            incomingAsset = {
+            assetItem = {
               id: idCounter.toString(),
               name: assetName,
-              amount: parseFloat(incomingAsset.quantity),
-              unit: asset.unit,
-              fingerprint: asset.fingerprint,
+              amount: parseFloat(assetItem.quantity),
+              unit: assetItem.unit,
+              fingerprint: assetItem.fingerprint,
               decimals: decimals
             };
             idCounter++;
-            break;
-          }
-        }
-        return incomingAsset;
+        return assetItem;
       });
       addressAssets[mintedAddress].push(...assetList);
       //console.log("assetsMinted", txData.assets_minted)
     } else {
       for (const output of outputs) {
       if (usedAddresses.includes(output.payment_addr.bech32)) {
-        const assetList = output.asset_list.map(incomingAsset => {
-          for (let asset of assets) {
-            if (asset.fingerprint === incomingAsset.fingerprint) {
-              let assetName = asset.assetName;
-              let decimals = incomingAsset.decimals;
+        const assetList = output.asset_list.map(assetItem => {
+          let assetName;
+          let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
+        
+          if (assetFoundInAssets && assetFoundInAssets.assetName) {
+            assetName = assetFoundInAssets.assetName;
+          } else {
+            assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
+          }
+              let decimals = assetItem.decimals;
   
               // Adjust name and decimals for gimbal
               if (assetName.toLowerCase() === 'gimbal') {
@@ -188,19 +200,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
                 decimals = 6;
               }
   
-              incomingAsset = {
+              assetItem = {
                 id: idCounter.toString(),
                 name: assetName,
-                amount: parseFloat(incomingAsset.quantity),
-                unit: asset.unit,
-                fingerprint: asset.fingerprint,
+                amount: parseFloat(assetItem.quantity),
+                unit: assetItem.unit,
+                fingerprint: assetItem.fingerprint,
                 decimals: decimals
               };
               idCounter++;
-              break;
-            }
-          }
-          return incomingAsset;
+          return assetItem;
         });
         
         idCounter++;
@@ -233,11 +242,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
     for (const output of outputs) {
       if (!usedAddresses.includes(output.payment_addr.bech32)) {
-        const assetList = output.asset_list.map(outgoingAsset => {
-          for (let asset of assets) {
-            if (asset.fingerprint === outgoingAsset.fingerprint) {
-              let assetName = asset.assetName;
-              let decimals = outgoingAsset.decimals;
+        const assetList = output.asset_list.map(assetItem => {
+          let assetName;
+          let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
+        
+          if (assetFoundInAssets && assetFoundInAssets.assetName) {
+            assetName = assetFoundInAssets.assetName;
+          } else {
+            assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
+          }
+              let decimals = assetItem.decimals;
 
               // Adjust name and decimals for gimbal
               if (assetName.toLowerCase() === 'gimbal') {
@@ -245,19 +259,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
                 decimals = 6;
               }
 
-              outgoingAsset = {
+              assetItem = {
                 id: idCounter.toString(),
                 name: assetName,
-                amount: parseFloat(outgoingAsset.quantity),
-                unit: asset.unit,
-                fingerprint: asset.fingerprint,
+                amount: parseFloat(assetItem.quantity),
+                unit: assetItem.unit,
+                fingerprint: assetItem.fingerprint,
                 decimals: decimals
               };
               idCounter++;
-              break;
-            }
-          }
-          return outgoingAsset;
+          return assetItem;
         });
 
         // Include ADA token
@@ -297,11 +308,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
     // If it's an incoming transaction, calculate total incoming value and gather asset lists
     for (const output of outputs) {
       if (usedAddresses.includes(output.payment_addr.bech32)) {
-        const assetList = output.asset_list.map(incomingAsset => {
-          for (let asset of assets) {
-            if (asset.fingerprint === incomingAsset.fingerprint) {
-              let assetName = asset.assetName;
-              let decimals = incomingAsset.decimals;
+        const assetList = output.asset_list.map(assetItem => {
+          let assetName;
+          let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
+        
+          if (assetFoundInAssets && assetFoundInAssets.assetName) {
+            assetName = assetFoundInAssets.assetName;
+          } else {
+            assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
+          }
+              let decimals = assetItem.decimals;
 
               // Adjust name and decimals for gimbal
               if (assetName.toLowerCase() === 'gimbal') {
@@ -309,19 +325,16 @@ export async function getTxInfo(usedAddresses, txData, assets) {
                 decimals = 6;
               }
 
-              incomingAsset = {
+              assetItem = {
                 id: idCounter.toString(),
                 name: assetName,
-                amount: parseFloat(incomingAsset.quantity),
-                unit: asset.unit,
-                fingerprint: asset.fingerprint,
+                amount: parseFloat(assetItem.quantity),
+                unit: assetItem.unit,
+                fingerprint: assetItem.fingerprint,
                 decimals: decimals
               };
               idCounter++;
-              break;
-            }
-          }
-          return incomingAsset;
+          return assetItem;
         });
 
         // Include ADA token
