@@ -165,29 +165,6 @@ function Newwallet() {
     setTokenRates(tokenExchangeRates)
   }  
 
-  async function promptPasswordAndRunFunction() {
-    const password = prompt('Please enter the password:');
-  
-    if (!password) {
-      return;
-    }
-  
-    try {
-      await axios.post('/api/verify-password', { password });
-      // If the password is correct, the request will succeed, and you can run the protected function
-      await runProtectedFunction();
-    } catch (error) {
-      console.log("error",error)
-      //alert('Invalid password');
-    }
-  }
-  
-  async function runProtectedFunction() {
-    // The protected function logic goes here
-    console.log('Protected function executed');
-    await getValues();
-  }
-
   async function commitFile(filePath: string, fileContent: string) {
     const commitMessage = 'Transaction';
   
@@ -233,9 +210,14 @@ function Newwallet() {
 `
     let prename = ''
     let name = (project).replace(/\s/g, '-')
+    let databaseProjectType = '';
     if (projectType == 'TreasuryWallet') {
+      databaseProjectType = 'Treasury Wallet'
       prename = 'TW'
-    } else {prename = 'F10'}
+    } else {
+      prename = 'F11'
+      databaseProjectType = 'Fund 11 Proposal'
+    }
     var copyData = (metadata);
     copyData = JSON.parse(copyData)
     const budgetItems = {"Incoming":"50000","Other":"10","bulkTransactions":"50000","Swap":"5000","Bounty":"20000","Contributors":"20000","Fixed-Costs":"5000"}
@@ -243,7 +225,7 @@ function Newwallet() {
     customFilePath = `proposals/${prename}-${name}.json`;
     await commitFile(customFilePath, customFileContent)
     let groupData = { group_name: group }
-    let projectData = { project_name: project, project_type: projectType, website: website, wallet: usedAddresses[0], budget_items: budgetItems }
+    let projectData = { project_name: project, project_type: databaseProjectType, website: website, wallet: usedAddresses[0], budget_items: budgetItems }
     //console.log("Test", groupData, projectData)
     await newWallet(groupData, projectData);
     setTimeout(function() {
@@ -331,7 +313,7 @@ function Newwallet() {
               <label className={styles.custom}> 
                 <select id="projectType">
                   <option value="TreasuryWallet">Treasury Wallet</option>
-                  <option value="Proposal">Proposal</option>
+                  <option value="Proposal">Fund 11 Proposal</option>
                 </select>
                 <span className={styles.tag}>Wallet Type</span>
               </label>
