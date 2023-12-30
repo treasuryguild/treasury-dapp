@@ -26,6 +26,7 @@ function MintFungibleTokens() {
   const [nftType, setNftType] = useState('single');
   const [contributionDetails, setContributionDetails] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
+  const [contributorWallet, setContributorWallet] = useState('');
 
   const generateHash = (input: any) => {
     return crypto.createHash('sha256').update(input).digest('hex');
@@ -179,11 +180,11 @@ const uploadToIpfs = async () => {
       assetQuantity: '1',
       metadata: assetMetadata1,
       label: '721', 
-      recipient: usedAddress[0],
+      recipient: contributorWallet,
     };
 
     const asset2: Mint = {
-      assetName: tokenName,
+      assetName: `ReferenceNFT.${tokenName}`,
       assetQuantity: '1',
       metadata: assetMetadata2,
       label: '721', 
@@ -198,7 +199,9 @@ const uploadToIpfs = async () => {
     } else if (nftType == 'double' && tokenType == 'nft') {
       tx.mintAsset(
         forgingScript,
-        asset1,
+        asset1
+      ).mintAsset(
+        forgingScript,
         asset2
       );
     } 
@@ -255,6 +258,10 @@ const uploadToIpfs = async () => {
             <input type="text" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} />
             <label className={styles.input}>Contribution Details:</label>
             <input type="text" value={contributionDetails} onChange={(e) => setContributionDetails(e.target.value)} />
+            { nftType == "double" && (<>
+              <label className={styles.input}>Contributor Wallet:</label>
+              <input type="text" value={contributorWallet} onChange={(e) => setContributorWallet(e.target.value)} />
+            </>)}
           </>)}
           <label className={styles.input}>Token Name:</label>
           <input type="text" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
@@ -274,12 +281,15 @@ const uploadToIpfs = async () => {
           </>)}
           {/*<label className={styles.input}>Image URL:</label>
           <input type="text" value={image.join('')} onChange={handleImageChange} /> */}
-            <label className={styles.input}>Image URL: (Enter url or upload picture below)</label>
-            <input type="text" value={imageUrl} onChange={handleImageUrlChange} disabled={image.length > 0} />
-          <div className={styles.imageInput}>
+            {image.length == 0 && (<>
+              <label className={styles.input}>Image URL: (Enter url or upload picture below)</label>
+              <input type="text" value={imageUrl} onChange={handleImageUrlChange} disabled={image.length > 0} />
+            </>)}
+          {imageUrl.length == 0 && (<div className={styles.imageInput}>
             <input type="file" onChange={handleFileChange} disabled={imageUrl.length > 0}/>
             <button type="button" onClick={uploadToIpfs} disabled={imageUrl.length > 0}>Upload</button>
-          </div>
+          </div>)}
+          {file && (<div>Image Uploaded Successfully</div>)}
           <button className={styles.submit} type="submit">Mint</button>
         </form>
       </div>
