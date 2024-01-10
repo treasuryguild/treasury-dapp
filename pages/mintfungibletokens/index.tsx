@@ -239,7 +239,7 @@ const uploadToIpfs = async () => {
       tokenName: "Minutes",
       tokenType: "fungible",
       policy: "open",
-      ticker: "MNTS",
+      ticker: "MINS",
       decimals: 0,
       website: "https://treasuryguild.io",
       assetQuantity: "1000000",
