@@ -85,15 +85,14 @@ const uploadToIpfs = async () => {
   }
 };
 
-  async function mintNative(event: any) {
-    event.preventDefault();
-
-    if (imageUrl.length === 0 && image.length === 0) {
+  async function mintTokens(tokenData: any) {
+   
+    if (tokenData.imageUrl.length === 0 && tokenData.image.length === 0) {
       alert("Please upload an image before minting.");
       return; // Exit the function if no image is uploaded
     }
 
-    let imageToUse = imageUrl.length != 0 ? imageUrl : image;
+    let imageToUse = tokenData.imageUrl.length != 0 ? tokenData.imageUrl : tokenData.image;
 
     const usedAddress = await wallet.getUsedAddresses();
     const address = usedAddress[0];
@@ -117,7 +116,7 @@ const uploadToIpfs = async () => {
       ],
     };
     
-    const forgingScript = policy === 'closed' ? 
+    const forgingScript = tokenData.policy === 'closed' ? 
     ForgeScript.fromNativeScript(nativeScript) : 
     ForgeScript.withOneSignature(address);
 
@@ -127,11 +126,11 @@ const uploadToIpfs = async () => {
     const tx = new Transaction({ initiator: wallet });
     
     // define asset#1 metadata
-    const assetMetadata1: AssetMetadata = tokenType === 'fungible' ? {
-      "name": tokenName,
-      "decimals": decimals,
-      "ticker": ticker,
-      "website": website,
+    const assetMetadata1: AssetMetadata = tokenData.tokenType === 'fungible' ? {
+      "name": tokenData.tokenName,
+      "decimals": tokenData.decimals,
+      "ticker": tokenData.ticker,
+      "website": tokenData.website,
       "image": imageToUse,
       "mediaType": "image/jpg",
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
@@ -163,15 +162,16 @@ const uploadToIpfs = async () => {
       "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
 
+    //If IPFS api ever stops working here are some urls
     //Treasury Guild ipfs://bafkreiccmrypkhje4iakdqdmqxol5x7lwc365akayyba74n2tx5pahfxxm
     //automate ipfs://bafkreialfwbehx5kppkbhsmjdp2e75zcoczcvcolwn56uthxvom4vnyvsm
     //voting ipfs://bafkreigpzaox2zp4esvt5ng23aldzeqjrbmo6jtvljkaz7i4uglo4a7qee
     //Deepfund academy ipfs://bafkreig2pze4gdl3gmnvn6s6g5hjdx64nzcfnq2alkujtt7rnts2khjvd4
     // add web3 url to this url https://bafybeialrcsrzwy2uhrjndwbz2deztcdmtaidthp7wevm6brmrjo37hbvq.ipfs.dweb.link/
     
-    const asset1: Mint = tokenType === 'fungible' ? {
-      assetName: tokenName,
-      assetQuantity: assetQuantity,
+    const asset1: Mint = tokenData.tokenType === 'fungible' ? {
+      assetName: tokenData.tokenName,
+      assetQuantity: tokenData.assetQuantity,
       metadata: assetMetadata1,
       label: '721', 
       recipient: usedAddress[0],
@@ -191,12 +191,12 @@ const uploadToIpfs = async () => {
       recipient: usedAddress[0],
     }
 
-    if (nftType == 'single' || tokenType == 'fungible') {
+    if (nftType == 'single' || tokenData.tokenType == 'fungible') {
       tx.mintAsset(
         forgingScript,
         asset1,
       );
-    } else if (nftType == 'double' && tokenType == 'nft') {
+    } else if (nftType == 'double' && tokenData.tokenType == 'nft') {
       tx.mintAsset(
         forgingScript,
         asset1
@@ -217,6 +217,38 @@ const uploadToIpfs = async () => {
     return txHash;
   }
 
+  const mintNative = async () => {
+    
+    const tokenData = {
+      tokenName: tokenName,
+      tokenType: tokenType,
+      policy: policy,
+      ticker: ticker,
+      decimals: decimals,
+      website: website,
+      assetQuantity: assetQuantity,
+      image: image,
+      imageUrl: imageUrl
+    };
+    await mintTokens(tokenData);
+  };
+
+  const mintMinuteTokens = async () => {
+    // Set your predetermined values
+    const preTokenData = {
+      tokenName: "Minutes",
+      tokenType: "fungible",
+      policy: "open",
+      ticker: "MNTS",
+      decimals: 0,
+      website: "https://treasuryguild.io",
+      assetQuantity: "1000000",
+      image: image,
+      imageUrl: "ipfs://QmSdLfKdaVGL4xgsi5oVMaYLFHx1mAVePvsE63Ncccc3RZ/0" // Replace with actual URL or logic to fetch it
+    };
+    await mintTokens(preTokenData);
+  };
+
   const handleImageChange = (url: any) => {
     if (typeof url !== 'string') {
       console.error('Invalid URL format');
@@ -236,7 +268,7 @@ const uploadToIpfs = async () => {
   return (
     <>
       <div className={styles.body}>
-        <form className={styles.form} onSubmit={mintNative}>
+        <form className={styles.form}>
           <h1>Mint Fungible Tokens</h1>
           <label className={styles.input}>Policy:</label>
           <select value={policy} onChange={(e) => setPolicy(e.target.value)}>
@@ -290,7 +322,8 @@ const uploadToIpfs = async () => {
             <button type="button" onClick={uploadToIpfs} disabled={imageUrl.length > 0}>Upload</button>
           </div>)}
           {file && (<div>Image Uploaded Successfully</div>)}
-          <button className={styles.submit} type="submit">Mint</button>
+          <button className={styles.submit} type="button" onClick={mintNative}>Mint</button>
+          <button className={styles.submit} type="button" onClick={mintMinuteTokens}>Mint Minute tokens</button>
         </form>
       </div>
     </>
