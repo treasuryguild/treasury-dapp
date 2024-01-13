@@ -448,9 +448,9 @@ function processMetadata(metadata: Metadata): string {
           }
           
           if (txdata.txtype == "Incoming" && Number(totalAmounts.AGIX) > 10000) {
-            if (!monthly_budget_balance[currentQuarter]) {
+            if (!monthly_budget_balance[currentQuarter] || Object.keys(monthly_budget_balance[currentQuarter]).length === 0) {
               monthly_budget_balance[currentQuarter] = { "AGIX": 172944 };
-            }
+          }          
             //monthly_budget_balance[budget_month]["AGIX"] = Number(totalAmounts.AGIX);
           } else if (txdata.txtype != "Incoming" && Number(totalAmounts.AGIX) > 0) {
               monthly_budget_balance[quarterYear]["AGIX"] = (Number(txdata.monthly_budget[quarterYear]["AGIX"]) || 0) - Number(totalAmounts.AGIX);
