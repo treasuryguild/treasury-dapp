@@ -509,7 +509,7 @@ function processMetadata(metadata: Metadata): string {
           monthly_budget_balance_strings[month] = formatTotalAmounts(monthly_budget_balance[month]);
       }
       
-      const monthly_wallet_budget_string = monthly_budget_balance_strings[d.toISOString().slice(0, 7)];
+      const monthly_wallet_budget_string = monthly_budget_balance_strings[getQuarterFromDate(new Date(d.toISOString().slice(0, 7)))];
     
 
       txdata = {...txdata, txdescription, totalAmounts, totalAmountsString, monthly_budget_balance, monthly_wallet_budget_string}
