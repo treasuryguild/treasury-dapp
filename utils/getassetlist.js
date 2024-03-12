@@ -3,8 +3,8 @@ import axios from "axios";
 function isValidKey(key) {
   if (typeof key !== 'string') return false;
   if (key.length > 40) return false;
-  // Start with a letter, can contain letters, numbers, and spaces
-  return /^[A-Za-z][A-Za-z0-9 ]*$/.test(key);
+  // Start with a letter, $, or @, can contain letters, numbers, spaces, $, @, and .
+  return /^[$@A-Za-z][$@A-Za-z0-9 .]*$/.test(key);
 }
 
 function mapAssetData(assetDetails, assetList) {
@@ -13,36 +13,41 @@ function mapAssetData(assetDetails, assetList) {
     const tokenType = Number(asset.total_supply) > 1 ? 'fungible' : 'nft';
     let name;
     let displayname;
-    //console.log("asset", asset)
+
     if (tokenType === 'nft') {
-      const nameAscii = asset.asset_name_ascii;
-      name = nameAscii;
-      //name = asset.fingerprint;
-      if (isValidKey(nameAscii)) {
-        displayname = nameAscii;
+      const nameFromMetadata = asset.minting_tx_metadata['721']?.[asset.policy_id]?.[asset.asset_name]?.name;
+      if (nameFromMetadata) {
+        name = nameFromMetadata;
+        displayname = nameFromMetadata;
       } else {
-        displayname = asset.fingerprint;
+        const nameAscii = asset.asset_name_ascii;
+        name = nameAscii;
+        if (isValidKey(nameAscii)) {
+          displayname = nameAscii;
+        } else {
+          displayname = asset.fingerprint;
+        }
       }
     } else {
-      displayname = asset.token_registry_metadata && asset.token_registry_metadata.ticker 
-            ? asset.token_registry_metadata.ticker 
-            : (asset.token_registry_metadata && asset.token_registry_metadata.name ? asset.token_registry_metadata.name : asset.asset_name_ascii);
+      displayname = asset.token_registry_metadata && asset.token_registry_metadata.ticker
+        ? asset.token_registry_metadata.ticker
+        : (asset.token_registry_metadata && asset.token_registry_metadata.name ? asset.token_registry_metadata.name : asset.asset_name_ascii);
       name = displayname
     }
 
     const decimals = asset.token_registry_metadata && asset.token_registry_metadata.decimals
-                   ? asset.token_registry_metadata.decimals 
-                   : null;
+      ? asset.token_registry_metadata.decimals
+      : null;
     return {
-        id: String(index + 1),
-        name: name,
-        displayname: displayname,
-        amount: (Number(matchingAsset.quantity) / Math.pow(10, decimals)).toFixed(decimals),
-        unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
-        fingerprint: asset.fingerprint,
-        decimals: decimals,
-        tokenType: tokenType,
-        policy_id: matchingAsset.policy_id
+      id: String(index + 1),
+      name: name,
+      displayname: displayname,
+      amount: (Number(matchingAsset.quantity) / Math.pow(10, decimals)).toFixed(decimals),
+      unit: `${matchingAsset.policy_id}${matchingAsset.asset_name}`,
+      fingerprint: asset.fingerprint,
+      decimals: decimals,
+      tokenType: tokenType,
+      policy_id: matchingAsset.policy_id
     };
   });
 }
@@ -51,6 +56,7 @@ export async function getAssetList(wallet) {
     
   async function getBalance() {
     const response = await axios.post('/api/getBalance', { wallet });
+    //console.log("getBaalance response:", response.data);
     return response.data;
 }
 
@@ -69,6 +75,7 @@ async function getList() {
 
     async function getAssetDetails(transformedArray) {
       const response = await axios.post('/api/getAssetDetails', { transformedArray });
+      //console.log("getAssetDetails response:", response.data);
       return response.data;
   }
 
