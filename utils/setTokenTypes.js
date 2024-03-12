@@ -7,15 +7,15 @@ export async function setTokenTypes(tokens) {
       // Fetch all existing labels from the database
       const { data: existingTokens, error: fetchError } = await supabase
         .from("tokens")
-        .select("policy_id");
+        .select("unit");
   
       if (fetchError) throw fetchError;
   
       // Convert the existing tokens to a Set for faster lookup
-      const existingTokenSet = new Set(existingTokens.map(item => item.policy_id));
+      const existingTokenSet = new Set(existingTokens.map(item => item.unit));
   
       // Filter out the tokens that already exist
-      const newTokens = tokens.filter(token => !existingTokenSet.has(token.policy_id));
+      const newTokens = tokens.filter(token => !existingTokenSet.has(token.unit));
       
       // Insert new tokens
       for (const token of newTokens) {
