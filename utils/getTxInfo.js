@@ -1,7 +1,9 @@
 export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
   const inputs = txData.inputs;
   const outputs = txData.outputs;
-
+  const certificates = txData.certificates;
+  const assets_minted = txData.assets_minted;
+  //console.log(usedAddresses, txData, assets, tTypes);
   let addressAssets = {};
   let idCounter = 1;
   let transactionType = "";
@@ -10,6 +12,7 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
   let isStaking = false;
   let isInternalTransfer = false;
   let isMinting = false;
+  let isBurning = false;
 
   let totalInputValue = 0;
   let totalOutputValue = 0;
@@ -30,20 +33,15 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
         if (inputs.length === 1 && outputs.length === 1 && inputs[0].payment_addr.bech32 === outputs[0].payment_addr.bech32
           || txData.withdrawals && txData.withdrawals.length > 0) {
           isStaking = true;
-        } else if (
-          inputs.length === 1 && 
-          outputs.length === 2 && 
-          inputs[0].payment_addr.bech32 === outputs[0].payment_addr.bech32 && 
-          outputs[0].asset_list && 
-          outputs[0].asset_list.length > 0
-        ) {
+        } else if (assets_minted?.length > 0 && assets_minted.some(asset => BigInt(asset.quantity) > 0n)) {
           isMinting = true;
-        } else if (inputs.every(input => input.stake_addr === outputs[0].stake_addr)) {
+        } else if (assets_minted?.length > 0 && assets_minted.some(asset => BigInt(asset.quantity) < 0n)) {
+          isBurning = true;
+        } else if (outputs.every(output => inputs.every(input => input.stake_addr === output.stake_addr))) {
           isInternalTransfer = true;
           isStaking = true;
         }
-        
-      if (!isStaking && !isMinting) {
+      if (!isStaking && !isMinting && !isBurning) {
         isOutgoing = true;
       }
       break;
@@ -75,8 +73,11 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
         if (usedAddresses.includes(output.payment_addr.bech32)) {
           totalOutputValue += parseFloat(output.value);
           let difference = 0.00
-          if (isInternalTransfer) {
+          if (isInternalTransfer && !(certificates && certificates.length > 0 && certificates[0].type === 'delegation')) {
             transactionType = "Internal Transfer";
+            difference = parseFloat(txData.fee);
+          } else if (isInternalTransfer && (certificates && certificates.length > 0 && certificates[0].type === 'delegation')) {
+            transactionType = "Staking";
             difference = parseFloat(txData.fee);
           } else {
             difference = totalInputValue - totalOutputValue - parseFloat(txData.fee);
@@ -103,9 +104,9 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
       }
     }
 
-  } else if (isMinting) {
-    transactionType = "Minting";
-  
+  } else if (isMinting || isBurning) {
+    transactionType = isMinting ? "Minting": "Burning";
+    
     // Calculate total input and output values
     let totalInputValue = 0;
     let totalOutputValue = 0;

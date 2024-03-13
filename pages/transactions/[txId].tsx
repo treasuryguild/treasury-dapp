@@ -271,6 +271,10 @@ function Txid() {
             label = txdata.txtype
             metaDescription = 'Minted new tokens'
             setDescription(metaDescription)
+          } else if (txdata.txtype == "Burning") {
+            label = txdata.txtype
+            metaDescription = 'Burnt tokens'
+            setDescription(metaDescription)
           }
         }
     }
@@ -339,7 +343,7 @@ function processMetadata(metadata: Metadata): string {
   
   async function checkTransactionType() {
     if (connected) { 
-      const databaseLabels = await getLabels();
+      const databaseLabels: any = await getLabels();
       const output: OutputLabels[] = transformArrayToObject(databaseLabels);
       //console.log(databaseLabels, output)
       setLabelOptions(output);
