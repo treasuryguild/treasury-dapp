@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabaseClient";
   let project = []
   let projectname = ''
   let projectWebsite = ''
+  let discordMsg = {}
   let projectId = ''
   let groupInfo = {}
   let monthly_budget = {}
@@ -10,7 +11,7 @@ export async function getProject(address) {
       try {
         const { data, error, status } = await supabase
         .from("projects")
-        .select('project_name, project_type, project_id, website, groups(group_name, logo_url)')
+        .select('project_name, project_type, project_id, website, discord_msg, groups(group_name, logo_url)')
         .eq("wallet", address)
         
         //console.log(data, lastTransaction.data)
@@ -22,9 +23,10 @@ export async function getProject(address) {
             groupInfo = {}
           } else {
             projectname = project[0].project_name;
+            discordMsg = project[0].discord_msg;
             projectWebsite = project[0].website;
             projectId = project[0].project_id;
-            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_id":"${project[0].project_id}","project_type":"${project[0].project_type}","project_website":"${project[0].website}","logo_url":"${project[0]['groups'].logo_url}"}`)
+            groupInfo = JSON.parse(`{"group":"${project[0]['groups'].group_name}","project":"${project[0].project_name}","project_id":"${project[0].project_id}","project_type":"${project[0].project_type}","project_website":"${project[0].website}","discord_msg":${JSON.stringify(project[0].discord_msg)},"logo_url":"${project[0]['groups'].logo_url}"}`)
           }
         }
       } catch (error) {

@@ -22,37 +22,36 @@ export async function sendDiscordMessage(myVariable) {
   }
   let balTokens = myVariable
   const thash = balTokens.txHash
-  console.log("balTokens", balTokens, myVariable)
-  const balance = `${myVariable.balanceString}`
-  let txdetail = `${myVariable.totalAmountsString}`
+  //console.log("balTokens", balTokens, myVariable)
   let details = ''
-  const projectConfigs = {
-    'Singularity Net Ambassador Wallet': {
-      tokenRateFormatter: (tokenRates, formattedDate) => `Exchange Rate - ${tokenRates.AGIX} USD per AGIX - ${formattedDate}`,
-      detailsFormatter: (myVariable) => '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${myVariable.wallet})**`+'\n'+'```css\n'+`${myVariable.balanceString}`+'\n```'+'\n'+`**Quarterly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
-    },
-    'Polkadot-Cardano uniFires': {
-      tokenRateFormatter: (tokenRates, formattedDate) => `${formattedDate}`,
-      detailsFormatter: (myVariable) => '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${myVariable.wallet})**`+'\n'+'```css\n'+`${myVariable.balanceString}`+'\n```',
-      // Add additional configurations for other projects here
-    },
-    // Default configuration for projects not explicitly defined
-    'default': {
-      tokenRateFormatter: (tokenRates, formattedDate) => `Exchange Rate - ${tokenRates.ADA} USD per ADA - ${formattedDate}`,
-      detailsFormatter: (myVariable) => '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${myVariable.wallet})**`+'\n'+'```css\n'+`${myVariable.balanceString}`+'\n```',
+  
+  const { extra_fields, footer } = myVariable.discord_msg;
+  
+  // Determine token rate formatter based on the footer value
+  const tokenRateFormatter = (tokenRates, formattedDate) => {
+    switch (footer) {
+      case 'AGIX':
+        return `Exchange Rate - ${tokenRates.AGIX} USD per AGIX - ${formattedDate}`;
+      case 'dateOnly':
+        return `${formattedDate}`;
+      case 'default':
+      default:
+        return `Exchange Rate - ${tokenRates.ADA} USD per ADA - ${formattedDate}`;
     }
   };
-  const projectConfig = projectConfigs[myVariable.project] || projectConfigs['default'];
-  tokenRate = projectConfig.tokenRateFormatter(myVariable.tokenRates, myVariable.formattedDate);
-  details = projectConfig.detailsFormatter(myVariable);
+  
+  // Determine details formatter based on the extra_fields value
+  const detailsFormatter = (myVariable) => {
+    let detailsBase = '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n' + `**[Wallet Balance](https://pool.pm/${myVariable.wallet})**` + '\n' + '```css\n' + `${myVariable.balanceString}` + '\n```';
+    if (extra_fields === 'quarterlyBudgets') {
+      detailsBase += '\n' + `**Quarterly Budget Balance** ` + '```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```';
+    }
+    return detailsBase;
+  };
+  
+  tokenRate = tokenRateFormatter(myVariable.tokenRates, myVariable.formattedDate);
+  details = detailsFormatter(myVariable);
 
-  /*if (myVariable.project === "Singularity Net Ambassador Wallet" || myVariable.project === "Test Wallet") {
-    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```'+'\n'+`**Quarterly Budget Balance** `+'```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```'
-    tokenRate = `Exchange Rate - ${myVariable.tokenRates.AGIX} USD per AGIX - ${myVariable.formattedDate}`
-  } else {
-    details = '```css\n' + `${txdetail}` + '\n```' + '\n'+`**[Wallet Balance](https://pool.pm/${wallet})**`+'\n'+'```css\n'+`${balance}`+'\n```';
-    tokenRate = `Exchange Rate - ${myVariable.tokenRates.ADA} USD per ADA - ${myVariable.formattedDate}`
-  }*/
   const content = `${header}`;
   const embeds = [
     {
