@@ -48,7 +48,24 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
     }
   }
 
-  if (isStaking) {
+if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
+  //console.log("Wallet Emptied")
+  transactionType = "Wallet Emptied";
+  isOutgoing = true;
+
+  // Handle the case where the fee is equal to the total input value
+  addressAssets[firstInputAddress] = [
+    {
+      id: idCounter.toString(),
+      name: 'ADA',
+      amount: -totalInputValue,
+      unit: 'lovelace',
+      fingerprint: '',
+      decimals: 6
+    }
+  ];
+  idCounter++;
+} else if (isStaking) {
     let adaAmount = 0;
 
     // If there are withdrawals, use the withdrawal amount for ADA
@@ -238,6 +255,7 @@ export async function getTxInfo(usedAddresses, txData, assets, tTypes) {
     }
   }
   //console.log("addressAssets", addressAssets)
+  
   } else if (isOutgoing) {
     transactionType = "Outgoing";
     // If it's an outgoing transaction, gather information about the addresses to which the funds are sent
