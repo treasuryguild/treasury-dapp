@@ -153,10 +153,6 @@ a {
   margin: 0.5em;
 }
 
-.walletbutton * {
-  background: black;
-}
-
 .mesh-badge {
   display: flex;
   justify-content: center;
