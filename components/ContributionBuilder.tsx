@@ -245,7 +245,7 @@ useEffect(() => {
     const newContributions = [...contributions];
     newContributions[index].arrayMap.subGroup = label.split(',');
     setContributions(newContributions);
-    const status = setSubGroups(label.split(','));
+    const status = setSubGroups(label.split(','), myVariable.project_id);
   };
 
   const addContributor = (index: number, contributorId: string) => {
@@ -489,7 +489,7 @@ useEffect(() => {
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
-
+  //console.log('myVariable', myVariable);
   return (
     <div>
       {contributions.map((contribution, index) => (

@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabaseClient";
 
-export async function setSubGroups(inputSubGroups) {
+export async function setSubGroups(inputSubGroups, project_id) {
   async function updateSubGroups(inputSubGroups) {
     let status = 'started';
     
@@ -21,6 +21,7 @@ export async function setSubGroups(inputSubGroups) {
     for (const sub_group of newSubGroups) {
       const updates = {
         sub_group,
+        project_id
       };
 
       const { data, error } = await supabase
