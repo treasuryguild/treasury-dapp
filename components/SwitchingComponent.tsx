@@ -1,39 +1,65 @@
 import React, { useState } from 'react';
 import TransactionBuilder from './TransactionBuilder';
 import ContributionBuilder from './ContributionBuilder';
+import JsonGenTransactionBuilder from './JsonGenTransactionBuilder';
 import { useMyVariable } from '../context/MyVariableContext';
+import styles from '../styles/SwitchingComponent.module.css';
 
 interface SwitchingComponentProps {
     contributionBuilderProps: any; 
     transactionBuilderProps: any;
-    onClick: () => void;
+    jsonGenTransactionBuilderProps: any;
+    onClick: (activeBuilder: BuilderType) => void;
 }
 
-const SwitchingComponent = (props: SwitchingComponentProps) => {
-  const { transactionBuilderProps, contributionBuilderProps } = props;
+type BuilderType = 'dework' | 'manual' | 'JsonGen';
 
-  // Create state to track whether the button is on or off
-  const [isOn, setIsOn] = useState(true);
+const SwitchingComponent = (props: SwitchingComponentProps) => {
+  const { transactionBuilderProps, contributionBuilderProps, jsonGenTransactionBuilderProps } = props;
+  const [activeBuilder, setActiveBuilder] = useState<BuilderType>('dework');
   const { myVariable, setMyVariable } = useMyVariable();
 
-  // Function to toggle the button state
-  const toggleButton = () => {
-    setIsOn(!isOn);
-    props.onClick();
-    console.log(myVariable.group);
+  const switchBuilder = (builderType: BuilderType) => {
+    setActiveBuilder(builderType);
+    props.onClick(builderType);
   };
 
   return (
-    <>
+    <div className={styles.container}>
       {myVariable.group !== undefined && (
-        <button onClick={toggleButton}>{isOn ? 'Switch to Manual' : 'Switch to Dework'}</button>
+        <div className={styles.buttonContainer}>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'dework' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('dework')}
+          >
+            Dework
+          </button>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'manual' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('manual')}
+          >
+            Manual
+          </button>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'JsonGen' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('JsonGen')}
+          >
+            JsonGen
+          </button>
+        </div>
       )}
-      {isOn ? (
-        <TransactionBuilder {...transactionBuilderProps}/>
-      ) : (
-        <ContributionBuilder {...contributionBuilderProps} />
-      )}
-    </>
+      <div className={styles.builderContainer}>
+        {activeBuilder === 'dework' && (
+          <TransactionBuilder {...transactionBuilderProps}/>
+        )}
+        {activeBuilder === 'manual' && (
+          <ContributionBuilder {...contributionBuilderProps} />
+        )}
+        {activeBuilder === 'JsonGen' && (
+          <JsonGenTransactionBuilder {...jsonGenTransactionBuilderProps} />
+        )}
+      </div>
+    </div>
   );
 };
 

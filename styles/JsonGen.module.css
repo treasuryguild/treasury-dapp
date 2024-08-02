@@ -1,0 +1,62 @@
+.container {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #92c5ff;
+}
+
+.noTransactions {
+  font-style: italic;
+  color: #888888;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 5px;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  text-align: left;
+  background-color: #2a2a2a;
+}
+
+.table th {
+  font-weight: bold;
+  color: #92c5ff;
+}
+
+.table tr:hover td {
+  background-color: #333333;
+}
+
+.button {
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #3a7bc8;
+}
+
+.button:disabled {
+  background-color: #555555;
+  cursor: not-allowed;
+}
+
+.loading {
+  opacity: 0.7;
+}

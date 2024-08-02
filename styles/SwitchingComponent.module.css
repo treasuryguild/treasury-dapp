@@ -1,0 +1,36 @@
+.container {
+  
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.button {
+  background-color: #333333;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  margin: 0 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #4a4a4a;
+}
+
+.button.active {
+  background-color: #4a90e2;
+}
+
+.builderContainer {
+  padding: 20px;
+  border-radius: 5px;
+}

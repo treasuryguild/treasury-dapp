@@ -6,6 +6,7 @@ import { useRouter } from 'next/router'
 import { Contribution } from '../../components/ContributionBuilder';
 import { ContributionBuilderProps } from '../../components/ContributionBuilder';
 import { TransactionBuilderProps } from '../../components/TransactionBuilder';
+import { JsonGenTransactionBuilderProps } from '../../components/JsonGenTransactionBuilder';
 import SwitchingComponent from '../../components/SwitchingComponent';
 import { getTxAmounts } from "../../utils/gettxamounts";
 import axios from 'axios';
@@ -39,11 +40,13 @@ type Token = {
   };
 let txdata: any = {}
 
+type BuilderType = 'dework' | 'manual' | 'JsonGen';
+
 function TxBuilder() {
   const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` 
   let project: any[] = [];
   const router = useRouter();
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const { connected, wallet } = useWallet();
   const [assets, setAssets] = useState<null | any>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -77,8 +80,11 @@ function TxBuilder() {
     setContributorWalletsJSON(JSON.stringify(contributorWallets, null, 2));
   };
 
-  const toggleVisibility = () => {
-    setIsVisible(!isVisible);
+  const [activeBuilder, setActiveBuilder] = useState<BuilderType>('dework');
+
+  const handleSwitchBuilder = (builderType: BuilderType) => {
+    setActiveBuilder(builderType);
+    setIsVisible(builderType === 'manual');
   };
 
   const contributionBuilderProps: ContributionBuilderProps = { 
@@ -92,6 +98,12 @@ function TxBuilder() {
   }
 
   const transactionBuilderProps: TransactionBuilderProps = { 
+    executeTransaction: executeTransaction,
+    walletTokens: walletTokens,
+    tokenRates: tokenRates
+  }
+
+  const jsonGenTransactionBuilderProps: JsonGenTransactionBuilderProps = {
     executeTransaction: executeTransaction,
     walletTokens: walletTokens,
     tokenRates: tokenRates
@@ -636,11 +648,12 @@ function getAggregatedAmountsPerMonth(metaData: any) {
                </label>
              </div>
              <div>
-               <SwitchingComponent
-                 onClick={toggleVisibility}
-                 transactionBuilderProps={transactionBuilderProps}
-                 contributionBuilderProps={contributionBuilderProps}
-               />
+                <SwitchingComponent
+                  onClick={handleSwitchBuilder}
+                  transactionBuilderProps={transactionBuilderProps}
+                  contributionBuilderProps={contributionBuilderProps}
+                  jsonGenTransactionBuilderProps={jsonGenTransactionBuilderProps}
+                />
              </div>
            </div>
            <div className={styles.balances}>
@@ -671,13 +684,12 @@ function getAggregatedAmountsPerMonth(metaData: any) {
                   }
                 return null; // Return null if tokenType is not "nft"
               })}
-
-               {isVisible && (
-                 <div className={styles.preContainer}>
-                   <h3>Metadata</h3>
-                   <pre>{contributionsJSON}</pre>
-                 </div>
-               )}
+                {activeBuilder === 'manual' && isVisible && (
+                  <div className={styles.preContainer}>
+                    <h3>Metadata</h3>
+                    <pre>{contributionsJSON}</pre>
+                  </div>
+                )}
              </div>
            </div>
          </div>
