@@ -3,6 +3,7 @@ import TransactionBuilder from './TransactionBuilder';
 import ContributionBuilder from './ContributionBuilder';
 import JsonGenTransactionBuilder from './JsonGenTransactionBuilder';
 import { useMyVariable } from '../context/MyVariableContext';
+import styles from '../styles/SwitchingComponent.module.css';
 
 interface SwitchingComponentProps {
     contributionBuilderProps: any; 
@@ -15,36 +16,50 @@ type BuilderType = 'dework' | 'manual' | 'JsonGen';
 
 const SwitchingComponent = (props: SwitchingComponentProps) => {
   const { transactionBuilderProps, contributionBuilderProps, jsonGenTransactionBuilderProps } = props;
-
-  // Create state to track which builder is currently active
   const [activeBuilder, setActiveBuilder] = useState<BuilderType>('dework');
   const { myVariable, setMyVariable } = useMyVariable();
 
-  // Function to switch between builders
   const switchBuilder = (builderType: BuilderType) => {
     setActiveBuilder(builderType);
     props.onClick(builderType);
   };
 
   return (
-    <>
+    <div className={styles.container}>
       {myVariable.group !== undefined && (
-        <div>
-          <button onClick={() => switchBuilder('dework')}>Dework</button>
-          <button onClick={() => switchBuilder('manual')}>Manual</button>
-          <button onClick={() => switchBuilder('JsonGen')}>JsonGen</button>
+        <div className={styles.buttonContainer}>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'dework' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('dework')}
+          >
+            Dework
+          </button>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'manual' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('manual')}
+          >
+            Manual
+          </button>
+          <button 
+            className={`${styles.button} ${activeBuilder === 'JsonGen' ? styles.active : ''}`} 
+            onClick={() => switchBuilder('JsonGen')}
+          >
+            JsonGen
+          </button>
         </div>
       )}
-      {activeBuilder === 'dework' && (
-        <TransactionBuilder {...transactionBuilderProps}/>
-      )}
-      {activeBuilder === 'manual' && (
-        <ContributionBuilder {...contributionBuilderProps} />
-      )}
-      {activeBuilder === 'JsonGen' && (
-        <JsonGenTransactionBuilder {...jsonGenTransactionBuilderProps} />
-      )}
-    </>
+      <div className={styles.builderContainer}>
+        {activeBuilder === 'dework' && (
+          <TransactionBuilder {...transactionBuilderProps}/>
+        )}
+        {activeBuilder === 'manual' && (
+          <ContributionBuilder {...contributionBuilderProps} />
+        )}
+        {activeBuilder === 'JsonGen' && (
+          <JsonGenTransactionBuilder {...jsonGenTransactionBuilderProps} />
+        )}
+      </div>
+    </div>
   );
 };
 

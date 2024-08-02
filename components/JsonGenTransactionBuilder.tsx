@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMyVariable } from '../context/MyVariableContext';
 import supabase from "../lib/supabaseClient";
+import styles from '../styles/JsonGen.module.css';
 
 export type JsonGenTransactionBuilderProps = {
   executeTransaction: (
@@ -23,13 +24,19 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [myVariable.wallet]);
 
   const fetchTransactions = async () => {
+    if (!myVariable.wallet) {
+      console.log("Wallet not set, skipping fetch");
+      return;
+    }
+
     const { data, error } = await supabase
       .from('tx_json_generator_data')
       .select('*')
-      .eq('reward_status', false);
+      .eq('reward_status', false)
+      .eq('project_wallet', myVariable.wallet);
 
     if (error) {
       console.error('Error fetching transactions:', error);
@@ -38,16 +45,16 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
     }
   };
 
-  const updateRewardStatus = async (id: number) => {
+  const updateRewardStatus = async (id: number, transactionHash: string) => {
     const { error } = await supabase
       .from('tx_json_generator_data')
-      .update({ reward_status: true })
+      .update({ reward_status: true, transaction_id: transactionHash })
       .eq('id', id);
 
     if (error) {
       console.error('Error updating reward status:', error);
     } else {
-      console.log('Reward status updated successfully');
+      console.log('Reward status and transaction ID updated successfully');
       // Refresh the transactions list
       fetchTransactions();
     }
@@ -95,8 +102,8 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
       const txHash = await executeTransaction(assetsPerAddress, adaPerAddress, metadata['674']);
       console.log('Transaction successful:', txHash);
       
-      // Update the reward status in the database
-      await updateRewardStatus(id);
+      // Update the reward status and transaction_id in the database
+      await updateRewardStatus(id, txHash);
       
       alert('Transaction built successfully!');
     } catch (error) {
@@ -108,31 +115,36 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
   };
 
   return (
-    <div>
-      <h2>Pending Transactions</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Created At</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((tx) => (
-            <tr key={tx.id}>
-              <td>{new Date(tx.created_at).toLocaleString()}</td>
-              <td>
-                <button 
-                  onClick={() => handleBuildTransaction(tx.id, tx.processed_data)}
-                  disabled={loading}
-                >
-                  {loading ? 'Building...' : 'Build Transaction'}
-                </button>
-              </td>
+    <div className={styles.container}>
+      <h2 className={styles.title}>Pending Transactions</h2>
+      {transactions.length === 0 ? (
+        <p className={styles.noTransactions}>No pending transactions for this wallet.</p>
+      ) : (
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Created At</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {transactions.map((tx) => (
+              <tr key={tx.id}>
+                <td>{new Date(tx.created_at).toLocaleString()}</td>
+                <td>
+                  <button 
+                    className={`${styles.button} ${loading ? styles.loading : ''}`}
+                    onClick={() => handleBuildTransaction(tx.id, tx.processed_data)}
+                    disabled={loading}
+                  >
+                    {loading ? 'Building...' : 'Build Transaction'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
