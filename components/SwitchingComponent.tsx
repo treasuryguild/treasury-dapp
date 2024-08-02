@@ -1,37 +1,48 @@
 import React, { useState } from 'react';
 import TransactionBuilder from './TransactionBuilder';
 import ContributionBuilder from './ContributionBuilder';
+import JsonGenTransactionBuilder from './JsonGenTransactionBuilder';
 import { useMyVariable } from '../context/MyVariableContext';
 
 interface SwitchingComponentProps {
     contributionBuilderProps: any; 
     transactionBuilderProps: any;
-    onClick: () => void;
+    jsonGenTransactionBuilderProps: any;
+    onClick: (activeBuilder: BuilderType) => void;
 }
 
-const SwitchingComponent = (props: SwitchingComponentProps) => {
-  const { transactionBuilderProps, contributionBuilderProps } = props;
+type BuilderType = 'dework' | 'manual' | 'JsonGen';
 
-  // Create state to track whether the button is on or off
-  const [isOn, setIsOn] = useState(true);
+const SwitchingComponent = (props: SwitchingComponentProps) => {
+  const { transactionBuilderProps, contributionBuilderProps, jsonGenTransactionBuilderProps } = props;
+
+  // Create state to track which builder is currently active
+  const [activeBuilder, setActiveBuilder] = useState<BuilderType>('dework');
   const { myVariable, setMyVariable } = useMyVariable();
 
-  // Function to toggle the button state
-  const toggleButton = () => {
-    setIsOn(!isOn);
-    props.onClick();
-    console.log(myVariable.group);
+  // Function to switch between builders
+  const switchBuilder = (builderType: BuilderType) => {
+    setActiveBuilder(builderType);
+    props.onClick(builderType);
   };
 
   return (
     <>
       {myVariable.group !== undefined && (
-        <button onClick={toggleButton}>{isOn ? 'Switch to Manual' : 'Switch to Dework'}</button>
+        <div>
+          <button onClick={() => switchBuilder('dework')}>Dework</button>
+          <button onClick={() => switchBuilder('manual')}>Manual</button>
+          <button onClick={() => switchBuilder('JsonGen')}>JsonGen</button>
+        </div>
       )}
-      {isOn ? (
+      {activeBuilder === 'dework' && (
         <TransactionBuilder {...transactionBuilderProps}/>
-      ) : (
+      )}
+      {activeBuilder === 'manual' && (
         <ContributionBuilder {...contributionBuilderProps} />
+      )}
+      {activeBuilder === 'JsonGen' && (
+        <JsonGenTransactionBuilder {...jsonGenTransactionBuilderProps} />
       )}
     </>
   );
