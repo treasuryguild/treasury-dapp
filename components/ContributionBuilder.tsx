@@ -1,3 +1,4 @@
+// ..components/ContributionBuilder.tsx
 import React, { useState, useEffect } from 'react';
 import { useMyVariable } from '../context/MyVariableContext';
 import styles from '../styles/TxBuilder.module.css';
@@ -18,7 +19,7 @@ export type Contribution = {
 type OptionsType = Array<{value: string, label: string}>;
 type OptionsType2 = Array<{value: string, label: string}>;
 
-type OptionType = {
+export type OptionType = {
   value: string;
   label: string;
 };
@@ -26,10 +27,10 @@ type OptionType2 = {
   value: string;
   label: string;
 };
-type ValueType = ReadonlyArray<OptionType> | null;
+export type ValueType = ReadonlyArray<OptionType> | null;
 type ValueType2 = ReadonlyArray<OptionType2> | null;
 
-type Tokens = string;
+export type Tokens = string;
 
 export type ContributionBuilderProps = {
   executeTransaction: (
