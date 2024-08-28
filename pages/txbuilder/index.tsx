@@ -40,7 +40,7 @@ type Token = {
   };
 let txdata: any = {}
 
-type BuilderType = 'dework' | 'manual' | 'JsonGen';
+type BuilderType = 'dework' | 'manual' | 'table' | 'JsonGen';
 
 function TxBuilder() {
   const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}` 
@@ -84,7 +84,7 @@ function TxBuilder() {
 
   const handleSwitchBuilder = (builderType: BuilderType) => {
     setActiveBuilder(builderType);
-    setIsVisible(builderType === 'manual');
+    setIsVisible(builderType === 'manual' || builderType === 'table');
   };
 
   const contributionBuilderProps: ContributionBuilderProps = { 
@@ -648,13 +648,14 @@ function getAggregatedAmountsPerMonth(metaData: any) {
                </label>
              </div>
              <div>
-                <SwitchingComponent
-                  onClick={handleSwitchBuilder}
-                  transactionBuilderProps={transactionBuilderProps}
-                  contributionBuilderProps={contributionBuilderProps}
-                  jsonGenTransactionBuilderProps={jsonGenTransactionBuilderProps}
-                />
-             </div>
+              <SwitchingComponent
+                onClick={handleSwitchBuilder}
+                transactionBuilderProps={transactionBuilderProps}
+                contributionBuilderProps={contributionBuilderProps}
+                jsonGenTransactionBuilderProps={jsonGenTransactionBuilderProps}
+                tableContributionBuilderProps={contributionBuilderProps} // Add this line
+              />
+            </div>
            </div>
            <div className={styles.balances}>
              <div>
@@ -684,7 +685,7 @@ function getAggregatedAmountsPerMonth(metaData: any) {
                   }
                 return null; // Return null if tokenType is not "nft"
               })}
-                {activeBuilder === 'manual' && isVisible && (
+                {(activeBuilder === 'manual'|| activeBuilder === 'table') && isVisible && (
                   <div className={styles.preContainer}>
                     <h3>Metadata</h3>
                     <pre>{contributionsJSON}</pre>

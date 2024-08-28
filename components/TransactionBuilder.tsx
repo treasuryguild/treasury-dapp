@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import styles from '../styles/Singletx.module.css'
+import styles from '../styles/DeworkJson.module.css'
 import { useMyVariable } from '../context/MyVariableContext';
 
 export type TransactionBuilderProps = {
@@ -89,49 +89,58 @@ const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
   }
  
   return (
-    <div>
-      <div className={styles.formitem}>
-        <label className={styles.custom}>
+    <div className={styles.container}>
+      <div className={styles.formItem}>
+        <label className={styles.label}>
           <textarea
             id="deworkJson"
             name="deworkJson"
+            className={styles.textarea}
             autoComplete="off"
             required
           />
           <span className={styles.tag}>Paste Json in here</span>
         </label>
       </div>
-      <div>
-        <label>Budget Month:</label>
-        <select value={myVariable.budget_month} onChange={handleBudgetMonthChange}>
+      <div className={styles.formItem}>
+        <label className={styles.label}>Budget Month:</label>
+        <select 
+          className={styles.select}
+          value={myVariable.budget_month} 
+          onChange={handleBudgetMonthChange}
+        >
           {months.map((month) => (
             <option key={month} value={month}>{month}</option>
           ))}
         </select>
       </div>
-      <div>
-        <label>Send Discord Message:</label>
-        <input
-          type="checkbox"
-          checked={myVariable.send_message}
-          onChange={handleSendMessageChange}
-        />
+      <div className={styles.formItem}>
+        <label className={styles.label}>
+          <input
+            type="checkbox"
+            className={styles.checkbox}
+            checked={myVariable.send_message}
+            onChange={handleSendMessageChange}
+          />
+          Send Discord Message
+        </label>
       </div>
       <div className={styles.submit}>
-      {Object.keys(tokenRates).length !== 0 && (
-        <button
-          className={styles.submitbut}
-          type="button"
-          onClick={() => {
-            const element = document.getElementById(
-              'deworkJson'
-            ) as HTMLInputElement | null;
-            const deworkJson = JSON.parse(element?.value ?? '{}');
-            getValues(deworkJson);
-          }}
-        >
-          Build
-        </button>)}
+        {Object.keys(tokenRates).length !== 0 && (
+          <button
+            className={styles.submitButton}
+            type="button"
+            onClick={() => {
+              const element = document.getElementById(
+                'deworkJson'
+              ) as HTMLInputElement | null;
+              const deworkJson = JSON.parse(element?.value ?? '{}');
+              getValues(deworkJson);
+            }}
+          >
+            Build
+          </button>
+        )}
       </div>
     </div>
   );
