@@ -480,6 +480,7 @@ useEffect(() => {
       finalMetaData = JSON.parse(metaData)
       const xrate = document.getElementById('xrate') as HTMLInputElement | null;
       finalMetaData = updateTransactionMessage(finalMetaData, xrate?.value);
+      //console.log(assetsPerAddress, adaPerAddressString, finalMetaData, myVariable);
     let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData)
   }
 

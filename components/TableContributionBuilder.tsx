@@ -45,17 +45,16 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
 }) => {
   const { myVariable } = useMyVariable();
 
-  // Function to get the date in "yyyy-MM-dd" format for the input field
-  const getCurrentDateForInput = () => {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
-    return `${year}-${month}-${day}`;
+  // Function to convert "dd.MM.yy" to "yyyy-MM-dd" for input field
+  const convertToISOFormat = (date: string) => {
+    if (!date) return '';
+    const [day, month, year] = date.split('.');
+    return `20${year}-${month}-${day}`;
   };
 
-  // Function to convert the date in "yyyy-MM-dd" format to "dd.MM.yy" format for the metadata
-  const formatDateForMetadata = (date: string) => {
+  // Function to convert "yyyy-MM-dd" to "dd.MM.yy" for storage
+  const convertToDisplayFormat = (date: string) => {
+    if (!date) return '';
     const [year, month, day] = date.split('-');
     return `${day}.${month}.${year.slice(-2)}`;
   };
@@ -64,7 +63,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
     {
       taskCreator: [myVariable.group],
       name: [],
-      arrayMap: { label: [], subGroup: [], date: [getCurrentDateForInput()], proof: [] },
+      arrayMap: { label: [], subGroup: [], date: [formattedDate], proof: [] },
       contributors: {},
     },
   ]);
@@ -137,7 +136,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
       {
         taskCreator: [myVariable.group],
         name: [],
-        arrayMap: { label: [], subGroup: [], date: [getCurrentDateForInput()], proof: [] },
+        arrayMap: { label: [], subGroup: [], date: [formattedDate], proof: [] },
         contributors: {},
       },
     ]);
@@ -178,7 +177,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
     const newContributions: Contribution[] = [...contributions];
 
     if (field === 'date') {
-      newContributions[index].arrayMap.date = [value];
+      newContributions[index].arrayMap.date = [convertToDisplayFormat(value)];
     } else if (field === 'name') {
       const parts = splitTextIntoChunks(value, 50);
       newContributions[index].name = parts;
@@ -448,7 +447,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
     finalMetaData = JSON.parse(metaData);
     const xrate = document.getElementById('xrate') as HTMLInputElement | null;
     finalMetaData = updateTransactionMessage(finalMetaData, xrate?.value);
-    //console.log('finaData', assetsPerAddress, adaPerAddressString, finalMetaData);
+    //console.log('finaData', assetsPerAddress, adaPerAddressString, finalMetaData, myVariable);
     let thash = await executeTransaction(assetsPerAddress, adaPerAddressString, finalMetaData);
   }
 
@@ -462,17 +461,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
       arrayMap: arrayMap.proof?.length ? arrayMap : { ...arrayMap, proof: undefined },
     }));
 
-    // When preparing the metadata, use the "dd.MM.yy" format
-    const contributionsJSON = JSON.stringify(
-      updatedContributions2.map((contribution) => ({
-        ...contribution,
-        arrayMap: {
-          ...contribution.arrayMap,
-          date: [formatDateForMetadata(contribution.arrayMap.date[0])],
-        },
-      }))
-    );
-
+    const contributionsJSON = JSON.stringify(updatedContributions2);
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
   };
@@ -528,9 +517,9 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
                 />
               </td>
               <td>
-                <input
+              <input
                   type="date"
-                  value={contribution.arrayMap.date[0]} // Now using the date for the input field
+                  value={convertToISOFormat(contribution.arrayMap.date[0])}
                   onChange={(e) => updateField(index, 'date', e.target.value)}
                 />
               </td>
