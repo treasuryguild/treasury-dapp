@@ -175,24 +175,36 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
 
   const updateField = (index: number, field: string, value: any) => {
     const newContributions: Contribution[] = [...contributions];
-
+  
     if (field === 'date') {
       newContributions[index].arrayMap.date = [convertToDisplayFormat(value)];
-    } else if (field === 'name') {
-      const parts = splitTextIntoChunks(value, 50);
-      newContributions[index].name = parts;
-    } else if (field === 'proof') {
-      const parts = splitTextIntoChunks(value, 50);
-      newContributions[index].arrayMap.proof = parts;
+    } else if (field === 'name' || field === 'proof') {
+      let parts = [];
+      let currentPart = '';
+      value.split(' ').forEach((word: string) => {
+        const potentialPart = currentPart ? currentPart + ' ' + word : word;
+        if (potentialPart.length > 50) {
+          parts.push(currentPart);
+          currentPart = word;
+        } else {
+          currentPart = potentialPart;
+        }
+      });
+      if (currentPart) {
+        parts.push(currentPart);
+      }
+      if (field === 'name') {
+        newContributions[index].name = parts;
+      } else {
+        newContributions[index].arrayMap.proof = parts;
+      }
     } else if (field === 'label') {
       newContributions[index].arrayMap.label = value.split(',');
-      setLabels(value.split(','));
       const newSelectedLabels = [...selectedLabels];
       newSelectedLabels[index] = value.split(',').map((val: any) => ({ value: val, label: val }));
       setSelectedLabels(newSelectedLabels);
     } else if (field === 'subGroup') {
       newContributions[index].arrayMap.subGroup = value.split(',');
-      setSubGroups(value.split(','), myVariable.project_id);
       const newSelectedSubGroup = [...selectedSubGroup];
       newSelectedSubGroup[index] = value.split(',').map((val: any) => ({ value: val, label: val }));
       setSelectedSubGroup(newSelectedSubGroup);
@@ -201,7 +213,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
     } else if (field.startsWith('token_')) {
       const [_, token] = field.split('_');
       const contributorId = Object.keys(newContributions[index].contributors)[0];
-
+  
       if (contributorId) {
         if (!newContributions[index].contributors[contributorId]) {
           newContributions[index].contributors[contributorId] = {};
@@ -211,7 +223,7 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
         }
       }
     }
-
+  
     setContributions(newContributions);
   };
 
@@ -460,7 +472,17 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
       ...rest,
       arrayMap: arrayMap.proof?.length ? arrayMap : { ...arrayMap, proof: undefined },
     }));
-
+  
+    // Call setLabels and setSubGroups here
+    updatedContributions2.forEach((contribution) => {
+      if (contribution.arrayMap.label && contribution.arrayMap.label.length > 0) {
+        setLabels(contribution.arrayMap.label);
+      }
+      if (contribution.arrayMap.subGroup && contribution.arrayMap.subGroup.length > 0) {
+        setSubGroups(contribution.arrayMap.subGroup, myVariable.project_id);
+      }
+    });
+  
     const contributionsJSON = JSON.stringify(updatedContributions2);
     const contributorWalletsJSON = JSON.stringify(contributorWallets);
     await getValues(contributionsJSON, contributorWalletsJSON);
@@ -479,19 +501,26 @@ const TableContributionBuilder: React.FC<ContributionBuilderProps> = ({
             <th>Contributor</th>
             {selectedTokens.map((token, index) => (
               <th key={index}>
-                <select
-                  value={token}
-                  onChange={(e) => updateTokenColumn(index, e.target.value)}
-                  className={styles.tokenSelect}
-                >
-                  <option value="">Select Token</option>
-                  {walletTokens.map((t: any) => (
-                    <option key={t.name} value={t.name}>
-                      {t.displayname}
-                    </option>
-                  ))}
-                </select>
-                <button onClick={() => removeTokenColumn(token)}>X</button>
+                <div className={styles.tokenSelectContainer}>
+                  <select
+                    value={token}
+                    onChange={(e) => updateTokenColumn(index, e.target.value)}
+                    className={styles.tokenSelect}
+                  >
+                    <option value="">Select Token</option>
+                    {walletTokens.map((t: any) => (
+                      <option key={t.name} value={t.name}>
+                        {t.displayname}
+                      </option>
+                    ))}
+                  </select>
+                  <button 
+                    onClick={() => removeTokenColumn(token)}
+                    className={styles.removeTokenButton}
+                  >
+                    X
+                  </button>
+                </div>
               </th>
             ))}
             <th>

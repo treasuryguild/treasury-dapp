@@ -77,17 +77,38 @@
   background-color: #007B9E;
 }
 
+.tokenSelectContainer {
+  display: flex;
+  align-items: center;
+  width: 110px; /* Adjust this value to make the column narrower or wider */
+}
+
 .tokenSelect {
   background-color: black;
   color: white;
   border: 1px solid grey;
   padding: 5px;
-  width: 100%;
+  flex-grow: 1;
+  margin-right: 5px;
+  width: 60px; /* Adjust this value to make the select narrower or wider */
 }
 
 .tokenSelect option {
   background-color: black;
   color: white;
+}
+
+.removeTokenButton {
+  padding: 5px 8px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0; /* Prevent the button from shrinking */
+}
+
+.removeTokenButton:hover {
+  background-color: #ff6666;
 }
 
 .firstContributor {
