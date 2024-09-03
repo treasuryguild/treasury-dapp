@@ -6,6 +6,13 @@ export default async function handler(req, res) {
     const url = "https://api.koios.rest/api/v1/tx_info";
     const data = {
       _tx_hashes: [txId],
+      _inputs: true,
+      _metadata: true,
+      _assets: true,
+      _withdrawals: true,
+      _certs: true,
+      _scripts: true,
+      _bytecode: true
     };
 
     try {
