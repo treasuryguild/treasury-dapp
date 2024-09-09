@@ -56,7 +56,7 @@ function BurnTokens() {
           <input type="text" value={tokenUnit} onChange={(e) => setTokenUnit(e.target.value)} />
           <label className={styles.input}>Amount to burn:</label>
           <input type="text" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <button className={styles.submit} type="submit">Mint</button>
+          <button className={styles.submit} type="submit">Burn</button>
         </form>
       </div>
     </>

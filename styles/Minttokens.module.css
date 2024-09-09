@@ -4,6 +4,10 @@
     flex-wrap: wrap;
 }
 
+.selectmint {
+    margin-bottom: 20px;
+}
+
 .form {
     margin-top: 50px;
     display: flex;
@@ -14,6 +18,18 @@
 .submit {
     margin: 40px;
     padding: 10px;
+    cursor: pointer;
+}
+
+.mint {
+    margin-top: 10px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.submit:hover, .mint:hover {
+    background-color: #281e1e; /* Light grey background on hover */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow on hover */
 }
 
 .input {
