@@ -293,7 +293,7 @@ const uploadToIpfs = async () => {
   const mintINFTokens = async () => {
     // Set your predetermined values
     const preTokenData = {
-      tokenName: "SingularityNET Ambassador Influance Token",
+      tokenName: "INF",
       tokenType: "fungible",
       policy: "open",
       ticker: "INF",
