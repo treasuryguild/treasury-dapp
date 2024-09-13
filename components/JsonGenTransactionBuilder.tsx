@@ -184,7 +184,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
       <h2 className={styles.title}>Pending Transactions (Only shows transactions for this wallet)</h2>
       {transactions.length === 0 ? (
         <p className={styles.noTransactions}>No pending transactions for this wallet.</p>
-      ) : (
+      ) : Object.keys(tokenRates).length !== 0 && (
         <table className={styles.table}>
           <thead>
             <tr>
