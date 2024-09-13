@@ -25,7 +25,7 @@
 .table th,
 .table td {
   padding: 12px;
-  text-align: left;
+  text-align: center;  /* Changed from left to center */
   background-color: #2a2a2a;
 }
 
