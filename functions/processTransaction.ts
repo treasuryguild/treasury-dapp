@@ -1,3 +1,4 @@
+// ../functions/processTransaction.ts
 import { Handler } from "@netlify/functions";
 import supabase from "../lib/supabaseClient";
 import { sendDiscordMessage } from '../utils/sendDiscordMessage'
@@ -21,6 +22,8 @@ const handler: Handler = async (event: any, context: any) => {
     const total_tokens = Object.keys(myVariable.totalAmounts);
     const total_amounts = Object.values(myVariable.totalAmounts);
     
+    const isFaultyTxFilter = metaData.msg.includes("FaultyTx-Filter");
+
     async function updateTransactions(myVariable:any, thash: any) {
       let recipients = ''
       const adaObject = myVariable.walletBalanceAfterTx.find((obj: any) => obj.name === 'ADA');
@@ -44,7 +47,7 @@ const handler: Handler = async (event: any, context: any) => {
               exchange_rate: myVariable.tokenRates.ADA,
               recipients: recipients,
               fee: myVariable.fee,
-              tx_type: myVariable.txtype,
+              tx_type: isFaultyTxFilter ? "FaultyTx-Filter" : myVariable.txtype,
               total_ada: myVariable.totalAmounts.ADA,
               project_id: myVariable.project_id,
               total_tokens: total_tokens,
@@ -63,7 +66,6 @@ const handler: Handler = async (event: any, context: any) => {
       return { tx_id };
     }
   
-  
     async function updateContributors(walletAddress: string, contributorKey: string) {
       const { error } = await supabase
         .from("contributors")
@@ -78,8 +80,32 @@ const handler: Handler = async (event: any, context: any) => {
       return contributorKey;
     } 
   
-      async function updateContributions(tx_id: any) {
-        try {
+    async function updateContributions(tx_id: any) {
+      try {
+        if (isFaultyTxFilter) {
+          // For FaultyTx-Filter, insert a single default contribution
+          const { data, error } = await supabase
+            .from('contributions')
+            .insert([
+              {
+                project_id: myVariable.project_id,
+                tx_id,
+                task_creator: "System",
+                task_name: "FaultyTx-Filter",
+                task_label: "FaultyTx-Filter",
+                task_description: "Addresses the invalidation or filtration of faulty transactions",
+                task_date: new Date().toISOString().split('T')[0],
+                task_sub_group: "System",
+                task_array_map: null,
+                task_type: "FaultyTx-Filter"
+              }
+            ])
+            .select('contribution_id');
+
+          if (error) throw error;
+          return [data[0].contribution_id];
+        } else {
+          // Original contribution update logic for normal transactions
           const promises = metaData.contributions.map(async (contribution: any) => {
             const task_name = contribution.name ? contribution.name.join(' ') : null;
             const task_date = contribution?.arrayMap?.date?.join(',') || null;
@@ -120,14 +146,30 @@ const handler: Handler = async (event: any, context: any) => {
           });
     
           return await Promise.all(promises);
-    
-        } catch (error:any) {
-          console.log(error.message);
         }
+      } catch (error:any) {
+        console.log(error.message);
       }
-  
-      async function updateDistributions(contribution_ids: any, tx_id: any) {
-        try {
+    }
+
+    async function updateDistributions(contribution_ids: any, tx_id: any) {
+      try {
+        if (isFaultyTxFilter) {
+          // For FaultyTx-Filter, insert a single default distribution
+          await supabase
+            .from('distributions')
+            .insert([
+              {
+                contributor_id: "System",
+                tokens: ["ADA"],
+                amounts: [0],
+                contribution_id: contribution_ids[0],
+                project_id: myVariable.project_id,
+                tx_id
+              }
+            ]);
+        } else {
+          // Original distribution update logic for normal transactions
           const promises = metaData.contributions.map(async (contribution: any, index: any) => {
             const contribution_id = contribution_ids[index];
       
@@ -164,12 +206,12 @@ const handler: Handler = async (event: any, context: any) => {
           });
       
           await Promise.all(promises);
-      
-        } catch (error: any) {
-          console.log(error.message);
         }
-      } 
-  
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    } 
+
     let { tx_id } = await updateTransactions(myVariable, thash);
     let customFileContent = ''
     let newMetaData = metaData
@@ -178,10 +220,10 @@ const handler: Handler = async (event: any, context: any) => {
     await commitFile(customFilePath, customFileContent)  
     const contribution_ids = await updateContributions(tx_id);
     await updateDistributions(contribution_ids, tx_id);
-    if (myVariable.send_message == true) {
+    if (myVariable.send_message == true && !isFaultyTxFilter) {
       await sendDiscordMessage(myVariable);
     }
-      //await checkAndUpdate(myVariable, thash);
+    //await checkAndUpdate(myVariable, thash);
 
   return {
     statusCode: 200,
