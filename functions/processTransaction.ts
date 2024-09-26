@@ -17,14 +17,20 @@ interface ContributionInsertResult {
 
 async function updateTransactions(myVariable: any, thash: any, metaData: any, isFaultyTxFilter: boolean, total_tokens: string[], total_amounts: number[], customFilePath: string) {
   try {
-    let recipients = ''
+    let recipients = 0; // Initialize as number
     const adaObject = myVariable.walletBalanceAfterTx.find((obj: any) => obj.name === 'ADA');
-    const adaBalance = adaObject ? adaObject.amount : 0;
+    const adaBalance = adaObject ? parseFloat(adaObject.amount) || 0 : 0;
     const recipientsMsg = metaData.msg.find((msg: string) => msg.startsWith("Recipients: "));
     if (recipientsMsg) {
       const numberOfRecipients = recipientsMsg.split(' ')[1];
-      recipients = numberOfRecipients;
+      recipients = parseInt(numberOfRecipients, 10) || 0; // Parse as integer, default to 0 if NaN
     }
+
+    // Ensure numeric fields have valid values or defaults
+    const fee = parseInt(myVariable.fee, 10) || 0;
+    const exchange_rate = parseFloat(myVariable.tokenRates.ADA) || 0;
+    const total_ada = parseFloat(myVariable.totalAmounts.ADA) || 0;
+    const monthly_budget_balance = myVariable.monthly_budget_balance || {};
 
     const { data: insertResult, error } = await supabase
     .from("transactions")
@@ -33,18 +39,18 @@ async function updateTransactions(myVariable: any, thash: any, metaData: any, is
         transaction_id: thash, 
         transaction_date: new Date().getTime().toString(),
         wallet_balance_after: adaBalance, 
-        md_version: metaData.mdVersion[0],
+        md_version: metaData.mdVersion[0] || '',
         tx_json: metaData,
         tx_json_url: `https://raw.githubusercontent.com/treasuryguild/treasury-system-v4/main/${customFilePath}`,
-        exchange_rate: myVariable.tokenRates.ADA,
-        recipients: recipients,
-        fee: myVariable.fee,
+        exchange_rate: exchange_rate,
+        recipients: recipients, // Now a number
+        fee: fee,
         tx_type: isFaultyTxFilter ? "FaultyTx-Filter" : myVariable.txtype,
-        total_ada: myVariable.totalAmounts.ADA,
+        total_ada: total_ada,
         project_id: myVariable.project_id,
         total_tokens: total_tokens,
         total_amounts: total_amounts,
-        monthly_budget_balance: myVariable.monthly_budget_balance
+        monthly_budget_balance: JSON.stringify(monthly_budget_balance) // Convert object to string
       }
     ])
     .select(`tx_id`)
