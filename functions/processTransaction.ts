@@ -43,14 +43,14 @@ async function updateTransactions(myVariable: any, thash: any, metaData: any, is
         tx_json: metaData,
         tx_json_url: `https://raw.githubusercontent.com/treasuryguild/treasury-system-v4/main/${customFilePath}`,
         exchange_rate: exchange_rate,
-        recipients: recipients, // Now a number
+        recipients: recipients, 
         fee: fee,
         tx_type: isFaultyTxFilter ? "FaultyTx-Filter" : myVariable.txtype,
         total_ada: total_ada,
         project_id: myVariable.project_id,
         total_tokens: total_tokens,
         total_amounts: total_amounts,
-        monthly_budget_balance: JSON.stringify(monthly_budget_balance) // Convert object to string
+        monthly_budget_balance: monthly_budget_balance
       }
     ])
     .select(`tx_id`)
