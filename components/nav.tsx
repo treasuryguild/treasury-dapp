@@ -81,7 +81,12 @@ const Nav = () => {
           {isAdmin && (<Link href='/burntokens' className="navitems">
             burn tokens
           </Link>)}
-          {isAdmin && <Link href='/admin' className="navitems">Admin</Link>}
+          {isAdmin && (
+            <>
+              <Link href='/admin' className="navitems">Admin</Link>
+              <Link href='/test' className="navitems">TestPage</Link>
+            </>  
+            )}
           {!session && (<button onClick={signInWithDiscord} className="navitems">
           Sign In with Discord
         </button>)}
