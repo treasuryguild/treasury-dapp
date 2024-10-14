@@ -3,6 +3,7 @@ import styles from '../../styles/Txid.module.css';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { getTxInfo } from '../../utils/getTxInfo';
+//import { getTxDetails } from '../../utils/getTxDetails';
 import { getProject } from '../../utils/getProject'
 import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
@@ -12,8 +13,8 @@ import { checkTxStatus } from '../../utils/checkTxStatus'
 import { getAssetList } from '../../utils/getassetlist'
 import { get, set } from '../../utils/cache'
 import { getExchangeRate } from '../../utils/getexchangerate'
-import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
-import { commitFile } from '../../utils/commitFile'
+//import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
+//import { commitFile } from '../../utils/commitFile'
 import { getTokenTypes } from '../../utils/getTokenTypes';
 
 interface Token {
@@ -349,10 +350,14 @@ function processMetadata(metadata: Metadata): string {
       setLabelOptions(output);
       const tTypes = await getTokenTypes();
       const usedAddresses = await wallet.getUsedAddresses();
+      //const rewardAddress = await wallet.getRewardAddresses();
       const assets = await wallet.getAssets();
       const txData = await txInfo(txId);
+      //const test = await getTxDetails(rewardAddress, txData[0], assets, tTypes) as GetTxInfoResult;
       const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes) as GetTxInfoResult;
-      //console.log("txData[0]", txData[0], result, assets, tTypes)
+      //console.log("txData[0]", txData[0], assets, tTypes)
+      //console.log("result", result)
+      //console.log("test", test, rewardAddress)
       fee = parseInt(txData[0].fee)
       let txamounts: Record<string, Amounts> = {};
       wallet2 = txData[0].inputs[0].payment_addr.bech32
