@@ -20,6 +20,15 @@ export default function TestPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     const { txHash, usedAddresses, rewardAddress, assets } = config;
+    
+    const transactionHash = txHash[6]  // Change the index to test different transaction types
+    // 0. Convert WMT to WMTX with Smart contract
+    // 1. Sending tokens to Minswap for token swap
+    // 2. Receiving tokens from Minswap for token swap
+    // 3. Sending tokens to multiple addresses
+    // 4. Receiving tokens from address
+    // 5. Minting new tokens
+    // 6. Burning tokens
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,7 +70,8 @@ export default function TestPage() {
         setIsLoading(true);
         try {
             const tTypes = await getTokenTypes();
-            const txData = await txInfo(txHash[0]);
+            const txData = await txInfo(transactionHash);
+            console.log("tTypes", tTypes);
             const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes);
             const fee = parseInt(txData[0].fee)
             console.log("txData[0]", txData[0], assets, tTypes, fee)
@@ -77,8 +87,8 @@ export default function TestPage() {
         setIsLoading(true);
         try {
             const tTypes = await getTokenTypes();
-            const txData = await txInfo(txHash[0]);
-            const test = await getTxDetails(rewardAddress, txData[0], assets, tTypes);
+            const txData = await txInfo(transactionHash);
+            const test = await getTxDetails(rewardAddress, txData[0], tTypes);
             const fee = parseInt(txData[0].fee)
             console.log("txData[0]", txData[0], assets, tTypes, fee)
             console.log("test", test, rewardAddress)
