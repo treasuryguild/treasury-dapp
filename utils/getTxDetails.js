@@ -8,47 +8,26 @@ const helpers = {
   hasTokensBurned: (txData) => 
     txData.assets_minted && 
     txData.assets_minted.some(asset => parseInt(asset.quantity) < 0),
-    processBurnedAssets: (txData) => {
-      const assets = [];
-      let assetIdCounter = 2;
   
-      txData.assets_minted.forEach(asset => {
-        if (parseInt(asset.quantity) < 0) {
-          assets.push({
-            amount: (parseInt(asset.quantity) * -1).toString(), // Convert to positive
-            decimals: asset.decimals || 0,
-            fingerprint: asset.fingerprint || "",
-            id: assetIdCounter.toString(),
-            name: asset.asset_name,
-            unit: `${asset.policy_id}.${asset.asset_name}`
-          });
-          assetIdCounter++;
-        }
-      });
-  
-      return { assets, assetIdCounter };
-    },
-  processAssets: (output, assetIdCounter = 2) => {
+  getAssetNameFromTTypes: (fingerprint, tTypes) => {
+    const typeEntry = tTypes.find(tType => tType.fingerprint === fingerprint);
+    return typeEntry ? typeEntry.asset_name : 'Unknown';
+  },
+
+  processAssetsExcludingAda: (output, assetIdCounter, tTypes) => {
     const assets = [];
-    const adaAmount = parseInt(output.value) / 1000000;
-    
-    assets.push({
-      amount: adaAmount.toString(),
-      decimals: 6,
-      fingerprint: "",
-      id: "1",
-      name: "ADA",
-      unit: "lovelace"
-    });
 
     if (output.asset_list && output.asset_list.length > 0) {
       output.asset_list.forEach(asset => {
+        const name = helpers.getAssetNameFromTTypes(asset.fingerprint, tTypes);
+        const decimals = asset.decimals || 0;
+        const amount = parseInt(asset.quantity) / Math.pow(10, decimals);
         assets.push({
-          amount: asset.quantity,
-          decimals: asset.decimals || 0,
+          amount: amount.toFixed(decimals),
+          decimals: decimals,
           fingerprint: asset.fingerprint || "",
           id: assetIdCounter.toString(),
-          name: asset.asset_name,
+          name: name,
           unit: `${asset.policy_id}.${asset.asset_name}`
         });
         assetIdCounter++;
@@ -57,30 +36,89 @@ const helpers = {
 
     return { assets, assetIdCounter };
   },
-  processNewlyMintedAssets: (output, assetsMinted) => {
+  
+  processAssets: (output, assetIdCounter, tTypes) => {
     const assets = [];
-    let assetIdCounter = 2;
+    const adaAmount = parseInt(output.value) / 1000000;
+    
+    assets.push({
+      amount: adaAmount.toFixed(6),
+      decimals: 6,
+      fingerprint: "",
+      id: assetIdCounter.toString(),
+      name: "ADA",
+      unit: "lovelace"
+    });
+    assetIdCounter++;
 
     if (output.asset_list && output.asset_list.length > 0) {
       output.asset_list.forEach(asset => {
-        // Check if this asset is in the assets_minted array
+        const name = helpers.getAssetNameFromTTypes(asset.fingerprint, tTypes);
+        const decimals = asset.decimals || 0;
+        const amount = parseInt(asset.quantity) / Math.pow(10, decimals);
+        assets.push({
+          amount: amount.toFixed(decimals),
+          decimals: decimals,
+          fingerprint: asset.fingerprint || "",
+          id: assetIdCounter.toString(),
+          name: name,
+          unit: `${asset.policy_id}.${asset.asset_name}`
+        });
+        assetIdCounter++;
+      });
+    }
+
+    return { assets, assetIdCounter };
+  },
+  
+  processNewlyMintedAssets: (output, assetsMinted, tTypes, assetIdCounter) => {
+    const assets = [];
+
+    if (output.asset_list && output.asset_list.length > 0) {
+      output.asset_list.forEach(asset => {
         const mintedAsset = assetsMinted.find(
           minted => minted.policy_id === asset.policy_id && minted.asset_name === asset.asset_name
         );
 
         if (mintedAsset) {
+          const name = helpers.getAssetNameFromTTypes(asset.fingerprint, tTypes);
+          const decimals = asset.decimals || 0;
+          const amount = parseInt(asset.quantity) / Math.pow(10, decimals);
           assets.push({
-            amount: asset.quantity,
-            decimals: asset.decimals || 0,
+            amount: amount.toFixed(decimals),
+            decimals: decimals,
             fingerprint: asset.fingerprint || "",
             id: assetIdCounter.toString(),
-            name: asset.asset_name,
+            name: name,
             unit: `${asset.policy_id}.${asset.asset_name}`
           });
           assetIdCounter++;
         }
       });
     }
+
+    return { assets, assetIdCounter };
+  },
+  
+  processBurnedAssets: (txData, tTypes, assetIdCounter) => {
+    const assets = [];
+
+    txData.assets_minted.forEach(asset => {
+      if (parseInt(asset.quantity) < 0) {
+        const name = helpers.getAssetNameFromTTypes(asset.fingerprint, tTypes);
+        const decimals = asset.decimals || 0;
+        const amount = (parseInt(asset.quantity) * -1) / Math.pow(10, decimals);
+        assets.push({
+          amount: amount.toFixed(decimals),
+          decimals: decimals,
+          fingerprint: asset.fingerprint || "",
+          id: assetIdCounter.toString(),
+          name: name,
+          unit: `${asset.policy_id}.${asset.asset_name}`
+        });
+        assetIdCounter++;
+      }
+    });
 
     return { assets, assetIdCounter };
   }
@@ -96,18 +134,31 @@ const transactionTypes = {
              txData.inputs.some(input => input.stake_addr === rewardAddress) &&
              helpers.findMatchingOutput(txData.outputs, rewardAddress);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
       let addressAssets = {};
       
-      // Find the output that matches our reward address (where we receive the newly minted tokens)
+      // Process the matching output (newly minted tokens)
       const matchingOutput = helpers.findMatchingOutput(txData.outputs, rewardAddress);
-      
       if (matchingOutput) {
-        const { assets } = helpers.processAssets(matchingOutput);
-        addressAssets[matchingOutput.payment_addr.bech32] = assets;
+        const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssetsExcludingAda(matchingOutput, assetIdCounter, tTypes);
+        if (assets.length > 0) {
+          addressAssets[matchingOutput.payment_addr.bech32] = assets;
+          assetIdCounter = newAssetIdCounter;
+        }
       }
 
-      return addressAssets;
+      // Process outputs sent to different stake addresses
+      txData.outputs.forEach(output => {
+        if (output.stake_addr !== rewardAddress) {
+          const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssets(output, assetIdCounter, tTypes);
+          if (assets.length > 0) {
+            addressAssets[output.payment_addr.bech32] = assets;
+            assetIdCounter = newAssetIdCounter;
+          }
+        }
+      });
+
+      return { addressAssets, assetIdCounter };
     }
   },
   TOKEN_SWAP: {
@@ -122,23 +173,22 @@ const transactionTypes = {
       const swapOutput = outputs.find(output => output.stake_addr !== rewardAddress && output.datum_hash !== null);
       return !!swapOutput;
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
       const inputs = txData.inputs;
       const outputs = txData.outputs;
       let addressAssets = {};
-      let assetIdCounter = 2;
 
       const inputAddresses = new Set(inputs.map(input => input.payment_addr.bech32));
 
       outputs.forEach(output => {
         if (!inputAddresses.has(output.payment_addr.bech32)) {
-          const { assets, newAssetIdCounter } = helpers.processAssets(output, assetIdCounter);
+          const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssets(output, assetIdCounter, tTypes);
           addressAssets[output.payment_addr.bech32] = assets;
           assetIdCounter = newAssetIdCounter;
         }
       });
 
-      return addressAssets;
+      return { addressAssets, assetIdCounter };
     }
   },
   SMART_CONTRACT_TOKEN_RECEIPT: {
@@ -148,13 +198,15 @@ const transactionTypes = {
              helpers.findMatchingOutput(txData.outputs, rewardAddress) &&
              helpers.hasCollateral(txData);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
+      let addressAssets = {};
       const matchingOutput = helpers.findMatchingOutput(txData.outputs, rewardAddress);
       if (matchingOutput) {
-        const { assets } = helpers.processAssets(matchingOutput);
-        return { [matchingOutput.payment_addr.bech32]: assets };
+        const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssets(matchingOutput, assetIdCounter, tTypes);
+        addressAssets[matchingOutput.payment_addr.bech32] = assets;
+        assetIdCounter = newAssetIdCounter;
       }
-      return {};
+      return { addressAssets, assetIdCounter };
     }
   },
   MULTI_SEND: {
@@ -167,19 +219,18 @@ const transactionTypes = {
              !helpers.isPlutusContractPresent(txData) && 
              !helpers.hasCollateral(txData);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
       let addressAssets = {};
-      let assetIdCounter = 2;
 
       txData.outputs.forEach(output => {
         if (output.stake_addr !== rewardAddress) {
-          const { assets, newAssetIdCounter } = helpers.processAssets(output, assetIdCounter);
+          const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssets(output, assetIdCounter, tTypes);
           addressAssets[output.payment_addr.bech32] = assets;
           assetIdCounter = newAssetIdCounter;
         }
       });
 
-      return addressAssets;
+      return { addressAssets, assetIdCounter };
     }
   },
   TOKEN_RECEIVE: {
@@ -192,13 +243,15 @@ const transactionTypes = {
              !helpers.isPlutusContractPresent(txData) && 
              !helpers.hasCollateral(txData);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
+      let addressAssets = {};
       const matchingOutput = helpers.findMatchingOutput(txData.outputs, rewardAddress);
       if (matchingOutput) {
-        const { assets } = helpers.processAssets(matchingOutput);
-        return { [matchingOutput.payment_addr.bech32]: assets };
+        const { assets, assetIdCounter: newAssetIdCounter } = helpers.processAssets(matchingOutput, assetIdCounter, tTypes);
+        addressAssets[matchingOutput.payment_addr.bech32] = assets;
+        assetIdCounter = newAssetIdCounter;
       }
-      return {};
+      return { addressAssets, assetIdCounter };
     }
   },
   NATIVE_SCRIPT_MINT: {
@@ -210,20 +263,20 @@ const transactionTypes = {
              txData.inputs.some(input => input.stake_addr === rewardAddress) &&
              helpers.findMatchingOutput(txData.outputs, rewardAddress);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
       let addressAssets = {};
       
-      // Find the output that matches our reward address (where we receive the newly minted tokens)
       const matchingOutputs = txData.outputs.filter(output => output.stake_addr === rewardAddress);
       
       matchingOutputs.forEach(output => {
-        const { assets } = helpers.processNewlyMintedAssets(output, txData.assets_minted);
+        const { assets, assetIdCounter: newAssetIdCounter } = helpers.processNewlyMintedAssets(output, txData.assets_minted, tTypes, assetIdCounter);
         if (assets.length > 0) {
           addressAssets[output.payment_addr.bech32] = assets;
+          assetIdCounter = newAssetIdCounter;
         }
       });
 
-      return addressAssets;
+      return { addressAssets, assetIdCounter };
     }
   },
   TOKEN_BURN: {
@@ -239,17 +292,118 @@ const transactionTypes = {
              !helpers.hasCollateral(txData) &&
              !helpers.hasNativeScriptMint(txData);
     },
-    process: (txData, rewardAddress) => {
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
       let addressAssets = {};
       
-      const { assets } = helpers.processBurnedAssets(txData);
+      const { assets, assetIdCounter: newAssetIdCounter } = helpers.processBurnedAssets(txData, tTypes, assetIdCounter);
       if (assets.length > 0) {
-        // Use the first output's payment address as the key
         const outputAddress = txData.outputs[0].payment_addr.bech32;
         addressAssets[outputAddress] = assets;
+        assetIdCounter = newAssetIdCounter;
       }
 
-      return addressAssets;
+      return { addressAssets, assetIdCounter };
+    }
+  },
+  DREP_REGISTRATION: {
+    name: "DRep Registration",
+    identify: (txData, rewardAddress) => {
+      return txData.certificates &&
+             txData.certificates.some(cert => cert.type === "drep_registration") &&
+             txData.deposit && 
+             txData.outputs.some(output => output.stake_addr === rewardAddress);
+    },
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
+      let addressAssets = {};
+      
+      const drepRegistrationOutput = txData.outputs.find(output => output.stake_addr === rewardAddress);
+      
+      if (drepRegistrationOutput && txData.deposit) {
+        const depositInAda = parseInt(txData.deposit) / 1000000; // Convert lovelace to ADA
+        const lockedAda = {
+          amount: depositInAda.toFixed(6),
+          decimals: 6,
+          fingerprint: "",
+          id: assetIdCounter.toString(),
+          name: "ADA",
+          unit: "lovelace"
+        };
+        
+        addressAssets[drepRegistrationOutput.payment_addr.bech32] = [lockedAda];
+        assetIdCounter++;
+      }
+
+      return { addressAssets, assetIdCounter };
+    }
+  },
+  VOTE_DELEGATION: {
+    name: "Vote Delegation",
+    identify: (txData, rewardAddress) => {
+      return txData.certificates &&
+             txData.certificates.some(cert => cert.type === "vote_delegation") &&
+             txData.withdrawals &&
+             txData.withdrawals.some(withdrawal => withdrawal.stake_addr === rewardAddress);
+    },
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
+      let addressAssets = {};
+      
+      const withdrawal = txData.withdrawals.find(withdrawal => withdrawal.stake_addr === rewardAddress);
+      
+      if (withdrawal) {
+        const withdrawalInAda = parseInt(withdrawal.amount) / 1000000; // Convert lovelace to ADA
+        const withdrawnAda = {
+          amount: withdrawalInAda.toFixed(6),
+          decimals: 6,
+          fingerprint: "",
+          id: assetIdCounter.toString(),
+          name: "ADA",
+          unit: "lovelace"
+        };
+        
+        // Use the first output's payment address as the receiving address for the withdrawal
+        const receiveAddress = txData.outputs[0].payment_addr.bech32;
+        addressAssets[receiveAddress] = [withdrawnAda];
+        assetIdCounter++;
+      }
+
+      return { addressAssets, assetIdCounter };
+    }
+  },
+  STAKE_REWARD_WITHDRAWAL: {
+    name: "Stake Reward Withdrawal",
+    identify: (txData, rewardAddress) => {
+      return txData.withdrawals &&
+             txData.withdrawals.length > 0 &&
+             txData.withdrawals[0].stake_addr === rewardAddress &&
+             txData.certificates.length === 0 &&
+             txData.inputs.length === 1 &&
+             txData.outputs.length === 1 &&
+             txData.inputs[0].stake_addr === txData.outputs[0].stake_addr &&
+             txData.inputs[0].stake_addr === rewardAddress;
+    },
+    process: (txData, rewardAddress, tTypes, assetIdCounter = 1) => {
+      let addressAssets = {};
+      
+      const withdrawal = txData.withdrawals[0];
+      
+      if (withdrawal) {
+        const withdrawalInAda = parseInt(withdrawal.amount) / 1000000; // Convert lovelace to ADA
+        const withdrawnAda = {
+          amount: withdrawalInAda.toFixed(6),
+          decimals: 6,
+          fingerprint: "",
+          id: assetIdCounter.toString(),
+          name: "ADA",
+          unit: "lovelace"
+        };
+        
+        // Use the output's payment address as the receiving address for the withdrawal
+        const receiveAddress = txData.outputs[0].payment_addr.bech32;
+        addressAssets[receiveAddress] = [withdrawnAda];
+        assetIdCounter++;
+      }
+
+      return { addressAssets, assetIdCounter };
     }
   },
 };
@@ -260,12 +414,15 @@ export async function getTxDetails(rewardAddress, txData, tTypes) {
 
   let transactionType = "";
   let addressAssets = {};
+  let assetIdCounter = 1;
 
   // Identify the transaction type
   for (const [type, handler] of Object.entries(transactionTypes)) {
     if (handler.identify(txData, rewardAddress)) {
       transactionType = handler.name;
-      addressAssets = handler.process(txData, rewardAddress);
+      const result = handler.process(txData, rewardAddress, tTypes, assetIdCounter);
+      addressAssets = result.addressAssets;
+      assetIdCounter = result.assetIdCounter;
       break;
     }
   }
@@ -294,5 +451,3 @@ function processUnknownTransaction(txData, rewardAddress) {
   
   return {};
 }
-
-// You can add more helper functions or transaction types here as needed
