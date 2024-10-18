@@ -21,7 +21,7 @@ export default function TestPage() {
 
     const { txHash, usedAddresses, rewardAddress, assets } = config;
     
-    const transactionHash = txHash[6]  // Change the index to test different transaction types
+    const transactionHash = txHash[9]  // Change the index to test different transaction types
     // 0. Convert WMT to WMTX with Smart contract
     // 1. Sending tokens to Minswap for token swap
     // 2. Receiving tokens from Minswap for token swap
@@ -29,6 +29,9 @@ export default function TestPage() {
     // 4. Receiving tokens from address
     // 5. Minting new tokens
     // 6. Burning tokens
+    // 7. Drep registration
+    // 8. Drep delegation
+    // 9. Reward Withdrawal
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
