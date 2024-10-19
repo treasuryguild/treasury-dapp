@@ -1,5 +1,4 @@
-// ../pages/test.js
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from '../lib/supabaseClient';
 import { getTxInfo } from '../utils/getTxInfo';
 import { getTxDetails } from '../utils/getTxDetails';
@@ -14,50 +13,42 @@ let config = {
     assets: []
 };
 
-export default function TestPage() {
-    const [session, setSession] = useState(null)
-    const [isAdmin, setIsAdmin] = useState(false)
-    const [isLoading, setIsLoading] = useState(false);
+const transactionTypes = [
+    "Convert WMT to WMTX with Smart contract",
+    "Sending tokens to Minswap for token swap",
+    "Receiving tokens from Minswap for token swap",
+    "Sending tokens to multiple addresses",
+    "Receiving tokens from address",
+    "Minting new tokens",
+    "Burning tokens",
+    "Drep registration",
+    "Drep delegation",
+    "Reward Withdrawal"
+];
 
-    const { txHash, usedAddresses, rewardAddress, assets } = config;
-    
-    const transactionHash = txHash[9]  // Change the index to test different transaction types
-    // 0. Convert WMT to WMTX with Smart contract
-    // 1. Sending tokens to Minswap for token swap
-    // 2. Receiving tokens from Minswap for token swap
-    // 3. Sending tokens to multiple addresses
-    // 4. Receiving tokens from address
-    // 5. Minting new tokens
-    // 6. Burning tokens
-    // 7. Drep registration
-    // 8. Drep delegation
-    // 9. Reward Withdrawal
+export default function TestPage() {
+    const [session, setSession] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session)
-            if (session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN) {
-                setIsAdmin(true)
-            }
-        })
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session)
-            if (session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN) {
-                setIsAdmin(true)
-            } else {
-                setIsAdmin(false)
-            }
-        })
-        return () => subscription.unsubscribe()
-    }, [])
+            setSession(session);
+            setIsAdmin(session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            setIsAdmin(session?.user?.id === process.env.NEXT_PUBLIC_TREASURY_ADMIN);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
     
     useEffect(() => {
         if (isAdmin) {
-            console.log("isAdmin", isAdmin)
             try {
-              config = require('../public/config.json');
+                config = require('../public/config.json');
             } catch (error) {
                 console.warn("Config file not found. Using default empty values.");
             }
@@ -69,67 +60,58 @@ export default function TestPage() {
         return response.data;
     }
 
-    async function checkOldTransactionType() {
+    async function checkTransactionType(index, isOld) {
         setIsLoading(true);
         try {
+            const { txHash, usedAddresses, rewardAddress, assets } = config;
             const tTypes = await getTokenTypes();
-            const txData = await txInfo(transactionHash);
-            console.log("tTypes", tTypes);
-            const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes);
-            const fee = parseInt(txData[0].fee)
-            console.log("txData[0]", txData[0], assets, tTypes, fee)
-            console.log("result", result)
+            const txData = await txInfo(txHash[index]);
+            
+            if (isOld) {
+                const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes);
+                console.log("Old Method Result:", result);
+            } else {
+                const result = await getTxDetails(rewardAddress, txData[0], tTypes);
+                console.log("New Method Result:", result);
+            }
+            
+            console.log("Transaction Data:", txData[0]);
+            console.log("Fee:", parseInt(txData[0].fee));
         } catch (error) {
-            console.error("Error in checkOldTransactionType:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    async function checkNewTransactionType() {
-        setIsLoading(true);
-        try {
-            const tTypes = await getTokenTypes();
-            const txData = await txInfo(transactionHash);
-            const test = await getTxDetails(rewardAddress, txData[0], tTypes);
-            const fee = parseInt(txData[0].fee)
-            console.log("txData[0]", txData[0], assets, tTypes, fee)
-            console.log("test", test, rewardAddress)
-        } catch (error) {
-            console.error("Error in checkNewTransactionType:", error);
+            console.error(`Error in checking transaction type (${isOld ? 'Old' : 'New'} method):`, error);
         } finally {
             setIsLoading(false);
         }
     }
 
     if (!isAdmin) {
-        return (
-            <div>
-                <h1>404 - Page Not Found</h1>
-            </div>
-        );
+        return <h1>404 - Page Not Found</h1>;
     }
 
     return (
         <div>
-            <h1>Test Page</h1>
-            <div>
-                <button
-                    onClick={checkOldTransactionType}
-                    disabled={isLoading}
-                    className="button"
-                >
-                    Check Old Transaction Type
-                </button>
-                <button
-                    onClick={checkNewTransactionType}
-                    disabled={isLoading}
-                    className="button"
-                >
-                    Check New Transaction Type
-                </button>
-                {isLoading && <p className="loading">Loading...</p>}
-            </div>
+            <h1>Transaction Type Test Page</h1>
+            {transactionTypes.map((type, index) => (
+                <div key={index} style={{ marginBottom: '20px' }}>
+                    <h3>{type}</h3>
+                    <button
+                        onClick={() => checkTransactionType(index, true)}
+                        disabled={isLoading}
+                        className="button"
+                    >
+                        Check Old Method
+                    </button>
+                    <button
+                        onClick={() => checkTransactionType(index, false)}
+                        disabled={isLoading}
+                        className="button"
+                        style={{ marginLeft: '10px' }}
+                    >
+                        Check New Method
+                    </button>
+                </div>
+            ))}
+            {isLoading && <p className="loading">Loading...</p>}
         </div>
     );
 }
