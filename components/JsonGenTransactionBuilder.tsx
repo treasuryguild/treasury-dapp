@@ -67,6 +67,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
           }
   
           const outputs = data.outputs;
+          console.log('outputs:', outputs);
           const tokenRegistry = tx.raw_data.tokenRegistry;
   
           // Build registryMap
@@ -83,7 +84,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
           for (const address in outputs) {
             const outputsArray = outputs[address];
             outputsArray.forEach((output: any) => {
-              if (output.policyId.toUpperCase() !== 'ADA') {
+              if (output.policyId.toUpperCase() !== '') {
                 const tokenKey = `${output.policyId}.${output.assetName}`;
                 const tokenInfo = registryMap[tokenKey];
                 if (tokenInfo) {
@@ -231,7 +232,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
                 for (const address in outputs) {
                   const outputsArray = outputs[address];
                   outputsArray.forEach((output: any) => {
-                    if (output.policyId.toUpperCase() !== 'ADA') {
+                    if (output.policyId.toUpperCase() !== '') {
                       const tokenKey = `${output.policyId}.${output.assetName}`;
                       const tokenInfo = registryMap[tokenKey];
                       if (tokenInfo) {
