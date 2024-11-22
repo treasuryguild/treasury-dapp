@@ -305,7 +305,10 @@ const uploadToIpfs = async () => {
       assetQuantity: "100000",
       image: image,
       imageUrl: "ipfs://QmbvVUVGxeCREbJ7i79n1ncN152bexBbfsofi2C4P2ZLLF/0",
-      description: "Influence Tokens enable SNet Ambassador Governance participation"
+      description: [
+        "Received for deciding on the SingularityNET Ambassador Program",
+        "budget allocations"
+      ]
     };
     await mintTokens(preTokenData);
   };
