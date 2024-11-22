@@ -30,6 +30,7 @@ function MintFungibleTokens() {
   const [contributorWallet, setContributorWallet] = useState('');
   const [mintOption, setMintOption] = useState('existing'); 
   const [allowedTokens, setAllowedTokens] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
 
   useEffect(() => {
     const checkProjectPermissions = async () => {
@@ -174,7 +175,7 @@ const uploadToIpfs = async () => {
       "website": tokenData.website,
       "image": imageToUse,
       "mediaType": "image/jpg",
-      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": tokenData.description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
     } : nftType === 'single' ? {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
@@ -182,7 +183,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
-      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
     } : {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
@@ -190,7 +191,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "referenceHash": generateHash(contributionDetails),
       "mediaType": "image/jpg",
-      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
 
     const assetMetadata2: AssetMetadata = {
@@ -200,7 +201,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
-      "description": "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
 
     //If IPFS api ever stops working here are some urls
@@ -269,7 +270,8 @@ const uploadToIpfs = async () => {
       website: website,
       assetQuantity: assetQuantity,
       image: image,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      description: description
     };
     await mintTokens(tokenData);
   };
@@ -285,7 +287,8 @@ const uploadToIpfs = async () => {
       website: "https://treasuryguild.io",
       assetQuantity: "1000000",
       image: image,
-      imageUrl: "ipfs://QmSdLfKdaVGL4xgsi5oVMaYLFHx1mAVePvsE63Ncccc3RZ/0"
+      imageUrl: "ipfs://QmSdLfKdaVGL4xgsi5oVMaYLFHx1mAVePvsE63Ncccc3RZ/0",
+      description: "This Token was minted using Mesh.js (https://meshjs.dev/)."
     };
     await mintTokens(preTokenData);
   };
@@ -299,9 +302,10 @@ const uploadToIpfs = async () => {
       ticker: "INF",
       decimals: 0,
       website: "https://treasuryguild.com",
-      assetQuantity: "10000",
+      assetQuantity: "100000",
       image: image,
-      imageUrl: "ipfs://QmbvVUVGxeCREbJ7i79n1ncN152bexBbfsofi2C4P2ZLLF/0"
+      imageUrl: "ipfs://QmbvVUVGxeCREbJ7i79n1ncN152bexBbfsofi2C4P2ZLLF/0",
+      description: "Influence Tokens enable SNet Ambassador Governance participation"
     };
     await mintTokens(preTokenData);
   };
@@ -395,6 +399,14 @@ const uploadToIpfs = async () => {
                 </div>
               )}
               {file && (<div>Image Uploaded Successfully</div>)}
+              <label className={styles.input}>Description:</label>
+              <textarea 
+                className={styles.textarea}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter a description for your token"
+                rows={4}
+              />
               <button className={styles.submit} type="button" onClick={mintNative}>Mint</button>
             </>
           )}
