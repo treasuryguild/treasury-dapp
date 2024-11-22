@@ -30,7 +30,8 @@ function MintFungibleTokens() {
   const [contributorWallet, setContributorWallet] = useState('');
   const [mintOption, setMintOption] = useState('existing'); 
   const [allowedTokens, setAllowedTokens] = useState<string[]>([]);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState<string[]>([]);
+  const [descriptionInput, setDescriptionInput] = useState('');
 
   useEffect(() => {
     const checkProjectPermissions = async () => {
@@ -77,6 +78,36 @@ function MintFungibleTokens() {
     const value: any = event.target.value;
     setImageUrl(value.match(/.{1,55}/g) || []);
     setImage([]); // Clear the image when a URL is entered
+  };
+
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    setDescriptionInput(value);
+    // Split into chunks of 55 characters, preserving whole words where possible
+    const chunks: string[] = [];
+    let remainingText = value;
+    
+    while (remainingText.length > 0) {
+      if (remainingText.length <= 55) {
+        chunks.push(remainingText);
+        break;
+      }
+      
+      let chunk = remainingText.substr(0, 55);
+      let splitIndex = 55;
+      
+      // Try to break at the last space within the 55-character limit
+      const lastSpace = chunk.lastIndexOf(' ');
+      if (lastSpace > 0) {
+        splitIndex = lastSpace + 1;
+        chunk = remainingText.substr(0, splitIndex - 1);
+      }
+      
+      chunks.push(chunk);
+      remainingText = remainingText.substr(splitIndex).trim();
+    }
+    
+    setDescription(chunks);
   };
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,7 +206,7 @@ const uploadToIpfs = async () => {
       "website": tokenData.website,
       "image": imageToUse,
       "mediaType": "image/jpg",
-      "description": tokenData.description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description":  tokenData.description.length > 0 ? tokenData.description : ["This Token was minted using Mesh.js (https://meshjs.dev/)."]
     } : nftType === 'single' ? {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
@@ -183,7 +214,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
-      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description.length > 0 ? description : ["This Token was minted using Mesh.js (https://meshjs.dev/)."]
     } : {
       "name": `ContributorNFT.${tokenName}`,
       "website": website,
@@ -191,7 +222,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "referenceHash": generateHash(contributionDetails),
       "mediaType": "image/jpg",
-      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description.length > 0 ? description : ["This Token was minted using Mesh.js (https://meshjs.dev/)."]
     };
 
     const assetMetadata2: AssetMetadata = {
@@ -201,7 +232,7 @@ const uploadToIpfs = async () => {
       "projectTitle": projectTitle,
       "contributionDetails": contributionDetails,
       "mediaType": "image/jpg",
-      "description": description || "This Token was minted using Mesh.js (https://meshjs.dev/)."
+      "description": description.length > 0 ? description : ["This Token was minted using Mesh.js (https://meshjs.dev/)."]
     };
 
     //If IPFS api ever stops working here are some urls
@@ -405,11 +436,21 @@ const uploadToIpfs = async () => {
               <label className={styles.input}>Description:</label>
               <textarea 
                 className={styles.textarea}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={descriptionInput}
+                onChange={handleDescriptionChange}
                 placeholder="Enter a description for your token"
                 rows={4}
               />
+              {description.length > 0 && (
+                <div className={styles.chunks}>
+                  <p>Description chunks:</p>
+                  {description.map((chunk, index) => (
+                    <div key={index} className={styles.chunk}>
+                      {chunk} ({chunk.length} characters)
+                    </div>
+                  ))}
+                </div>
+              )}
               <button className={styles.submit} type="button" onClick={mintNative}>Mint</button>
             </>
           )}
