@@ -12,9 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const webhookUrls: { [key: string]: string | undefined } = {
     '3ynval': process.env.SNET_DISCORD_WEBHOOK_URL,
     't49ftp': process.env.GG_DISCORD_WEBHOOK_URL,
-    'msx826': process.env.CGO_DISCORD_WEBHOOK_URL,
     'm45kgs': process.env.SWARM_DISCORD_WEBHOOK_URL,
-    'pqfqwr': process.env.METH_DISCORD_WEBHOOK_URL,
     '94cqxx': process.env.HIVE_DISCORD_WEBHOOK_URL,
     'gfyvd3': process.env.HIVE_DISCORD_WEBHOOK_URL,
     'l0lw53': process.env.SWARM_DISCORD_WEBHOOK_URL,
