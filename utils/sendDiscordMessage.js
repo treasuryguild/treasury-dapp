@@ -1,4 +1,4 @@
-//https://lambent-kelpie-e8b15c.netlify.app/api/discord
+// ../utils/sendDiscordMessage.js
 import axios from 'axios';
 
 export async function sendDiscordMessage(myVariable) {
@@ -10,9 +10,13 @@ export async function sendDiscordMessage(myVariable) {
   let color = 0xeb3477
   let tokenRate = ''
   if (txtype === 'Incoming') {
-    txtype2 = 'Amount received'
-    wallet = myVariable.incomingwallet
-    color = 0x16fa3c
+    txtype2 = 'Amount received';
+    if (myVariable.incomingwallet) {
+      wallet = myVariable.incomingwallet;
+    } else {
+      console.warn('Warning: Incoming transaction detected but incomingwallet is missing. Using default wallet.');
+    }
+    color = 0x16fa3c;
   } else if (txtype === 'Outgoing') {
     txtype2 = 'Amount paid'
     color = 0xeb3477
@@ -42,7 +46,7 @@ export async function sendDiscordMessage(myVariable) {
   
   // Determine details formatter based on the extra_fields value
   const detailsFormatter = (myVariable) => {
-    let detailsBase = '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n' + `**[Wallet Balance](https://pool.pm/${myVariable.wallet})**` + '\n' + '```css\n' + `${myVariable.balanceString}` + '\n```';
+    let detailsBase = '```css\n' + `${myVariable.totalAmountsString}` + '\n```' + '\n' + `**[Wallet Balance](https://pool.pm/${wallet})**` + '\n' + '```css\n' + `${myVariable.balanceString}` + '\n```';
     if (extra_fields === 'quarterlyBudgets') {
       detailsBase += '\n' + `**Quarterly Budget Balance** ` + '```css\n' + `${myVariable.monthly_wallet_budget_string}` + '\n```';
     }
