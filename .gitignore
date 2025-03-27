@@ -37,3 +37,6 @@ next-env.d.ts
 .env
 
 public/config.json
+
+/.cursor
+/memory-bank
