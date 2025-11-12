@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export default async function handler(req, res) {
   const SHEET_ID = process.env.NEXT_PUBLIC_GOOGLE_SHEET;
-  const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+  const API_KEY = process.env.GOOGLE_API_KEY;
   const SERVER_API_KEY = process.env.SERVER_API_KEY;
   const API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/'Form responses 1'?key=${API_KEY}`;
 
