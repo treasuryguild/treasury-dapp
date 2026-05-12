@@ -1,40 +1,29 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { supabase } from '../../lib/supabaseClient'
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  res.status(200).json({
-    "tickerApiNames":{"ADA":"cardano",
-      "gimbal":"",
-      "AGIX":"singularitynet",
-      "NTX":"nunet",
-      "COPI":"cornucopias",
-      "RJV":"rejuve-ai",
-      "DJED":"djed",
-      "SHEN":"shen",
-      "WMT":"world-mobile-token"
-    },
-    "tickerFingerprints":{"ADA":"",
-      "gimbal":"asset1seuf4pwhwdxqtrsz4axfwtrp94gkdlhcyat9nn",
-      "AGIX":"asset1wwyy88f8u937hz7kunlkss7gu446p6ed5gdfp6",
-      "NTX":"nunet",
-      "COPI":"asset1c6uau7pufsxhnm7eg0eerhu4snwfd9sn7kvvvz",
-      "RJV":"rejuve-ai",
-      "DJED":"djed",
-      "SHEN":"shen",
-      "WMT":"world-mobile-token",
-    },
-    "tickerDecimals":{"ADA":6,
-      "gimbal":6,
-      "AGIX":8,
-      "NTX":6,
-      "COPI":6,
-      "RJV":6,
-      "DJED":6,
-      "SHEN":6,
-      "WMT":6
+  const { data, error } = await supabase
+    .from('tokens')
+    .select('ticker, fingerprint, decimals, coingecko_name')
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  const tickerApiNames: Record<string, string> = {}
+  const tickerFingerprints: Record<string, string> = {}
+  const tickerDecimals: Record<string, number> = {}
+
+  for (const token of data) {
+    if (token.ticker) {
+      tickerApiNames[token.ticker] = token.coingecko_name ?? ''
+      tickerFingerprints[token.ticker] = token.fingerprint ?? ''
+      tickerDecimals[token.ticker] = token.decimals ?? 0
     }
-  })
+  }
+
+  res.status(200).json({ tickerApiNames, tickerFingerprints, tickerDecimals })
 }
