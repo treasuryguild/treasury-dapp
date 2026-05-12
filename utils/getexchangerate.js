@@ -1,9 +1,20 @@
 import axios from "axios";
+import { get, set } from "./cache";
 
 export async function getExchangeRate(wallettokens) {
-    //console.log("Running API calls to get exchange rates")
-    const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
-    let tickerDetails = await axios.get(tickerAPI)
+    const tokenNames = wallettokens.map(t => t.name);
+    const cached = get('rates');
+    if (cached && JSON.stringify(cached.tokens) === JSON.stringify(tokenNames)) {
+        console.log('[ExchangeRate] Serving from cache', cached.data);
+        if (cached.data['ADA'] !== undefined) {
+            const xrates = document.getElementById('xrate');
+            if (xrates) xrates.value = cached.data['ADA'];
+        }
+        return cached.data;
+    }
+
+    console.log('[ExchangeRate] Fetching from CoinGecko...');
+    let tickerDetails = await axios.get('/api/tickers')
     let tickers = tickerDetails.data.tickerApiNames;
     let tokenExchangeRates = {};
     for (let i in wallettokens) {
@@ -11,7 +22,6 @@ export async function getExchangeRate(wallettokens) {
         try {
             const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tickers[wallettokens[i].name]}&vs_currencies=usd`)
             const rate = response.data[tickers[wallettokens[i].name]].usd;
-            //console.log("Exchange rate response.data", response.data)
             if (rate !== undefined) {
               tokenExchangeRates[wallettokens[i].name] = parseFloat(rate).toFixed(3)
               if (wallettokens[i].name == "ADA") {
@@ -22,12 +32,13 @@ export async function getExchangeRate(wallettokens) {
               tokenExchangeRates[wallettokens[i].name] = 0.00
             }
           } catch (error) {
-            //console.log(`Failed to get exchange rate for ${wallettokens[i].name}: `, error);
             if (wallettokens[i].name != "ADA") {
               tokenExchangeRates[wallettokens[i].name] = 0.00
             }
         }
       }
     }
-  return tokenExchangeRates;
+    console.log('[ExchangeRate] Fetched from CoinGecko', tokenExchangeRates);
+    set('rates', tokenExchangeRates, tokenNames);
+    return tokenExchangeRates;
 }

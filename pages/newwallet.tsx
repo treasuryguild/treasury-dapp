@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import axios from 'axios';
 import { getGroups } from '../utils/getGroups';
 import { newWallet } from '../utils/newWallet';
+import { get, set } from '../utils/cache';
 
 type Group = {
   group_id: string;
@@ -25,9 +26,6 @@ type ProjectData = {
 
 function Newwallet() {
 
-  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
-  //const tickerAPI = 'https://community-treasury-dapp.netlify.app/api/tickers'
-  
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const { connected, wallet } = useWallet();
@@ -60,7 +58,7 @@ function Newwallet() {
     let tokenAmounts: any[] = []
     let finalTokenAmount = 0
     let tokenUnits: any[] = []
-    let tickerDetails = await axios.get(tickerAPI)
+    let tickerDetails = await axios.get('/api/tickers')
     let walletBalance = await wallet.getBalance();
     const assets = await wallet.getAssets();
     let totalAmount = parseFloat(walletBalance[0].quantity).toFixed(6)
@@ -114,7 +112,7 @@ function Newwallet() {
     } catch (error) {
       console.error('An error occurred while signing the transaction:', error);
       //try api
-      await axios.get(tickerAPI).then(response => {
+      await axios.get('/api/tickers').then(response => {
         const details = response.data;
         for (let i in response.data.tickerApiNames) {
             for (let j in updatedTokens) {
@@ -140,7 +138,20 @@ function Newwallet() {
   }
 
   async function getEchangeRate(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    let tickerDetails = await axios.get(tickerAPI)
+    const tokenNames = wallettokens.map(t => t.name);
+    const cached = get('rates');
+    if (cached && JSON.stringify(cached.tokens) === JSON.stringify(tokenNames)) {
+      console.log('[ExchangeRate] Serving from cache', cached.data);
+      if (cached.data['ADA'] !== undefined) {
+        const xrates: HTMLElement | any = document.getElementById('xrate');
+        if (xrates) xrates.value = cached.data['ADA'];
+      }
+      setTokenRates(cached.data);
+      return;
+    }
+
+    console.log('[ExchangeRate] Fetching from CoinGecko...');
+    let tickerDetails = await axios.get('/api/tickers')
     let tickers = tickerDetails.data.tickerApiNames;
     let tokenExchangeRates: any = {}
     for (let i in wallettokens) {
@@ -162,8 +173,9 @@ function Newwallet() {
         tokenExchangeRates[wallettokens[i].name] = 0.00
       }
     }
+    set('rates', tokenExchangeRates, tokenNames);
     setTokenRates(tokenExchangeRates)
-  }  
+  }
 
   async function commitFile(filePath: string, fileContent: string) {
     const commitMessage = 'Transaction';

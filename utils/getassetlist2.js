@@ -1,7 +1,6 @@
 import axios from "axios";
 
 export async function getAssetList2(tokens, wallet) {
-    const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
     let updatedTokens = tokens
     try {
       await axios.get(`https://pool.pm/wallet/${wallet}`).then(response => {
@@ -22,7 +21,7 @@ export async function getAssetList2(tokens, wallet) {
     } catch (error) {
       console.error('An error occurred while signing the transaction:', error);
       //try api
-      await axios.get(tickerAPI).then(response => {
+      await axios.get('/api/tickers').then(response => {
         const details = response.data;
         for (let i in response.data.tickerApiNames) {
             for (let j in updatedTokens) {

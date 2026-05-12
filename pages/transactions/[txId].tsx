@@ -11,7 +11,6 @@ import { getLabels } from '../../utils/getLabels'
 import { updateTxInfo } from '../../utils/updateTxInfo'
 import { checkTxStatus } from '../../utils/checkTxStatus'
 import { getAssetList } from '../../utils/getassetlist'
-import { get, set } from '../../utils/cache'
 import { getExchangeRate } from '../../utils/getexchangerate'
 //import { sendDiscordMessage } from '../../utils/sendDiscordMessage'
 //import { commitFile } from '../../utils/commitFile'
@@ -54,7 +53,6 @@ let projectInfo2: any;
 let metadata: any = {};
 
 function Txid() {
-  const tickerAPI = `${process.env.NEXT_PUBLIC_TICKER_API}`
   const router = useRouter();
   const { txId } = router.query;
   const { connected, wallet } = useWallet();
@@ -582,30 +580,10 @@ function processMetadata(metadata: Metadata): string {
 }
 
   async function getTokenRates(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
-    // Extract token names from wallettokens
-    const tokenNames = wallettokens.map(token => token.name);
-    const cachedData = get('rates');
-  
-    let tokenExchangeRates:any = {};
-    
-    // If we have cachedData and the token names have not changed, use the cached rates
-    if (cachedData && JSON.stringify(cachedData.tokens) === JSON.stringify(tokenNames)) {
-      tokenExchangeRates = cachedData.data;
-      setTokenRates(tokenExchangeRates);
-      if (tokenExchangeRates['ADA'] !== undefined) {
-        let xrates:any = document.getElementById('xrate');
-        xrates.value = tokenExchangeRates['ADA'];
-      }
-    } else {
-      // If the token names have changed, or we don't have cached data, fetch the rates
-      tokenExchangeRates = await getExchangeRate(wallettokens);
-      set('rates', tokenExchangeRates, tokenNames); // Save the new rates and token names in cache
-      setTokenRates(tokenExchangeRates);
-    }
-    txdata = {...txdata,
-      tokenRates: tokenExchangeRates}
-    //console.log("tokenrates", tokenExchangeRates, wallettokens);
-  }  
+    const tokenExchangeRates = await getExchangeRate(wallettokens);
+    setTokenRates(tokenExchangeRates);
+    txdata = {...txdata, tokenRates: tokenExchangeRates}
+  }
 
   async function txInfo(txid: any) {
     const response = await axios.post('/api/getTxInfo', { txid });
