@@ -542,8 +542,14 @@ function TxBuilder() {
     return `${year}-${quarter}`;
   }
 
-  async function executeTransaction(assetsPerAddress: any, adaPerAddress: any, metaData: any): Promise<string> {
+  async function executeTransaction(
+    assetsPerAddress: any,
+    adaPerAddress: any,
+    metaData: any,
+    afterTransactionRecorded?: (txHash: string) => Promise<void> | void
+  ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      let submittedTxId = '';
       try {
         let customFilePath = '';
         let customFileContent = '';
@@ -567,6 +573,7 @@ function TxBuilder() {
         if (!txid) {
           throw new Error("Failed to get transaction hash");
         }
+        submittedTxId = txid;
 
         setDoneTxHash(txid);
 
@@ -591,12 +598,16 @@ function TxBuilder() {
 
         customFilePath = `Transactions/${(myVariable.group).replace(/\s/g, '-')}/${pType}/${(myVariable.project).replace(/\s/g, '-')}/bulkTransactions/${new Date().getTime().toString()}-${(myVariable.group).replace(/\s/g, '-')}-bulkTransaction.json`;
 
-        resolve(txid);
         await updateTxInfo(updatedVariable, newMetaData, txid, customFilePath);
+        if (afterTransactionRecorded) {
+          await afterTransactionRecorded(txid);
+        }
+        resolve(txid);
         router.push(`/done/${txid}`);
       } catch (error) {
         console.error("Error processing transaction:", error);
-        alert(error instanceof Error ? error.message : "An unknown error occurred");
+        const message = error instanceof Error ? error.message : "An unknown error occurred";
+        alert(submittedTxId ? `${message}. Transaction hash: ${submittedTxId}` : message);
         reject(error);
       } finally {
         setLoading(false);

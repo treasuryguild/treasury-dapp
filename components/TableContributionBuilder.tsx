@@ -18,7 +18,8 @@ export type ContributionBuilderProps = {
   executeTransaction: (
     assetsPerAddress: any,
     adaPerAddress: any,
-    metaData: any
+    metaData: any,
+    afterTransactionRecorded?: (txHash: string) => Promise<void> | void
   ) => Promise<string>;
   onContributionsUpdate: (contributions: Contribution[]) => void;
   onContributorWalletsUpdate: (contributorWallets: any[]) => void;

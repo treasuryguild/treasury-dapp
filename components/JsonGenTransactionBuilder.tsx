@@ -7,7 +7,8 @@ export type JsonGenTransactionBuilderProps = {
   executeTransaction: (
     assetsPerAddress: any,
     adaPerAddress: any,
-    metaData: any
+    metaData: any,
+    afterTransactionRecorded?: (txHash: string) => Promise<void> | void
   ) => Promise<string>;
   walletTokens: any;
   tokenRates: any;
@@ -111,7 +112,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
     }
   }, [transactions]);  
 
-  const updateRewardStatus = async (id: number, transactionHash: string) => {
+  const updateRewardStatus = async (id: string, transactionHash: string) => {
     const { error } = await supabase
       .from('tx_json_generator_data')
       .update({ reward_status: true, transaction_id: transactionHash })
@@ -119,6 +120,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
 
     if (error) {
       console.error('Error updating reward status:', error);
+      throw error;
     } else {
       console.log('Reward status and transaction ID updated successfully');
       // Refresh the transactions list
@@ -126,7 +128,7 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
     }
   };
 
-  const handleBuildTransaction = async (id: number, processedData: any) => {
+  const handleBuildTransaction = async (id: string, processedData: any) => {
     setLoading(true);
     try {
       let data;
@@ -165,12 +167,14 @@ const JsonGenTransactionBuilder: React.FC<JsonGenTransactionBuilderProps> = ({
         }
       }
 
-      const txHash = await executeTransaction(assetsPerAddress, adaPerAddress, metadata['674']);
+      const txHash = await executeTransaction(
+        assetsPerAddress,
+        adaPerAddress,
+        metadata['674'],
+        (transactionHash) => updateRewardStatus(id, transactionHash)
+      );
       console.log('Transaction successful:', txHash);
-      
-      // Update the reward status and transaction_id in the database
-      await updateRewardStatus(id, txHash);
-      
+
       alert('Transaction built successfully!');
     } catch (error) {
       console.error('Transaction failed:', error);
