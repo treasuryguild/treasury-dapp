@@ -289,6 +289,12 @@ function TxBuilder() {
     return '';
   }
 
+  function getYearMonthFromContributionDate(date: string): string {
+    const [, month, year] = date.split(".");
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    return `${fullYear}-${month.padStart(2, '0')}`;
+  }
+
   function getAggregatedAmounts(metaData: any) {
     let aggregatedAGIXPerMonth: any = {};
 
@@ -307,7 +313,7 @@ function TxBuilder() {
         date = `${currentDay}.${currentMonth}.${currentYear}`;
       }
 
-      const yearMonth = `20${date.split(".")[2]}-${date.split(".")[1].padStart(2, '0')}`;
+      const yearMonth = getYearMonthFromContributionDate(date);
       const contributors = contribution.contributors;
 
       for (let contributor in contributors) {
@@ -341,7 +347,7 @@ function TxBuilder() {
         date = `${currentDay}.${currentMonth}.${currentYear}`;
       }
 
-      const yearMonth = `20${date.split(".")[2]}-${date.split(".")[1].padStart(2, '0')}`;
+      const yearMonth = getYearMonthFromContributionDate(date);
       const contributors = contribution.contributors;
 
       // Initialize the yearMonth key if it doesn't already exist
