@@ -7,7 +7,8 @@ export type TransactionBuilderProps = {
   executeTransaction: (
     assetsPerAddress: any,
     adaPerAddress: any,
-    metaData: any
+    metaData: any,
+    afterTransactionRecorded?: (txHash: string) => Promise<void> | void
   ) => Promise<string>;
   walletTokens: any;
   tokenRates: any;
