@@ -90,10 +90,10 @@ if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
         if (usedAddresses.includes(output.payment_addr.bech32)) {
           totalOutputValue += parseFloat(output.value);
           let difference = 0.00
-          if (isInternalTransfer && !(certificates && certificates.length > 0 && certificates[0].type === 'delegation')) {
+          if (isInternalTransfer && !(certificates && certificates.length > 0 && certificates[0]?.type === 'delegation')) {
             transactionType = "Internal Transfer";
             difference = parseFloat(txData.fee);
-          } else if (isInternalTransfer && (certificates && certificates.length > 0 && certificates[0].type === 'delegation')) {
+          } else if (isInternalTransfer && (certificates && certificates.length > 0 && certificates[0]?.type === 'delegation')) {
             transactionType = "Staking";
             difference = parseFloat(txData.fee);
           } else {
@@ -172,8 +172,8 @@ if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
           let assetName;
           let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
         
-          if (assetFoundInAssets && assetFoundInAssets.assetName) {
-            assetName = assetFoundInAssets.assetName;
+          if (assetFoundInAssets && (assetFoundInAssets.assetName || assetFoundInAssets.name)) {
+            assetName = assetFoundInAssets.assetName || assetFoundInAssets.name;
           } else {
             assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
           }
@@ -205,8 +205,8 @@ if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
           let assetName;
           let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
         
-          if (assetFoundInAssets && assetFoundInAssets.assetName) {
-            assetName = assetFoundInAssets.assetName;
+          if (assetFoundInAssets && (assetFoundInAssets.assetName || assetFoundInAssets.name)) {
+            assetName = assetFoundInAssets.assetName || assetFoundInAssets.name;
           } else {
             assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
           }
@@ -265,8 +265,8 @@ if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
           let assetName;
           let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
         
-          if (assetFoundInAssets && assetFoundInAssets.assetName) {
-            assetName = assetFoundInAssets.assetName;
+          if (assetFoundInAssets && (assetFoundInAssets.assetName || assetFoundInAssets.name)) {
+            assetName = assetFoundInAssets.assetName || assetFoundInAssets.name;
           } else {
             assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
           }
@@ -331,8 +331,8 @@ if (outputs.length === 0 && totalInputValue === parseFloat(txData.fee)) {
           let assetName;
           let assetFoundInAssets = assets.find(asset => asset.fingerprint === assetItem.fingerprint);
         
-          if (assetFoundInAssets && assetFoundInAssets.assetName) {
-            assetName = assetFoundInAssets.assetName;
+          if (assetFoundInAssets && (assetFoundInAssets.assetName || assetFoundInAssets.name)) {
+            assetName = assetFoundInAssets.assetName || assetFoundInAssets.name;
           } else {
             assetName = getAssetNameFromTTypes(assetItem.fingerprint, tTypes);
           }
