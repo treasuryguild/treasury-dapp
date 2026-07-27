@@ -25,6 +25,7 @@ interface Token {
   fingerprint: string;
   decimals: number;
   tokenType: string;
+  policy_id?: string;
 }
 
 interface Amounts {
@@ -74,19 +75,20 @@ function Txid() {
 
   useEffect(() => {
     const executeAsync = async () => {
-      if (connected) {
-        await assignTokens();
-        //await checkTransactionType();
+      if (connected && router.isReady && txId) {
+        try {
+          await assignTokens();
+        } catch (error) {
+          console.error('Failed to load transaction:', error);
+          setLoading(false);
+        }
       }
     };
   
     executeAsync();
-  }, [connected]);
+  }, [connected, router.isReady, txId]);
   
 
-  useEffect(() => {
-    console.log("Changed")
-  }, [walletTokens]);
 
   if (router.isFallback) {
     return <div>Loading...</div>;
@@ -340,18 +342,29 @@ function processMetadata(metadata: Metadata): string {
   return '';
 }
   
-  async function checkTransactionType() {
+  async function checkTransactionType(usedAddresses: string[], assetList: Token[]) {
     if (connected) { 
       const databaseLabels: any = await getLabels();
       const output: OutputLabels[] = transformArrayToObject(databaseLabels);
       //console.log(databaseLabels, output)
       setLabelOptions(output);
       const tTypes = await getTokenTypes();
-      const usedAddresses = await wallet.getUsedAddresses();
-      //const rewardAddress = await wallet.getRewardAddresses();
-      const assets = await wallet.getAssets();
+      // Use Koios asset list instead of wallet.getAssets() to avoid CIP-30 InternalError (-2)
+      const assets = assetList
+        .filter((a) => a.unit !== 'lovelace' && a.fingerprint)
+        .map((a) => ({
+          fingerprint: a.fingerprint,
+          assetName: a.name,
+          unit: a.unit,
+          quantity: a.amount,
+          policyId: a.policy_id,
+        }));
       const txData = await txInfo(txId);
-      //const test = await getTxDetails(rewardAddress, txData[0], assets, tTypes) as GetTxInfoResult;
+      if (!txData?.[0]) {
+        console.error('No transaction data returned for', txId);
+        setLoading(false);
+        return;
+      }
       const result = await getTxInfo(usedAddresses, txData[0], assets, tTypes) as GetTxInfoResult;
       //console.log("txData[0]", txData[0], assets, tTypes)
       //console.log("result", result)
@@ -576,7 +589,7 @@ function processMetadata(metadata: Metadata): string {
       walletTokens: assetList,
       balanceString,
       walletBalanceAfterTx: assetList}
-      await checkTransactionType();
+      await checkTransactionType(usedAddresses, assetList);
 }
 
   async function getTokenRates(wallettokens: { id: string; name: string; amount: string; unit: string; decimals: number; fingerprint: string; }[]) {
